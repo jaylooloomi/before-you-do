@@ -1,0 +1,20 @@
+{
+  "name": "before-you-do",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:ui": "vite build",
+    "dev:ui": "vite --host 127.0.0.1",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "vite": "^7"
+  }
+}

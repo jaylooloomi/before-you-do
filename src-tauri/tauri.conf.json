@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Before You Do",
+  "version": "0.2.0",
+  "identifier": "dev.quicksay.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev:ui",
+    "devUrl": "http://127.0.0.1:5173",
+    "beforeBuildCommand": "npm run build:ui",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Before You Do · 常用短句",
+        "width": 940,
+        "height": 820,
+        "minWidth": 780,
+        "minHeight": 680,
+        "transparent": true,
+        "backgroundColor": "#00000000",
+        "decorations": false,
+        "shadow": false,
+        "dragDropEnabled": false
+      },
+      {
+        "label": "picker",
+        "title": "Before You Do",
+        "url": "index.html?picker",
+        "width": 580,
+        "height": 360,
+        "visible": false,
+        "focus": false,
+        "focusable": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "center": true,
+        "transparent": true,
+        "backgroundColor": "#00000000",
+        "shadow": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "infoPlist": "Info.plist"
+    }
+  }
+}

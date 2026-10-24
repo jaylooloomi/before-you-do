@@ -1,0 +1,16 @@
+.tools/
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/target-macos-check/
+artifacts/
+*.log
+selftest-result.txt
+*.exe
+*.dll
+*.shape-audit.json
+*.window-regression.jsonl
+.env
+.env.*
+!.env.example
+src-tauri/gen/

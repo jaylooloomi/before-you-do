@@ -1,0 +1,38 @@
+name: Desktop builds
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:ui
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+      - if: runner.os == 'Windows'
+        run: npm run build -- --bundles none
+      - if: runner.os == 'macOS'
+        run: npm run build -- --bundles app
+      - if: runner.os == 'macOS'
+        run: |
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent "src-tauri/target/release/bundle/macos/Before You Do.app" artifacts/BeforeYouDo-mac.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BeforeYouDo-${{ matrix.os }}
+          path: |
+            src-tauri/target/release/before-you-do.exe
+            artifacts/BeforeYouDo-mac.zip
+          if-no-files-found: error
