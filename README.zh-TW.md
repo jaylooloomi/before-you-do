@@ -79,9 +79,18 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 完成後告訴我測過什麼、結果如何，以及哪些還沒驗證，不用每一步等我確認。
 ```
 
-<p align="center"><img src="docs/images/picker-settings.png" alt="快捷選單實際介面：上方顯示目前與相鄰角色，下方為短句，底部固定有新增快捷提示詞與設定兩列" width="580"></p>
+<table>
+<tr>
+<td align="center" width="50%"><strong>我的短句</strong><br><img src="docs/images/picker-personal-zh-TW.png" alt="我的短句 — 日常交代與實作驗證" width="460"><br><sub>日常交代與實作驗證</sub></td>
+<td align="center" width="50%"><strong>專案管理</strong><br><img src="docs/images/picker-project-zh-TW.png" alt="專案管理 — 拆解工作、追蹤進度與阻礙" width="460"><br><sub>拆解工作、追蹤進度與阻礙</sub></td>
+</tr>
+<tr>
+<td align="center" width="50%"><strong>程式開發</strong><br><img src="docs/images/picker-developer-zh-TW.png" alt="程式開發 — 實作、除錯與測試" width="460"><br><sub>實作、除錯與測試</sub></td>
+<td align="center" width="50%"><strong>內容行銷</strong><br><img src="docs/images/picker-marketing-zh-TW.png" alt="內容行銷 — 依受眾改寫、規劃選題" width="460"><br><sub>依受眾改寫、規劃選題</sub></td>
+</tr>
+</table>
 
-選單不搶走原輸入框的焦點；角色列顯示目前角色、序號與前後角色。底部「新增」與「設定」固定顯示；圖中選到「設定」，放開組合鍵會回到短句管理主畫面。貼入後由你自行檢查與送出。
+選單不搶走原輸入框的焦點；角色列顯示目前角色、序號與前後角色。上圖展示「我的短句、專案管理、程式開發、內容行銷」四種角色，用 ←／→ 即可切換。底部「新增」與「設定」固定顯示；選到「設定」並放開組合鍵會回到短句管理主畫面。貼入後由你自行檢查與送出。
 
 ## 安裝與啟動
 

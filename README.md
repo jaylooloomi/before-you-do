@@ -82,9 +82,18 @@ When finished, report what you tested, the results, and anything still unverifie
 Do not wait for my confirmation at every step.
 ```
 
-<p align="center"><img src="docs/images/picker-settings.png" alt="Actual shortcut picker with current and neighboring roles, snippets and fixed Add a prompt and Settings rows; Traditional Chinese interface shown" width="580"></p>
+<table>
+<tr>
+<td align="center" width="50%"><strong>My snippets</strong><br><img src="docs/images/picker-personal-en.png" alt="My snippets — Everyday instructions and verification" width="460"><br><sub>Everyday instructions and verification</sub></td>
+<td align="center" width="50%"><strong>Project planning</strong><br><img src="docs/images/picker-project-en.png" alt="Project planning — Break down work and track blockers" width="460"><br><sub>Break down work and track blockers</sub></td>
+</tr>
+<tr>
+<td align="center" width="50%"><strong>Development</strong><br><img src="docs/images/picker-developer-en.png" alt="Development — Implementation, debugging and testing" width="460"><br><sub>Implementation, debugging and testing</sub></td>
+<td align="center" width="50%"><strong>Marketing</strong><br><img src="docs/images/picker-marketing-en.png" alt="Marketing — Adapt content and plan topics" width="460"><br><sub>Adapt content and plan topics</sub></td>
+</tr>
+</table>
 
-The picker preserves focus in the original input field. Its role bar shows the current role, position and neighboring roles; Add and Settings remain fixed below the list. Settings is selected in this screenshot: releasing the modifiers opens the snippet manager. The screenshot shows the Traditional Chinese interface; the app supports four interface languages. You review and send pasted messages yourself.
+The picker preserves focus in the original input field. Its role bar shows the current role, position and neighboring roles; Add and Settings remain fixed below the list. The examples show My snippets, Project planning, Development and Marketing. Use Left/Right to switch roles. Selecting Settings and releasing the modifiers opens the snippet manager. The app supports four interface languages. You review and send pasted messages yourself.
 
 ## Installation
 
