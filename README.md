@@ -3,10 +3,14 @@
 <h1 align="center">before-you-do</h1>
 
 <p align="center">
-  <b>Tired of giving AI the same reminders?</b><br>
-  “Test your changes.” “Only edit the requested parts.” “Polish my writing.” Stop retyping them.<br>
-  Save common instructions as snippets and add them when needed, without packing every rule into a long system prompt.<br>
-  Hold <code>Alt + H</code>, choose a snippet, and release to paste requirements, guidelines and limits into your conversation.
+  <b>One more instruction, before AI gets to work.</b><br>
+  Hold <code>Alt + H</code>, choose a snippet, release to paste. Describe the task, then add how you want AI to approach it.
+</p>
+
+<p align="center">
+  Tired of repeating reminders while your system prompt keeps growing?<br>
+  Save “Test your changes,” “Only edit the requested parts,” and “Polish my writing” as reusable snippets.<br>
+  Add requirements, guidelines and limits to your conversation when needed, without retyping them.
 </p>
 
 <p align="center">
