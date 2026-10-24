@@ -44,3 +44,5 @@
 - 回合6：加分05第一片完成：儲存/匯入帶各角色已讀快照，原生寫入前比對存在性與資料；同內容的角色預設建檔允許，外部改動/刪除/損壞拒寫。JS25/25、Rust18通過+1略過、build:ui成功。未宣稱跨程序鎖／UI整合驗證。續片會將快照深複製移至同編號純helper並補單元測試。
 
 - 回合7：加分05續片完成，同編號抽出saved-snapshot.js，兩項純測試驗證draft不共享原文/情境及跨角色baseline不被新讀取偷偷取代；JS27/27、build:ui成功。兩片各≤5檔，無新增套件。
+
+| 06（候選09） | UTF8 BOM短句檔相容 | scores-07.md：12.3 | Unicode BOM FAQ、Microsoft UTF8Encoding、RFC8259 8.1 | 計畫：只改storage.rs既有load小區塊及本項測試，不碰05snapshot區。先測出BOM失敗再修；保留正文FEFF、原檔不寫入、雙BOM/UTF16拒絕 | cargo test --offline；本機offline build | 待實作 | 否決猜測UTF16編碼（不確定轉換）；否決自動重寫原檔（資料風險） |

@@ -1,3 +1,6 @@
+a80c1f0 feat(night-shift/bonus-05): isolate cached saved snapshots from editable drafts
+8e61708 feat(night-shift/bonus-05): reject saves over externally changed snippet files
+09e1b65 chore(night-shift): select stale-file save protection
 20dd3aa feat(night-shift/bonus-04): copy saved-role snippets as portable JSON
 2998eb1 chore(night-shift): select saved-role JSON export
 21702f7 feat(night-shift/bonus-03): explain target focus and shortcut cancellation inline

@@ -51,3 +51,23 @@
 因為原始需求是 **快速補充每次不同的文字要求**，所以頂尖做法會順便做 **明確選擇的模板填值**；目前的成果 **沒有**。
 - 參考：Espanso forms：https://espanso.org/docs/matches/forms/；Raycast dynamic placeholders：https://manual.raycast.com/dynamic-placeholders。
 - 需要新的原生選取與放開行為、schema和預覽；不能把既有大括號當模板自行替換。很可能超過5檔及300行，不能直接實作整體；若評分高須再切片。
+
+# Candidates — 第三輪（第一輪後首次TOP:none，繼續調研）
+
+## 09 — Windows UTF-8 BOM 短句檔相容讀取
+因為原始需求是 **讓使用者用自己的AI/編輯器修改本機短句**，所以頂尖做法會順便做 **接受常見UTF-8 BOM簽章，避免合法短句在Windows編輯後無法載入**；目前的成果 **沒有**，Rust load 直接把原始bytes交給serde_json，UI貼入JSON的trim反而已支援BOM。
+- 參考：Unicode官方BOM FAQ：https://unicode.org/faq/utf_bom.html；Microsoft UTF8Encoding：https://learn.microsoft.com/en-us/dotnet/api/system.text.utf8encoding；RFC8259 8.1允許parser容忍BOM：https://www.rfc-editor.org/rfc/rfc8259#section-8.1。
+- 範圍：storage.rs既有load讀取區剝除單一開頭UTF8 BOM，純tempfile單元測試內嵌；不支援猜測UTF16、不剝正文的U+FEFF、不改寫原檔、不改前項新增snapshot helper。
+- 1檔≤65行。測帶/不帶BOM、正文保留、重複BOM仍拒絕、損壞不覆寫。
+
+## 10 — AI JSON 套用前預覽將取代的短句
+因為原始需求是 **用自己的AI改好短句再安全匯回**，所以頂尖做法會順便做 **套用前顯示輸入短句預覽與取代範圍**；目前的成果 **只有筆數確認**，使用者無法在確認窗看出AI回傳了哪些名稱。
+- 參考：Textfold官方文件明說先預覽每筆再import：https://textfold.app/docs。
+- 範圍：新增純import-preview.js+test，settings.js既有import確認區補前5個名稱與還有N筆、已存筆數與草稿取代提醒；locales.js新增列。4檔≤140行，不改解析/儲存/匯出區、不自動合併。
+- 驗證：空/長/多行名稱、安全純字串、截斷與筆數、四語；只純unit，未宣稱原生確認窗實測。
+
+## 11 — 情境欄固定標示不會貼入
+因為原始需求是 **以情境選句、只把正文補進對話**，所以頂尖做法會順便做 **讓選句說明和真正插入內容的界線一直可見**；目前的成果 **只有部分**，新草稿顯示不會貼入，但內建或自訂情境會改顯示來源，遮掉這句說明。
+- 參考：Textfold官方文件live preview/明確觸發說明：https://textfold.app/；Alfred官方建議plain text與目的地格式：https://www.alfredapp.com/help/features/snippets/。
+- 範圍：新增scenario-hint.js+test，main.js既有renderScenario小區塊把現有「僅作為選句提示，不會一起貼入」固定顯示，來源附後；使用既有翻譯，不改先前加分區（3檔≤70行）。
+- 驗證：內建、自訂、空情境、來源字串、四語與使用者內容不變；不改貼入邏輯。
