@@ -31,3 +31,23 @@
 - 參考：VS Code 官方 Hot Exit：https://code.visualstudio.com/docs/editor/codebasics#_hot-exit。
 - 規模風險：要新增原生路徑／schema、跨角色同步及恢復 UI，很可能>5檔／300行；可能觸及設定圍欄。若評分仍高，須先切為純規劃或明確獨立第一片，否則往下。
 - 本輪不新增依賴，真實用戶資料不得讀寫。
+
+# Candidates — 第二輪（第一輪已完成01/02/03/04）
+
+## 06 — 外部 AI 改檔後阻止舊內容覆蓋
+因為原始需求是 **讓使用者用自己的 AI 直接修改本機短句且保留既有資料**，所以頂尖做法會順便做 **儲存前偵測磁碟已被外部改動，讓使用者先保留草稿再重載**；目前的成果 **沒有**，只在教學文字提醒。save_snippets 直接寫檔；在另一角色停留時，前角色快取也可能過期。
+- 參考：VS Code 官方 basic editing 的 Preventing dirty writes/save conflicts（以官方文件目前網址為準）：https://code.visualstudio.com/docs/editor/codebasics；Rust fs rename語意：https://doc.rust-lang.org/std/fs/fn.rename.html。
+- 方案：前端為各角色保存獨立的已讀資料snapshot（複製，不能與editor物件共用），儲存傳入；Rust儲存前比對目前檔案存在性及解析內容，改動則拒寫、保留草稿/備份，提示先備份再reload。JSON空白格式差異不視為改動。匯入也帶snapshot。Native呼叫未傳snapshot保留相容性。
+- 規模：src/main.js、src-tauri/src/main.rs、src-tauri/src/storage.rs（含純tempfile單元測試）、src/locales.js，預估4檔≤220行；不改前幾項自己新增區塊。若超規模僅做native helper與測試第一片，後續沿同編號續做。
+- 驗證：只用自身暫存檔的Rust unit tests，測外部內容修改、刪除／建立、格式相同、備份未被破壞；純JS檢查snapshot複製。依技能不跑原生App整合或系統輸入。
+- 限制：不是跨程序交易鎖，不保證比較後瞬間同時寫入；若需鎖及多版本合併則另議。
+
+## 07 — 角色自訂建立／刪除（規模風險）
+因為原始需求是 **不同角色有自己的常用短句**，所以頂尖做法會順便做 **使用者自建分類**；目前的成果 **只有固定12角色**。
+- 參考：Alfred collections：https://www.alfredapp.com/help/features/snippets/。
+- 須變動native roles白名單、角色持久化、UI管理與picker，至少6檔，可能觸設定圍欄；本輪只可規劃，不能直接上完整功能。
+
+## 08 — 動態模板參數（規模與相容風險）
+因為原始需求是 **快速補充每次不同的文字要求**，所以頂尖做法會順便做 **明確選擇的模板填值**；目前的成果 **沒有**。
+- 參考：Espanso forms：https://espanso.org/docs/matches/forms/；Raycast dynamic placeholders：https://manual.raycast.com/dynamic-placeholders。
+- 需要新的原生選取與放開行為、schema和預覽；不能把既有大括號當模板自行替換。很可能超過5檔及300行，不能直接實作整體；若評分高須再切片。

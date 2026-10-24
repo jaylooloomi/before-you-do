@@ -38,3 +38,5 @@
 | 04（候選03） | 複製目前角色純JSON | scores-04.md：5.8 | Raycast JSON import/export、Alfred sharing | 計畫：settings.js獨立匯出區/按鈕，model.js新序列化函式區，locales.js新列，model.test新測試區；測往返、順序、情境、空白、原物件不變 | npm test；npm run build:ui | 待實作 | 否決第三方備份服務（範圍）；否決複製草稿卻標已儲存（混淆來源），僅匯出native已存資料 |
 
 - 回合5：加分04（候選03）完成；只複製native已儲存資料，情境/排序/原始空白不變，可再匯入。npm test 25/25與build:ui成功；未操作真實剪貼簿。
+
+| 05（候選06） | 外部改檔儲存衝突保護 | scores-05.md：2.9 | VS Code官方tips-and-tricks：Preventing dirty writes | 計畫：storage.rs新snapshot檢查區與tempfile單元測試，Rust main save命令加可選expected參數；JS main舊有保存區記錄各角色深複製snapshot與傳參，locales新增衝突列。測外部修改/刪除/同內容建檔/格式差異/備份保留 | cargo test --offline；npm test；UI build及offline native build | 待實作 | 否決直接覆寫（遺失AI成果）；否決自動merge/新鎖套件（超出規模與依賴） |
