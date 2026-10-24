@@ -103,3 +103,12 @@ test('import errors explain field and row in all four languages',async()=>{
  }
  setLanguage('en',false);
 });
+
+test('saved snippet export is importable and preserves order, Unicode and exact saved text',async()=>{
+ const {serializeSnippetExport}=await import('../src/model.js');
+ const items=[{name:' 第二句 ',text:'  原文\n第二行  ',scenario:' 時機 '},{name:'第一句',text:'日本語 😀',scenario:''}];
+ const before=JSON.stringify(items);const exported=serializeSnippetExport(items);
+ assert.deepEqual(JSON.parse(exported),items);assert.equal(JSON.stringify(items),before);
+ const roundtrip=parseSnippetImport(exported);assert.deepEqual(roundtrip.map(i=>i.name),['第二句','第一句']);assert.equal(roundtrip[1].scenario,'');
+ assert.throws(()=>serializeSnippetExport([]));
+});

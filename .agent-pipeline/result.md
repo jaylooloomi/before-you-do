@@ -36,3 +36,5 @@
 - 回合4：加分03（候選04）完成，四語提示與設定快捷鍵同步，原收起／取消邏輯未改；npm test 24/24、build:ui成功。未做視覺／系統按鍵測試。
 
 | 04（候選03） | 複製目前角色純JSON | scores-04.md：5.8 | Raycast JSON import/export、Alfred sharing | 計畫：settings.js獨立匯出區/按鈕，model.js新序列化函式區，locales.js新列，model.test新測試區；測往返、順序、情境、空白、原物件不變 | npm test；npm run build:ui | 待實作 | 否決第三方備份服務（範圍）；否決複製草稿卻標已儲存（混淆來源），僅匯出native已存資料 |
+
+- 回合5：加分04（候選03）完成；只複製native已儲存資料，情境/排序/原始空白不變，可再匯入。npm test 25/25與build:ui成功；未操作真實剪貼簿。

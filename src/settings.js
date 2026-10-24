@@ -3,7 +3,7 @@ import { getShortcut, onShortcutChange, shortcutLabel } from './shortcut.js';
 import { t, getLanguage, getPreference, setLanguage, onLanguageChange, errorMessage } from './i18n.js';
 import { filePrompt, chatPrompt } from './ai-prompts.js';
 import { getTemplates } from './template-locales.js';
-import { parseSnippetImport } from './model.js';
+import { parseSnippetImport, serializeSnippetExport } from './model.js';
 
 export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, onImport, onAddTemplate }) {
   const panel = document.createElement('section');
@@ -18,6 +18,10 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
     <section class="settings-card"><h3>怎麼請 AI 修改比較有效？</h3><ul><li><b>交代用途：</b>例如「補在開發需求後，請 AI 自主完成並回報」。</li><li><b>交代修改範圍：</b>例如「只改第三句，其他名稱、內容和順序不變」。</li><li><b>描述期待行為：</b>例如「先整理理解再做，不用逐步確認；遇到缺少權限時再問我」。</li><li><b>用實際任務試用：</b>觀察回覆與操作結果，再調整短句；提示詞無法保證 AI 一定完成或沒有錯誤。</li></ul><p>資料檔需保留 name、text，另可加入選填的 scenario（最多 1,000 字）。自訂情境不會自動翻譯，也不會一起貼入；未自訂時才使用內建範本的情境提示。</p></section>
     <section class="settings-card"><h3>備份與還原</h3><p>每次儲存會在目前角色的 .json.bak 檔保留上一版，不是完整歷史紀錄。還原前請完整結束 App，另存目前檔案，再將備份複製回上方顯示的短句路徑。外部 AI 修改前也應另做備份。</p></section>
     <p id="settings-status" role="status" aria-live="polite"></p>`;
+  // Bonus-04: explicit saved-only JSON export, using the existing clipboard command.
+  const exportCard=document.createElement('section');exportCard.className='settings-card';
+  exportCard.innerHTML='<h3>匯出目前角色</h3><p>只複製目前角色已儲存的短句 JSON，包含情境與排序，不含未儲存草稿。</p><button type="button" data-settings="export-json">複製短句 JSON</button>';
+  panel.querySelector('#import-json').closest('.settings-card').after(exportCard);
   const roleNote=document.createElement('p');roleNote.className='role-settings-note';panel.querySelector('.settings-heading').after(roleNote);
   let currentRole='personal';
   function renderRoleNote(){roleNote.textContent=t('目前角色：{role}。匯入、重新載入與 AI 修改指令只針對此角色。',{role:roleName(currentRole,getLanguage())});}
@@ -60,6 +64,11 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
       if(action==='shortcut-save'||action==='shortcut-reset'){
         const candidate=action==='shortcut-reset'?{modifier:'alt',key:'H'}:{modifier:shortcutModifier.value,key:shortcutKey.value};
         await invoke('save_shortcut',{shortcut:candidate});refreshShortcut();report('快捷鍵已儲存，下次啟動也會沿用。');
+      }
+      if(action==='export-json'){
+        const saved=await invoke('get_snippets');
+        await invoke('copy_text',{text:serializeSnippetExport(saved)});
+        report('已複製目前角色的短句 JSON；未儲存草稿未包含在內。');
       }
       if (action === 'folder') { await invoke('open_data_folder'); report('已開啟資料夾。'); }
       if (action === 'path') { await invoke('copy_text', { text: info.path }); report('已複製檔案路徑。'); }

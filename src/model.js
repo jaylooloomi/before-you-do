@@ -81,3 +81,10 @@ export function prepareSnippetSave(items, previous=new Map()) {
   if(saved.length>100)throw new Error('最多 100 句。');
   return {saved,editorItems,versions,issues,draftCount:issues.length};
 }
+
+// Export saved data as-is; validation must not trim or otherwise rewrite the payload.
+export function serializeSnippetExport(items) {
+  const json = JSON.stringify(items, null, 2);
+  parseSnippetImport(json);
+  return json;
+}

@@ -1,5 +1,9 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["匯出目前角色","导出当前角色","Export current role","現在のロールを書き出す"],
+["只複製目前角色已儲存的短句 JSON，包含情境與排序，不含未儲存草稿。","仅复制当前角色已保存的短句 JSON，包括场景和顺序，不含未保存草稿。","Copy this role’s saved snippets as JSON, including scenarios and order. Unsaved drafts are excluded.","このロールの保存済み短文を使用場面・順番を含む JSON としてコピーします。未保存の下書きは含みません。"],
+["複製短句 JSON","复制短句 JSON","Copy snippets as JSON","短文の JSON をコピー"],
+["已複製目前角色的短句 JSON；未儲存草稿未包含在內。","已复制当前角色的短句 JSON；未保存草稿未包含在内。","Copied this role’s saved snippets as JSON. Unsaved drafts are not included.","このロールの保存済み短文 JSON をコピーしました。未保存の下書きは含まれていません。"],
 ["先點對話輸入框，再按住 {modifier} 並按 {key}，選句後放開貼入。","先点击对话输入框，再按住 {modifier} 并按 {key}，选句后松开粘贴。","Click the conversation input field, hold {modifier} and press {key}, select a snippet and release to paste.","会話の入力欄を選び、{modifier} を押しながら {key} を押し、短文を選んで離すと貼り付けます。"],
 ["操作與取消方式","操作与取消方式","Navigation and cancellation","操作とキャンセル"],
 ["← → 切換角色，↑ ↓ 選句；Esc 或再按 {key} 取消。在管理視窗按快捷鍵只會先收起，草稿會保留。","← → 切换角色，↑ ↓ 选句；Esc 或再按 {key} 取消。在管理窗口按快捷键只会先收起，草稿会保留。","Use ← → for roles and ↑ ↓ for snippets; Esc or press {key} again to cancel. In the manager, the shortcut only hides the window and keeps your drafts.","← → でロール、↑ ↓ で短文を選択。Esc または {key} をもう一度押すとキャンセルします。管理画面ではショートカットで画面を隠すだけで、下書きは保持します。"],
