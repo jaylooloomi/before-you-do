@@ -1,3 +1,4 @@
+import { usageHelp } from './usage-help.js';
 import { matchesSnippetQuery } from './snippet-search.js';
 import appIcon from './assets/app-icon.png';
 import { matchesShortcutEvent } from './shortcut-match.js';
@@ -264,6 +265,14 @@ if (picker) {
   };
   async function nativeStatus() { const status = await invoke('native_status'); const preview = status.startsWith('外觀預覽'); const ready = status.startsWith('已啟用') || preview; if (preview) document.querySelector('.workspace>footer').firstChild.textContent = t('外觀預覽 · 修改不會影響原有短句。'); document.querySelector('#native-status').classList.toggle('unavailable', !ready); document.querySelector('#native-status span').textContent = t(preview ? '外觀預覽' : ready ? '快捷鍵已啟用' : '快捷鍵需設定'); document.querySelector('#native-status').title = shortcutLabel(); document.querySelector('#native-error').hidden = ready; document.querySelector('#native-error').textContent = ready ? '' : errorMessage(status); document.querySelector('#retry').hidden = ready; }
   onShortcutChange(nativeStatus);
+  // Bonus-03: inline guidance follows the actual shortcut without changing its behavior.
+  const usageBar=document.querySelector('.usage-bar'),usageContent=el('div','usage-help');
+  const usageInstruction=el('span',''),usageDetails=el('details',''),usageSummary=el('summary',''),usageExplanation=el('p','');
+  usageDetails.append(usageSummary,usageExplanation);usageContent.append(usageInstruction,usageDetails);
+  usageBar.lastElementChild.replaceWith(usageContent);
+  function renderUsageHelp(){const help=usageHelp(getLanguage(),modifierLabel(),keyLabel());usageInstruction.textContent=help.instruction;usageSummary.textContent=help.summary;usageExplanation.textContent=help.details;}
+  renderUsageHelp();onShortcutChange(renderUsageHelp);
+
   document.querySelector('#retry').onclick = async () => { await invoke('restart_keyboard'); await nativeStatus(); };
   async function hide() { if (!dirty || await askConfirmation({title: '收起視窗？', message: '目前有尚未儲存的修改。收起後程式仍會執行，草稿會保留在此視窗中。', confirmText: '收起視窗'})) await invoke('hide_manager'); }
   await listen('native-status', nativeStatus); await listen('save-before-hide', hide);

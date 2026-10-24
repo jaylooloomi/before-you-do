@@ -1,5 +1,8 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["先點對話輸入框，再按住 {modifier} 並按 {key}，選句後放開貼入。","先点击对话输入框，再按住 {modifier} 并按 {key}，选句后松开粘贴。","Click the conversation input field, hold {modifier} and press {key}, select a snippet and release to paste.","会話の入力欄を選び、{modifier} を押しながら {key} を押し、短文を選んで離すと貼り付けます。"],
+["操作與取消方式","操作与取消方式","Navigation and cancellation","操作とキャンセル"],
+["← → 切換角色，↑ ↓ 選句；Esc 或再按 {key} 取消。在管理視窗按快捷鍵只會先收起，草稿會保留。","← → 切换角色，↑ ↓ 选句；Esc 或再按 {key} 取消。在管理窗口按快捷键只会先收起，草稿会保留。","Use ← → for roles and ↑ ↓ for snippets; Esc or press {key} again to cancel. In the manager, the shortcut only hides the window and keeps your drafts.","← → でロール、↑ ↓ で短文を選択。Esc または {key} をもう一度押すとキャンセルします。管理画面ではショートカットで画面を隠すだけで、下書きは保持します。"],
 ["可輸入多個關鍵字，搜尋名稱、內容與情境。","可输入多个关键词，搜索名称、内容和场景。","Search names, content and scenarios with multiple keywords.","複数のキーワードで名前・内容・使用場面を検索できます。"],
 ["error.import_entry","第 {index} 项的 {field}：{reason}","Entry {index}, {field}: {reason}","{index} 件目の {field}：{reason}"],
 ["error.import_object","每项必须是含 name、text 的对象。","Each entry must be an object containing name and text.","各項目は name と text を持つオブジェクトにしてください。"],
