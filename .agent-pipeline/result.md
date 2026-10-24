@@ -28,3 +28,5 @@
 - 回合 2：加分01完成，嚴格JSON型別與四語欄位錯誤，npm test 19/19、build:ui成功；未執行外部或原生桌面測試。
 
 | 02 | 四語 Unicode 多詞搜尋 | scores-02.md：10.5 | Raycast Snippets、MDN normalize | 計畫：新增snippet-search.js及純測試，main.js只改搜尋判斷與title，locales.js僅新增本項提示列；測全半形、日文、重音、跨欄多詞、原文不變 | npm test；npm run build:ui | 待實作 | 否決重排／改寫使用者資料（只做搜尋索引）；否決模糊搜尋套件（依賴與結果不可預期） |
+
+- 回合3：加分02完成：多詞AND搜尋跨名稱/正文/有效情境，NFKC搜尋索引支援全半形與日文濁音，原文不變；npm test 22/22、build:ui成功。4個程式/測試檔。

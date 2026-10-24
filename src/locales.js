@@ -1,5 +1,6 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["可輸入多個關鍵字，搜尋名稱、內容與情境。","可输入多个关键词，搜索名称、内容和场景。","Search names, content and scenarios with multiple keywords.","複数のキーワードで名前・内容・使用場面を検索できます。"],
 ["error.import_entry","第 {index} 项的 {field}：{reason}","Entry {index}, {field}: {reason}","{index} 件目の {field}：{reason}"],
 ["error.import_object","每项必须是含 name、text 的对象。","Each entry must be an object containing name and text.","各項目は name と text を持つオブジェクトにしてください。"],
 ["error.import_string","必须是文字，不能是数字、null 或对象。","Must be text, not a number, null or object.","数値・null・オブジェクトではなく文字列を指定してください。"],
