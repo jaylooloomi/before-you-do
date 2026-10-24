@@ -3,12 +3,14 @@
 <h1 align="center">before-you-do</h1>
 
 <p align="center">
-  <b>One more instruction, before AI gets to work.</b><br>
-  Hold <code>Alt + H</code>, choose a snippet, release to paste. Describe the task, then add how you want AI to approach it.
+  <b>Tired of giving AI the same reminders?</b><br>
+  “Test your changes.” “Only edit the requested parts.” “Polish my writing.” Stop retyping them.<br>
+  Save common instructions as snippets and add them when needed, without packing every rule into a long system prompt.<br>
+  Hold <code>Alt + H</code>, choose a snippet, and release to paste requirements, guidelines and limits into your conversation.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-informational" alt="Version 0.2.0">
+  <img src="https://img.shields.io/github/v/release/jaylooloomi/before-you-do" alt="Latest release">
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2">
   <img src="https://img.shields.io/badge/Windows-tested-22863a" alt="Windows tested on hardware">
   <img src="https://img.shields.io/badge/macOS-awaiting_hardware_testing-orange" alt="macOS awaiting hardware testing">

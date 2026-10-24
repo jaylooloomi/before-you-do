@@ -3,12 +3,14 @@
 <h1 align="center">before-you-do</h1>
 
 <p align="center">
-  <b>在 AI 動手之前，把該交代的補上。</b><br>
-  按住 <code>Alt + H</code>，選一句，放開貼入。你描述要做什麼，它幫你補上希望 AI 怎麼做。
+  <b>受夠了每次都要重複提醒 AI？</b><br>
+  「記得測試」「只改指定範圍」「幫我潤飾文字」，不用每次重打。<br>
+  不用把所有要求塞進一大串 system prompt；把常用指令存成短句，需要時再補上。<br>
+  按住 <code>Alt + H</code>，選一句，放開貼入對話，快速補上要求、規範與限制。
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-informational" alt="版本 0.2.0">
+  <img src="https://img.shields.io/github/v/release/jaylooloomi/before-you-do" alt="最新發布版本">
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2">
   <img src="https://img.shields.io/badge/Windows-%E5%B7%B2%E5%AF%A6%E6%A9%9F%E9%A9%97%E8%AD%89-22863a" alt="Windows 已實機驗證">
   <img src="https://img.shields.io/badge/macOS-%E5%BE%85%E5%AF%A6%E6%A9%9F%E9%A9%97%E8%AD%89-orange" alt="macOS 待實機驗證">
