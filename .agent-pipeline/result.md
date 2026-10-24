@@ -30,3 +30,5 @@
 | 02 | 四語 Unicode 多詞搜尋 | scores-02.md：10.5 | Raycast Snippets、MDN normalize | 計畫：新增snippet-search.js及純測試，main.js只改搜尋判斷與title，locales.js僅新增本項提示列；測全半形、日文、重音、跨欄多詞、原文不變 | npm test；npm run build:ui | 待實作 | 否決重排／改寫使用者資料（只做搜尋索引）；否決模糊搜尋套件（依賴與結果不可預期） |
 
 - 回合3：加分02完成：多詞AND搜尋跨名稱/正文/有效情境，NFKC搜尋索引支援全半形與日文濁音，原文不變；npm test 22/22、build:ui成功。4個程式/測試檔。
+
+| 03（候選04） | 管理畫面快捷操作指引 | scores-03.md：8.2 | Alfred browsing、Raycast quickstart | 計畫：新增usage-help.js純訊息、usage-help.test.js、main獨立usageBar區塊、locales新增列。主句先點輸入框；摺疊詳情列角色、取消與管理視窗收起。四語與自訂鍵同步 | npm test；npm run build:ui | 待實作 | 否決強制新手導覽（打斷）；否決修改快捷鍵核心（原行為使用者已確認） |
