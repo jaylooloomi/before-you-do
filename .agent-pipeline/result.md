@@ -26,3 +26,5 @@
 | 01 | AI JSON 匯入型別與逐筆錯誤 | scores-01.md：10.7 | Raycast Snippets、MDN JSON.parse | 預計動 model.js 的import新區塊、i18n.js errorMessage小區塊、locales.js新增列、model.test.js新增區塊；測數字/null/欄位/四語/不變性 | npm test；npm run build:ui | 19/19 JS單元測試通過、前端build成功；4程式/測試檔，新增約70行 | 否決自動把物件轉字串（資料誤入）；否決引入schema套件（技能禁新增依賴） |
 
 - 回合 2：加分01完成，嚴格JSON型別與四語欄位錯誤，npm test 19/19、build:ui成功；未執行外部或原生桌面測試。
+
+| 02 | 四語 Unicode 多詞搜尋 | scores-02.md：10.5 | Raycast Snippets、MDN normalize | 計畫：新增snippet-search.js及純測試，main.js只改搜尋判斷與title，locales.js僅新增本項提示列；測全半形、日文、重音、跨欄多詞、原文不變 | npm test；npm run build:ui | 待實作 | 否決重排／改寫使用者資料（只做搜尋索引）；否決模糊搜尋套件（依賴與結果不可預期） |
