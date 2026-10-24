@@ -253,7 +253,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --locked
 npm run build
 ```
 
-The Windows executable is at `src-tauri/target/release/before-you-do.exe`; the macOS app is at `src-tauri/target/release/bundle/macos/before-you-do.app`. Use `npm run build -- --bundles none` to build only the executable, or `--bundles app` on macOS.
+The Windows executable is at `src-tauri/target/release/before-you-do.exe`; the macOS app is at `src-tauri/target/release/bundle/macos/before-you-do.app`. Use `npm run build -- --no-bundle` to build only the executable, or `--bundles app` on macOS.
 
 <details>
 <summary><b>Source guide and desktop integration tests</b></summary>

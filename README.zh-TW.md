@@ -250,7 +250,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --locked
 npm run build
 ```
 
-Windows 執行檔位於 `src-tauri/target/release/before-you-do.exe`；macOS App 位於 `src-tauri/target/release/bundle/macos/before-you-do.app`。也可用 `npm run build -- --bundles none` 僅建置執行檔，或在 Mac 使用 `--bundles app`。
+Windows 執行檔位於 `src-tauri/target/release/before-you-do.exe`；macOS App 位於 `src-tauri/target/release/bundle/macos/before-you-do.app`。也可用 `npm run build -- --no-bundle` 僅建置執行檔，或在 Mac 使用 `--bundles app`。
 
 <details>
 <summary><b>原始碼導覽與桌面整合測試</b></summary>

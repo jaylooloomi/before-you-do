@@ -22,7 +22,7 @@ jobs:
       - run: npm run build:ui
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
       - if: runner.os == 'Windows'
-        run: npm run build -- --bundles none
+        run: npm run build -- --no-bundle
       - if: runner.os == 'macOS'
         run: npm run build -- --bundles app
       - if: runner.os == 'macOS'
