@@ -1,5 +1,10 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["error.import_entry","第 {index} 项的 {field}：{reason}","Entry {index}, {field}: {reason}","{index} 件目の {field}：{reason}"],
+["error.import_object","每项必须是含 name、text 的对象。","Each entry must be an object containing name and text.","各項目は name と text を持つオブジェクトにしてください。"],
+["error.import_string","必须是文字，不能是数字、null 或对象。","Must be text, not a number, null or object.","数値・null・オブジェクトではなく文字列を指定してください。"],
+["error.import_required","必填，不能只有空白。","Required; cannot contain only whitespace.","必須です。空白のみにはできません。"],
+["error.import_length","最多 {limit} 个字符。","Use at most {limit} characters.","最大 {limit} 文字です。"],
 ["目前角色：{role} · {status}","当前角色：{role} · {status}","Current role: {role} · {status}","現在のロール：{role} · {status}"],
 ["其他未儲存角色：","其他未保存角色：","Other unsaved roles:","未保存の他のロール："],
 ["儲存目前角色的完整短句；未完成草稿會保留。","保存当前角色的完整短句；未完成草稿会保留。","Save complete snippets in this role; incomplete drafts are kept.","このロールの完成した短文を保存します。未完成の下書きは保持します。"],
@@ -123,6 +128,11 @@ export const rows = [
 ];
 
 export const specialTraditional = {
+ 'error.import_entry':'第 {index} 筆的 {field}：{reason}',
+ 'error.import_object':'每筆必須是含 name、text 的物件。',
+ 'error.import_string':'必須是文字，不能是數字、null 或物件。',
+ 'error.import_required':'必填，不能只有空白。',
+ 'error.import_length':'最多 {limit} 個字元。',
  'error.scenario_invalid':'情境最多 1,000 字。',
  'error.role_invalid':'角色設定無效，請檢查 roles.json。',
  'error.shortcut_invalid':'請選擇 Alt 或 Ctrl（可加 Shift），搭配 A–Z、0–9 或空白鍵。',

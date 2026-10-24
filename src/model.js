@@ -18,7 +18,25 @@ export function parseSnippetImport(input) {
   const json = input.trim().replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i, '$1');
   const items = JSON.parse(json);
   if (!Array.isArray(items) || items.length > 100) throw new Error('請提供 1～100 筆短句的 JSON 陣列。');
+  items.forEach(validateImportEntry);
   return validateSnippets(items);
+}
+
+// Import is deliberately stricter than editor normalization: JSON types must be explicit.
+function validateImportEntry(item, offset) {
+  const fail = (field, reason, limit) => {
+    const error = new Error('error.import_entry');
+    error.code = 'error.import_entry';
+    error.params = { index: offset + 1, field, reason, limit };
+    throw error;
+  };
+  if (!item || typeof item !== 'object' || Array.isArray(item)) fail('item', 'error.import_object');
+  for (const [field, limit] of [['name', 100], ['text', 20000], ['scenario', 1000]]) {
+    if (field === 'scenario' && !Object.hasOwn(item, field)) continue;
+    if (typeof item[field] !== 'string') fail(field, 'error.import_string');
+    if (field !== 'scenario' && !item[field].trim()) fail(field, 'error.import_required');
+    if (item[field].length > limit) fail(field, 'error.import_length', limit);
+  }
 }
 
 export function isEmptyDraft(item) {

@@ -84,3 +84,22 @@ test('optional scenarios survive save, import and reorder without changing text'
  assert.throws(()=>validateSnippets([{name:'a',text:'b',scenario:'x'.repeat(1001)}]));
  assert.throws(()=>prepareSnippetSave([{name:'新短句',text:'',scenario:'Important draft context'}]));
 });
+
+test('AI import rejects wrong row and field types without coercing user data',()=>{
+ const valid={name:'合法',text:'正文',scenario:'使用時機'};
+ for(const [value,field] of [[null,'item'],[17,'item'],[[],'item'],[{name:42,text:'正文'},'name'],[{name:'標題',text:{x:1}},'text'],[{name:'標題',text:'正文',scenario:null},'scenario'],[{name:'標題',text:'   '},'text'],[{name:'x'.repeat(101),text:'正文'},'name']]){
+  const json=JSON.stringify([valid,value]);
+  assert.throws(()=>parseSnippetImport(json),error=>error.code==='error.import_entry'&&error.params.index===2&&error.params.field===field);
+  assert.equal(json,JSON.stringify([valid,value]));
+ }
+ assert.deepEqual(parseSnippetImport(JSON.stringify([valid])),[valid]);
+});
+
+test('import errors explain field and row in all four languages',async()=>{
+ const {errorMessage,setLanguage}=await import('../src/i18n.js');
+ let error;try{parseSnippetImport('[{"name":"ok","text":"body"},{"name":"bad","text":2}]')}catch(e){error=e}
+ for(const [language,expected]of [['zh-TW','第 2 筆的 text'],['zh-CN','第 2 项的 text'],['en','Entry 2, text'],['ja','2 件目の text']]){
+  setLanguage(language,false);const message=errorMessage(error);assert(message.includes(expected));assert(!message.includes('error.import_'));assert(!message.includes('{'));
+ }
+ setLanguage('en',false);
+});

@@ -23,4 +23,6 @@
 
 - scope-reviewer 獨立複核：VERDICT: OK。無確定收尾工作；所有存疑項跳過。
 
-| 01 | AI JSON 匯入型別與逐筆錯誤 | scores-01.md：10.7 | Raycast Snippets、MDN JSON.parse | 預計動 model.js 的import新區塊、i18n.js errorMessage小區塊、locales.js新增列、model.test.js新增區塊；測數字/null/欄位/四語/不變性 | npm test；npm run build:ui | 待實作 | 否決自動把物件轉字串（資料誤入）；否決引入schema套件（技能禁新增依賴） |
+| 01 | AI JSON 匯入型別與逐筆錯誤 | scores-01.md：10.7 | Raycast Snippets、MDN JSON.parse | 預計動 model.js 的import新區塊、i18n.js errorMessage小區塊、locales.js新增列、model.test.js新增區塊；測數字/null/欄位/四語/不變性 | npm test；npm run build:ui | 19/19 JS單元測試通過、前端build成功；4程式/測試檔，新增約70行 | 否決自動把物件轉字串（資料誤入）；否決引入schema套件（技能禁新增依賴） |
+
+- 回合 2：加分01完成，嚴格JSON型別與四語欄位錯誤，npm test 19/19、build:ui成功；未執行外部或原生桌面測試。

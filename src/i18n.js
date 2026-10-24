@@ -68,6 +68,9 @@ export function bindTranslations(root) {
   onLanguageChange(render); render();
 }
 export function errorMessage(error) {
+  if (error?.code === 'error.import_entry') {
+    return t(error.code, {...error.params, reason:t(error.params.reason, error.params)});
+  }
   const message = error?.message ?? String(error);
   const code = message.split(':')[0];
   if (code.startsWith('error.')) return t(code);
