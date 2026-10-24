@@ -26,7 +26,7 @@
   <a href="#常見問題">FAQ</a>
 </p>
 
-<p align="center"><img src="docs/images/before-you-do-hero-v2-lowercase.png" alt="before-you-do：從反覆打字與翻找便條，到使用 Alt+H 選句，將工作交代貼入尚未送出的 AI 對話" width="1000"></p>
+<p align="center"><img src="docs/images/before-you-do-hero-zh-TW.png" alt="before-you-do：從反覆打字與翻找便條，到使用 Alt+H 選句，將工作交代貼入尚未送出的 AI 對話" width="1000"></p>
 
 <p align="center"><sub>宣傳插畫：Alt+H 為預設快捷鍵，可在設定中調整。工具只貼入文字，不自動送出。</sub></p>
 
