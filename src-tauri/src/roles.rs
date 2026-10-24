@@ -20,6 +20,29 @@ pub const IDS: [&str; 12] = [
     "project",
 ];
 
+// Bonus-05 continuation: distinguish new role files from externally deleted files.
+pub struct KnownFiles(std::collections::HashSet<String>);
+impl KnownFiles {
+    pub fn new(base: &Path) -> Self {
+        Self(
+            IDS.iter()
+                .filter(|id| path(base, id).is_ok_and(|p| p.exists()))
+                .map(|id| id.to_string())
+                .collect(),
+        )
+    }
+    pub fn path(&self, base: &Path, id: &str) -> Result<PathBuf, String> {
+        let file = path(base, id)?;
+        if self.0.contains(id) && !file.exists() {
+            return Err("error.external_change".into());
+        }
+        Ok(file)
+    }
+    pub fn observe(&mut self, id: &str) {
+        self.0.insert(id.to_string());
+    }
+}
+
 pub fn path(base: &Path, id: &str) -> Result<PathBuf, String> {
     if !IDS.contains(&id) {
         return Err("error.role_invalid".into());
@@ -68,6 +91,31 @@ pub fn load(base: &Path, id: &str, defaults: &[Snippet]) -> Result<Vec<Snippet>,
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn known_role_deletion_is_not_treated_as_first_use() {
+        let dir = std::env::temp_dir().join(format!("quicksay-knownfiles-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let base = dir.join("snippets.json");
+        storage::save(&base, &storage::defaults()).unwrap();
+        let mut known = KnownFiles::new(&base);
+        assert!(known.path(&base, "personal").is_ok());
+        assert!(known.path(&base, "developer").is_ok());
+        fs::remove_file(&base).unwrap();
+        assert_eq!(
+            known.path(&base, "personal").unwrap_err(),
+            "error.external_change"
+        );
+        assert!(!base.exists());
+        let dev = path(&base, "developer").unwrap();
+        storage::save(&dev, &storage::defaults()).unwrap();
+        known.observe("developer");
+        fs::remove_file(&dev).unwrap();
+        assert!(known.path(&base, "developer").is_err());
+        assert!(!dev.exists());
+        assert!(known.path(&base, "../invalid").is_err());
+        let _ = fs::remove_dir_all(dir);
+    }
+
     #[test]
     fn roles_isolate_files_preserve_original_and_remember_selection() {
         let dir = std::env::temp_dir().join(format!("before-you-do-roles-{}", std::process::id()));

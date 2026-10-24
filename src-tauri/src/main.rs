@@ -76,6 +76,7 @@ impl Picker {
 }
 struct State {
     items: Mutex<Vec<Snippet>>,
+    files: Mutex<roles::KnownFiles>,
     picker: Mutex<Picker>,
     status: Mutex<String>,
     path: PathBuf,
@@ -216,16 +217,18 @@ fn switch_role(
     if *current == role {
         return Ok(state.items.lock().unwrap().clone());
     }
-    let path = roles::path(&state.path, &role)?;
+    let path = state.files.lock().unwrap().path(&state.path, &role)?;
+    let previous_path = state.files.lock().unwrap().path(&state.path, &current)?;
     let items = roles::load(&state.path, &role, &defaults)?;
     // Seed only a new role; the original personal file is never overwritten here.
     if !path.exists() {
         storage::save(&path, &items)?;
     }
-    let previous_path = roles::path(&state.path, &current)?;
     if !previous_path.exists() {
         storage::save(&previous_path, &state.items.lock().unwrap())?;
     }
+    state.files.lock().unwrap().observe(&role);
+    state.files.lock().unwrap().observe(&current);
     roles::remember(&state.path, &role)?;
     *state.items.lock().unwrap() = items.clone();
     *current = role.clone();
@@ -252,11 +255,12 @@ fn save_snippets(
     if expected_role.as_ref().is_some_and(|id| id != &*role) {
         return Err("error.external_change".into());
     }
-    let path = roles::path(&state.path, &role)?;
+    let path = state.files.lock().unwrap().path(&state.path, &role)?;
     if let Some(snapshot) = expected.as_ref() {
         storage::check_snapshot(&path, snapshot)?;
     }
     storage::save(&path, &items)?;
+    state.files.lock().unwrap().observe(&role);
     *state.items.lock().unwrap() = items;
     Ok(())
 }
@@ -295,6 +299,7 @@ fn reload_snippets(state: tauri::State<State>) -> Result<Vec<Snippet>, String> {
         return Err("error.no_file".into());
     }
     let items = storage::load(&path, None)?;
+    state.files.lock().unwrap().observe(&role);
     *state.items.lock().unwrap() = items.clone();
     Ok(items)
 }
@@ -511,6 +516,7 @@ fn change_picker_role(state: &State, picker: &mut Picker, delta: i32) -> Result<
         return Ok(());
     }
     let id = roles::next_id(&picker.role, delta).to_string();
+    state.files.lock().unwrap().path(&state.path, &id)?;
     let current = state.role.lock().unwrap();
     let items = if *current == id {
         state.items.lock().unwrap().clone()
@@ -527,14 +533,16 @@ fn activate_picker_role(app: &tauri::AppHandle, id: &str, items: &[Snippet]) -> 
     if *current == id {
         return Ok(());
     }
-    let path = roles::path(&state.path, id)?;
+    let path = state.files.lock().unwrap().path(&state.path, id)?;
+    let previous = state.files.lock().unwrap().path(&state.path, &current)?;
     if !path.exists() {
         storage::save(&path, items)?;
     }
-    let previous = roles::path(&state.path, &current)?;
     if !previous.exists() {
         storage::save(&previous, &state.items.lock().unwrap())?;
     }
+    state.files.lock().unwrap().observe(id);
+    state.files.lock().unwrap().observe(&current);
     roles::remember(&state.path, id)?;
     *state.items.lock().unwrap() = items.to_vec();
     *current = id.to_string();
@@ -728,7 +736,9 @@ fn main() {
             let shortcut_error = loaded_shortcut.as_ref().err().cloned();
             let initial_shortcut = loaded_shortcut.unwrap_or_default();
             let (tx, rx) = mpsc::channel();
+            let files = roles::KnownFiles::new(&path);
             app.manage(State {
+                files: Mutex::new(files),
                 items: Mutex::new(items),
                 role: Mutex::new(initial_role),
                 language: Mutex::new("en".into()),
