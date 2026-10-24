@@ -85,6 +85,8 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 
 ### Windows
 
+到 [Releases 下載最新版](https://github.com/jaylooloomi/before-you-do/releases/latest) 的 **Windows x64 可攜版 ZIP**。另提供 macOS Apple Silicon 與 Intel 版本，但尚未經 Mac 實機驗證；目前發布檔皆未簽章。
+
 原始碼倉庫不包含執行檔。可到 [GitHub Actions](https://github.com/jaylooloomi/before-you-do/actions) 查看建置結果及成功產生的檔案，或依下方步驟自行建置。
 
 取得 Windows 版本後：

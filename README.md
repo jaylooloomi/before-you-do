@@ -88,6 +88,8 @@ The picker preserves focus in the original input field. The screenshot shows the
 
 ### Windows
 
+Download the **Windows x64 portable ZIP** from [Releases](https://github.com/jaylooloomi/before-you-do/releases/latest). macOS Apple Silicon and Intel archives are also available, but have not been tested on real Mac hardware. These builds are unsigned.
+
 The source repository does not include executables. Check successful [GitHub Actions builds](https://github.com/jaylooloomi/before-you-do/actions) for available build artifacts, or build the app yourself using the instructions below.
 
 After obtaining a Windows build:
