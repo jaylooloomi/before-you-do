@@ -1,3 +1,5 @@
+31d9f8b feat(night-shift/bonus-07): keep scenario paste boundaries visible
+78c00b3 chore(night-shift): select persistent scenario guidance
 29358e4 feat(night-shift/bonus-06): load UTF-8 BOM snippet files without rewriting them
 153088d chore(night-shift): select UTF-8 BOM file compatibility
 a80c1f0 feat(night-shift/bonus-05): isolate cached saved snapshots from editable drafts

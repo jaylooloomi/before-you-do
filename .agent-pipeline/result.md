@@ -52,3 +52,5 @@
 | 07（候選11） | 情境說明固定顯示不貼入 | scores-08.md：7.5 | Textfold live preview、Alfred snippet格式說明（設計推論） | 計畫：scenario-hint.js與測試，main原renderScenario小區塊使用helper；保留來源與既有翻譯。測四語內建/自訂/空值，不洩正文到說明、不改原物件 | npm test；npm run build:ui | 待實作 | 否決把情境一起貼入（違反原需求）；否決移除來源（失去範本出處） |
 
 - 回合9：加分07完成，內建/自訂/空情境均固定保留不會貼入說明，來源仍保留；JS28/28與build:ui成功；無貼入邏輯變更。
+
+| 08（候選10） | AI匯入前名稱預覽 | scores-09.md：4.7 | Textfold官方import preview | 計畫：import-preview.js與純test，settings既有import確認小區塊顯示已存數/將取代數/前5名稱/餘數/草稿覆蓋警告，locales新增列；測多行/emoji/多筆/四語/原文不變。確認仍使用textContent純文字 | npm test；npm run build:ui | 待實作 | 否決自動合併（改既有取代語意）；否決列出100筆完整正文（確認窗過長） |
