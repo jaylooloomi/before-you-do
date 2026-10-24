@@ -34,3 +34,5 @@
 | 03（候選04） | 管理畫面快捷操作指引 | scores-03.md：8.2 | Alfred browsing、Raycast quickstart | 計畫：新增usage-help.js純訊息、usage-help.test.js、main獨立usageBar區塊、locales新增列。主句先點輸入框；摺疊詳情列角色、取消與管理視窗收起。四語與自訂鍵同步 | npm test；npm run build:ui | 待實作 | 否決強制新手導覽（打斷）；否決修改快捷鍵核心（原行為使用者已確認） |
 
 - 回合4：加分03（候選04）完成，四語提示與設定快捷鍵同步，原收起／取消邏輯未改；npm test 24/24、build:ui成功。未做視覺／系統按鍵測試。
+
+| 04（候選03） | 複製目前角色純JSON | scores-04.md：5.8 | Raycast JSON import/export、Alfred sharing | 計畫：settings.js獨立匯出區/按鈕，model.js新序列化函式區，locales.js新列，model.test新測試區；測往返、順序、情境、空白、原物件不變 | npm test；npm run build:ui | 待實作 | 否決第三方備份服務（範圍）；否決複製草稿卻標已儲存（混淆來源），僅匯出native已存資料 |

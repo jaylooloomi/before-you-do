@@ -1,3 +1,5 @@
+21702f7 feat(night-shift/bonus-03): explain target focus and shortcut cancellation inline
+9ac28f4 chore(night-shift): select focused shortcut guidance
 751ef9f feat(night-shift/bonus-02): match multilingual snippets with normalized keyword search
 e2e4ec1 chore(night-shift): select Unicode search after independent scoring
 b490a6f feat(night-shift/bonus-01): validate AI imports with localized row errors
