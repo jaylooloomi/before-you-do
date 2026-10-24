@@ -13,6 +13,7 @@ const root = document.querySelector('#app');
 if (/Win/i.test(navigator.platform)) document.body.classList.add('windows');
 const picker = new URLSearchParams(location.search).has('picker');
 const paths = {
+  settings: '<circle cx="12" cy="12" r="3"/><path d="m9 3-.5 2-2 1-2-.5-2 3 1.5 1.5v3L2.5 15l2 3 2-.5 2 1L9 21h6l.5-2.5 2-1 2 .5 2-3-1.5-2v-3L21.5 9l-2-3-2 .5-2-1L15 3Z"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   text: '<path d="M5 6h14M12 6v13M8 19h8"/>',
@@ -53,6 +54,7 @@ if (picker) {
   box.innerHTML = `<header class="picker-header"><span class="app-mark">${icon('text')}</span><div><strong>快捷提示詞</strong></div><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span></header><div class="picker-label">我的短句</div>`;
   const list = el('div', 'picker-list'); box.append(list);
   const addRow = el('div', 'picker-row picker-add'); addRow.innerHTML = `<span class="item-icon">${icon('plus')}</span><div class="picker-content"><strong>新增快捷提示詞</strong></div>`; box.append(addRow);
+  const settingsRow=el('div','picker-row picker-settings');settingsRow.innerHTML=`<span class="item-icon">${icon('settings')}</span><div class="picker-content"><strong>設定</strong></div>`;box.append(settingsRow);
   const footer = el('footer', 'picker-footer'); footer.innerHTML = '<span><kbd>↑</kbd><kbd>↓</kbd> 選擇</span><span>放開 <kbd>Alt / ⌥</kbd> 貼入</span><span><kbd>Esc</kbd> 取消</span>'; box.append(footer); root.append(box);
   let latestState;
   function render(state) { latestState = state;
@@ -63,7 +65,8 @@ if (picker) {
       const content = el('div', 'picker-content'); content.append(el('strong', '', item.name), el('p', '', templateInfo(item)?.scenario ?? item.text)); row.append(content, el('span', 'number', String(i + 1).padStart(2, '0'))); list.append(row);
     });
     addRow.classList.toggle('active', state.selected === state.items.length);
-    footer.children[1].innerHTML = `${t('放開')} <kbd>${modifierLabel()}</kbd> ${t(state.selected === state.items.length ? '新增' : '貼入')}`;
+    settingsRow.classList.toggle('active',state.selected === state.items.length+1);
+    footer.children[1].innerHTML = `${t('放開')} <kbd>${modifierLabel()}</kbd> ${t(state.selected === state.items.length+1 ? '開啟' : state.selected === state.items.length ? '新增' : '貼入')}`;
     list.children[state.selected]?.scrollIntoView({ block: 'nearest' });
   }
   await listen('picker-state', event => render(event.payload));
@@ -137,6 +140,8 @@ if (picker) {
   document.querySelector('#add').onclick = addSnippet;
   async function consumeNewSnippet() { if (items.length && await invoke('consume_new_snippet')) addSnippet(); }
   await listen('new-snippet', consumeNewSnippet);
+  async function consumeOpenSettings(){if(await invoke('consume_open_settings')){await settingsButton.onclick();settings.panel.scrollTop=0;}}
+  await listen('open-settings',consumeOpenSettings);
   document.querySelector('#delete').onclick = async () => { if (items.length === 1) { await askConfirmation({title: '請至少保留一句短句', message: '先新增另一句短句，再刪除這一句。', confirmText: '知道了', notice: true}); return; } stash(); const target = selected; if (!await askConfirmation({title: '刪除短句？', message: t('確定要刪除「{name}」嗎？刪除後需按「儲存短句」才會生效。', {name:items[target].name || t('未命名短句')}), confirmText: '刪除短句', danger: true})) return; items.splice(target, 1); selected = Math.min(target, items.length - 1); dirty = true; render(); setSaveStatus('尚未儲存'); };
   document.querySelector('#editor').onsubmit = async e => { e.preventDefault(); stash(); try { const result = prepareSnippetSave(items); await invoke('save_snippets', { items: result.saved }); items = result.editorItems; dirty = result.draftCount > 0; render(); setSaveStatus(result.draftCount ? '已儲存 · {count} 筆空白草稿尚未儲存' : '已儲存', {count:result.draftCount}); } catch (error) { setSaveError(error); } };
   async function nativeStatus() { const status = await invoke('native_status'); const preview = status.startsWith('外觀預覽'); const ready = status.startsWith('已啟用') || preview; if (preview) document.querySelector('.workspace>footer').firstChild.textContent = t('外觀預覽 · 修改不會影響原有短句。'); document.querySelector('#native-status').classList.toggle('unavailable', !ready); document.querySelector('#native-status span').textContent = t(preview ? '外觀預覽' : ready ? '快捷鍵已啟用' : '快捷鍵需設定'); document.querySelector('#native-status').title = shortcutLabel(); document.querySelector('#native-error').hidden = ready; document.querySelector('#native-error').textContent = ready ? '' : errorMessage(status); document.querySelector('#retry').hidden = ready; }
@@ -155,7 +160,7 @@ if (picker) {
   theme.onchange = () => { appearance.theme = theme.value; applyAppearance(true); };
   document.addEventListener('keydown', e => { if (document.querySelector('dialog[open]')) return; if (!settings.panel.hidden) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') e.preventDefault(); return; } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); document.querySelector('#editor').requestSubmit(); } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); search.focus(); } });
   onLanguageChange(() => { renderList(); renderScenario(); document.querySelector('#count').textContent=t('{count} 字',{count:text.value.length}); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
-  items = await invoke('get_snippets'); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet();
+  items = await invoke('get_snippets'); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
 }
 
 

@@ -52,6 +52,8 @@ body.picker{color-scheme:dark;--ink:#f3f3f3;--muted:#bdbdbd;--faint:#b0b0b0;--ac
 .picker .picker-add{min-height:45px;flex-shrink:0;margin:4px 0;border-radius:5px}
 .picker .picker-add::after{content:'';position:absolute;left:0;right:0;top:-5px;height:1px;background:#383838}
 .picker .picker-add.active::before{top:12px;bottom:12px}
+.picker .picker-settings{min-height:42px;flex-shrink:0;margin:0 0 4px}
+.picker .picker-settings.active::before{top:12px;bottom:12px}
 .picker .picker-footer{padding:9px 9px 10px;border-top:1px solid #383838;flex-shrink:0;font-size:11px;color:#bdbdbd}
 .picker .picker-footer kbd{height:18px;min-width:18px;font-size:10px}
 @media(forced-colors:active){:root[data-theme] .picker .picker-card{background:Canvas;color:CanvasText}.picker .picker-row.active{background:Highlight}.picker .picker-content strong,.picker .picker-content p,.picker .number,.picker-label{color:CanvasText}}

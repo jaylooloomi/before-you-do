@@ -1,5 +1,6 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+['設定','设置','Settings','設定'],['開啟','打开','Open','開く'],
 ['已啟用','已启用','Enabled','有効'],
 ['快捷鍵設定','快捷键设置','Keyboard shortcut','キーボードショートカット'],
 ['預設 Alt+H，可更換組合；按住喚出、放開貼入的操作不變。','默认 Alt+H，可更换组合；按住唤出、松开粘贴的操作不变。','Default: Alt+H. Choose another combination; hold to open and release to paste.','初期設定は Alt+H です。変更後も長押しで開き、離すと貼り付けます。'],

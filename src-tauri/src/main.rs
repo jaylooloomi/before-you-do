@@ -29,6 +29,7 @@ struct Picker {
 enum Selection {
     Paste(usize, String),
     Add,
+    Settings,
 }
 impl Picker {
     fn begin(&mut self, items: Vec<Snippet>, target: usize) {
@@ -42,7 +43,7 @@ impl Picker {
     fn step(&mut self, delta: i32) {
         if self.active {
             self.selected =
-                (self.selected as i32 + delta).rem_euclid(self.items.len() as i32 + 1) as usize;
+                (self.selected as i32 + delta).rem_euclid(self.items.len() as i32 + 2) as usize;
         }
     }
     fn finish(&mut self, paste: bool) -> Option<Selection> {
@@ -52,6 +53,8 @@ impl Picker {
         self.active = false;
         if paste && self.selected == self.items.len() {
             Some(Selection::Add)
+        } else if paste && self.selected == self.items.len() + 1 {
+            Some(Selection::Settings)
         } else if paste {
             self.items
                 .get(self.selected)
@@ -68,6 +71,7 @@ struct State {
     path: PathBuf,
     tx: Sender<Action>,
     pending_new: AtomicBool,
+    pending_settings: AtomicBool,
     shortcut: Mutex<shortcut::Shortcut>,
     shortcut_path: PathBuf,
     preview: bool,
@@ -123,6 +127,10 @@ fn preview_picker(
             result = match picker.finish(true) {
                 Some(Selection::Paste(_, text)) => serde_json::json!({"kind":"paste","text":text}),
                 Some(Selection::Add) => serde_json::json!({"kind":"add"}),
+                Some(Selection::Settings) => {
+                    request_settings(&app, false);
+                    serde_json::json!({"kind":"settings"})
+                }
                 None => serde_json::Value::Null,
             }
         }
@@ -218,6 +226,10 @@ fn picker_state(state: tauri::State<State>) -> Picker {
 #[tauri::command]
 fn consume_new_snippet(state: tauri::State<State>) -> bool {
     state.pending_new.swap(false, Ordering::SeqCst)
+}
+#[tauri::command]
+fn consume_open_settings(state: tauri::State<State>) -> bool {
+    state.pending_settings.swap(false, Ordering::SeqCst)
 }
 #[tauri::command]
 fn native_status(state: tauri::State<State>) -> String {
@@ -326,6 +338,20 @@ fn manage(app: &tauri::AppHandle) {
         let _ = w.set_focus();
     }
 }
+fn request_settings(app: &tauri::AppHandle, activate: bool) {
+    app.state::<State>()
+        .pending_settings
+        .store(true, Ordering::SeqCst);
+    if activate {
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            manage(&handle);
+            let _ = handle.emit_to("main", "open-settings", ());
+        });
+    } else {
+        let _ = app.emit_to("main", "open-settings", ());
+    }
+}
 fn handle_action(app: &tauri::AppHandle, action: Action) {
     diagnostic(&format!("action: {action:?}"));
     let state = app.state::<State>();
@@ -372,6 +398,8 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
                         diagnostic("paste input sent");
                     }
                 }
+            } else if chosen == Some(Selection::Settings) {
+                request_settings(app, true);
             } else if chosen == Some(Selection::Add) {
                 state.pending_new.store(true, Ordering::SeqCst);
                 let handle = app.clone();
@@ -423,7 +451,8 @@ fn main() {
             hide_manager,
             window_action,
             configure_glass,
-            consume_new_snippet
+            consume_new_snippet,
+            consume_open_settings
         ])
         .setup(move |app| {
             let integration = std::env::args().any(|arg| arg == "--integration-test");
@@ -461,6 +490,7 @@ fn main() {
                 path,
                 tx,
                 pending_new: AtomicBool::new(std::env::args().any(|arg| arg == "--new-snippet")),
+                pending_settings: AtomicBool::new(false),
             });
             let handle = app.handle().clone();
             std::thread::spawn(move || {
@@ -623,7 +653,7 @@ mod tests {
     fn last_row_opens_add_without_pasting() {
         let mut p = Picker::default();
         p.begin(storage::defaults(), 123);
-        p.step(-1);
+        p.step(-2);
         assert_eq!(p.selected, p.items.len());
         assert_eq!(p.finish(true), Some(Selection::Add));
         assert_eq!(p.finish(true), None);
@@ -635,8 +665,23 @@ mod tests {
         p.step(p.items.len() as i32);
         assert_eq!(p.selected, p.items.len());
         p.step(1);
+        assert_eq!(p.selected, p.items.len() + 1);
+        p.step(1);
         assert_eq!(p.selected, 0);
         p.step(-1);
         assert_eq!(p.finish(false), None);
+    }
+    #[test]
+    fn settings_row_wraps_commits_once_and_can_be_cancelled() {
+        let mut p = Picker::default();
+        p.begin(storage::defaults(), 123);
+        p.step(-1);
+        assert_eq!(p.selected, p.items.len() + 1);
+        assert_eq!(p.finish(true), Some(Selection::Settings));
+        assert_eq!(p.finish(true), None);
+        p.begin(storage::defaults(), 123);
+        p.step(-1);
+        assert_eq!(p.finish(false), None);
+        assert_eq!(p.finish(true), None);
     }
 }
