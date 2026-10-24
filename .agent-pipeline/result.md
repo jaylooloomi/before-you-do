@@ -42,3 +42,5 @@
 | 05（候選06） | 外部改檔儲存衝突保護 | scores-05.md：2.9 | VS Code官方tips-and-tricks：Preventing dirty writes | 計畫：storage.rs新snapshot檢查區與tempfile單元測試，Rust main save命令加可選expected參數；JS main舊有保存區記錄各角色深複製snapshot與傳參，locales新增衝突列。測外部修改/刪除/同內容建檔/格式差異/備份保留 | cargo test --offline；npm test；UI build及offline native build | 待實作 | 否決直接覆寫（遺失AI成果）；否決自動merge/新鎖套件（超出規模與依賴） |
 
 - 回合6：加分05第一片完成：儲存/匯入帶各角色已讀快照，原生寫入前比對存在性與資料；同內容的角色預設建檔允許，外部改動/刪除/損壞拒寫。JS25/25、Rust18通過+1略過、build:ui成功。未宣稱跨程序鎖／UI整合驗證。續片會將快照深複製移至同編號純helper並補單元測試。
+
+- 回合7：加分05續片完成，同編號抽出saved-snapshot.js，兩項純測試驗證draft不共享原文/情境及跨角色baseline不被新讀取偷偷取代；JS27/27、build:ui成功。兩片各≤5檔，無新增套件。
