@@ -50,3 +50,5 @@
 - 回合8：加分06已先實際重現 UTF8 BOM 載入失敗，再修成只忽略單一檔頭BOM。Rust19通過+1略過（含正文FEFF、雙BOM、UTF16與不覆寫檔案）、offline release compile成功。只改storage.rs原有load區與本項測試，未改05區塊。
 
 | 07（候選11） | 情境說明固定顯示不貼入 | scores-08.md：7.5 | Textfold live preview、Alfred snippet格式說明（設計推論） | 計畫：scenario-hint.js與測試，main原renderScenario小區塊使用helper；保留來源與既有翻譯。測四語內建/自訂/空值，不洩正文到說明、不改原物件 | npm test；npm run build:ui | 待實作 | 否決把情境一起貼入（違反原需求）；否決移除來源（失去範本出處） |
+
+- 回合9：加分07完成，內建/自訂/空情境均固定保留不會貼入說明，來源仍保留；JS28/28與build:ui成功；無貼入邏輯變更。

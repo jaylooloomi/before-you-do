@@ -1,3 +1,4 @@
+import { scenarioHint } from './scenario-hint.js';
 import { savedSnapshot } from './saved-snapshot.js';
 import { usageHelp } from './usage-help.js';
 import { matchesSnippetQuery } from './snippet-search.js';
@@ -192,7 +193,7 @@ if (picker) {
     const item=items[selected],info=templateInfo(item),value=info?.scenario??'';
     if(scenario.value!==value)scenario.value=value;
     scenarioEdited=!!item&&Object.hasOwn(item,'scenario');
-    scenarioBox.querySelector('small').textContent=info?.source??t('僅作為選句提示，不會一起貼入。');
+    scenarioBox.querySelector('small').textContent=scenarioHint(info,getLanguage());
     scenarioBox.querySelector('small').title=info?.url??'';
   }
   const name = document.querySelector('#name'), text = document.querySelector('#text'), search = document.querySelector('#search'), saveStatus = document.querySelector('#save-status');
