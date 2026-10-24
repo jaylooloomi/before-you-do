@@ -196,7 +196,13 @@ Click “Add snippet” in the manager, enter a name and content, then click “
 
 Search the sidebar, drag snippets to reorder them, or use their ↑ / ↓ buttons. **Once saved, the next Alt+H picker uses the updated content and order.** Unsaved edits do not change the picker.
 
-Each role supports 1–100 snippets, with up to 100 characters per name and 20,000 per content field. Untouched default empty drafts are skipped when saving and remain in the current editor; other incomplete entries must be completed. Save the edits in each role you want to keep before quitting.
+Each role supports 1–100 snippets, with up to 100 characters per name and 20,000 per content field.
+
+**Saving applies to the current role.** In v0.3.1 and later, complete snippets save even when other drafts are incomplete. Incomplete drafts stay in the editor; the attention list names each affected snippet and field. Click an entry to select it and focus the field that needs work. If an existing saved snippet is edited into an incomplete state, its previous saved version remains in the file and shortcut picker. A new incomplete draft is not added to the picker. If there are no complete snippets or previous versions to retain, nothing is written.
+
+**Unsaved changes are tracked per role.** Role cards show an unsaved marker, and the overview names other roles with pending edits. Saving one role does not save the others. On a normal app exit, a confirmation lists all unsaved roles. Cancel to return and save them, or explicitly discard the changes and exit. Closing the manager window still hides it and keeps the app running.
+
+Drafts remain in memory until completed and saved. They are not automatically restored after an explicit discard, forced termination or system failure.
 
 ### Four interface and template languages
 

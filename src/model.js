@@ -35,13 +35,31 @@ export function reorderSnippets(items, from, to, selected) {
   return { items: ordered, selected: ordered.indexOf(current) };
 }
 
-// Keep untouched drafts in the editor, but never persist or paste empty text.
-export function prepareSnippetSave(items) {
-  const saved = validateSnippets(items.filter(item => !isEmptyDraft(item)));
-  let index = 0;
-  return {
-    saved,
-    editorItems: items.map(item => isEmptyDraft(item) ? item : saved[index++]),
-    draftCount: items.filter(isEmptyDraft).length,
-  };
+// Incomplete edits remain in memory; an existing saved version is never removed by them.
+export function snippetIssues(item) {
+  const fields=[];
+  for(const [field,limit] of [['name',100],['text',20000]]) {
+    if(!String(item[field]??'').trim()) fields.push({field,reason:'required'});
+    else if(String(item[field]).length>limit) fields.push({field,reason:'length',limit});
+  }
+  if(Object.hasOwn(item,'scenario')&&(typeof item.scenario!=='string'||item.scenario.length>1000)) fields.push({field:'scenario',reason:'length',limit:1000});
+  return fields;
+}
+export function savedVersions(items) {
+  return new Map(items.map(item=>[item,structuredClone(item)]));
+}
+export function prepareSnippetSave(items, previous=new Map()) {
+  const saved=[],editorItems=[],versions=new Map(),issues=[];
+  items.forEach((item,index)=>{
+    const fields=snippetIssues(item),prior=previous.get(item);
+    if(fields.length){
+      issues.push({index,name:item.name,fields,retained:!!prior});editorItems.push(item);
+      if(prior){saved.push(prior);versions.set(item,prior);}
+    }else{
+      const normalized=validateSnippets([item])[0];saved.push(normalized);editorItems.push(normalized);versions.set(normalized,structuredClone(normalized));
+    }
+  });
+  if(!saved.length){const error=new Error('沒有可儲存的完整短句；草稿已保留，請補齊標示欄位。');error.issues=issues;throw error;}
+  if(saved.length>100)throw new Error('最多 100 句。');
+  return {saved,editorItems,versions,issues,draftCount:issues.length};
 }

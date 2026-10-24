@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateSnippets, prepareSnippetSave, reorderSnippets, parseSnippetImport } from '../src/model.js';
+import { validateSnippets, prepareSnippetSave, reorderSnippets, parseSnippetImport, savedVersions } from '../src/model.js';
 test('keeps Unicode and multiline content while normalizing whitespace', () => {
   assert.deepEqual(validateSnippets([{ name: '  規劃  ', text: '  先理解\n再進行。  ' }]), [{ name: '規劃', text: '先理解\n再進行。' }]);
 });
@@ -14,6 +14,40 @@ test('saving a valid edit keeps an empty draft out of persisted snippets without
 test('partially filled drafts still require content and cannot replace all valid snippets', () => {
   assert.throws(() => prepareSnippetSave([{ name: '自訂草稿', text: '' }]));
   assert.throws(() => prepareSnippetSave([{ name: '新短句', text: '' }]));
+});
+
+test('complete snippets save beside incomplete drafts with precise issues and no draft loss', () => {
+  const draft={name:'待補正文',text:'',scenario:'保留情境'};
+  const noName={name:'',text:'保留內容'};
+  const complete={name:'完整',text:'正文'};
+  const result=prepareSnippetSave([draft,complete,noName]);
+  assert.deepEqual(result.saved,[complete]);
+  assert.equal(result.editorItems[0],draft);
+  assert.equal(result.editorItems[2],noName);
+  assert.deepEqual(result.issues.map(i=>[i.index,i.fields[0].field]),[[0,'text'],[2,'name']]);
+});
+
+test('incomplete edits retain their last saved version while other changes persist',()=>{
+  const existing={name:'原名',text:'原文',scenario:'時機'};
+  const previous=savedVersions([existing]);existing.text='';
+  const other={name:'新增完整',text:'新文'};
+  const result=prepareSnippetSave([existing,other],previous);
+  assert.equal(result.saved[0].text,'原文');
+  assert.equal(result.saved[1].text,'新文');
+  assert.equal(result.editorItems[0].text,'');assert.equal(result.issues[0].retained,true);
+  existing.text='補齊';
+  const next=prepareSnippetSave(result.editorItems,result.versions);
+  assert.equal(next.saved[0].text,'補齊');assert.equal(next.draftCount,0);
+});
+
+test('field limits and missing fields identify the original editor index',()=>{
+  const good={name:'有效',text:'正文'};
+  const invalid={name:'',text:'',scenario:'x'.repeat(1001)};
+  const result=prepareSnippetSave([good,invalid]);
+  assert.deepEqual(result.issues[0].fields.map(f=>f.field),['name','text','scenario']);
+  assert.equal(result.issues[0].index,1);
+  assert.equal(result.editorItems[1],invalid);
+  assert.deepEqual(result.saved,[good]);
 });
 test('reordering preserves selected edit and draft identity across moves in both directions', () => {
   const a = { name: 'A', text: '未儲存的修改' }, b = { name: 'B', text: 'B' }, draft = { name: '新短句', text: '' };

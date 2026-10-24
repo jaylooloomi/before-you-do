@@ -3,7 +3,7 @@ import { matchesShortcutEvent } from './shortcut-match.js';
 import { getShortcut, initializeShortcut, renderShortcut, onShortcutChange, modifierLabel, keyLabel, shortcutLabel } from './shortcut.js';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { prepareSnippetSave, reorderSnippets } from './model.js';
+import { prepareSnippetSave, reorderSnippets, savedVersions, snippetIssues } from './model.js';
 import './style.css';
 import { askConfirmation } from './dialog.js';
 import { t, getLanguage, onLanguageChange, bindTranslations, errorMessage } from './i18n.js';
@@ -94,17 +94,40 @@ if (picker) {
   onLanguageChange(() => { if (latestState) render(latestState); });
   onShortcutChange(() => { if(latestState)render(latestState); });
 } else {
-  let items = [], selected = 0, dirty = false;
+  let items = [], selected = 0, dirty = false, versions = new Map(), saveIssues = [];
   let activeRole = await invoke('get_role'), switchingRole = false;
   const roleSessions = new Map();
-  let roleSync=Promise.resolve();
-  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" maxlength="100" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" maxlength="20000" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="外觀主題"><option value="light">淺色</option><option value="dark">深色</option><option value="system">跟隨系統</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.3.0</span></footer></section></main></div>`;
+  let roleSync=Promise.resolve(), saveTask=Promise.resolve(), saving=false;
+  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" maxlength="100" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" maxlength="20000" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="外觀主題"><option value="light">淺色</option><option value="dark">深色</option><option value="system">跟隨系統</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.3.1</span></footer></section></main></div>`;
   const roleCards = el('div','role-cards');roleCards.setAttribute('role','group');roleCards.setAttribute('aria-label',t('選擇角色'));
   const roleSwitcher=el('div','role-switcher');
   const previousRoles=el('button','role-scroll','‹'),nextRoles=el('button','role-scroll','›');
   previousRoles.type=nextRoles.type='button';
   roleSwitcher.append(previousRoles,roleCards,nextRoles);
   document.querySelector('.editor-heading').before(roleSwitcher);
+  const saveOverview=el('div','role-save-overview');saveOverview.setAttribute('role','status');roleSwitcher.after(saveOverview);
+  const issuePanel=el('div','save-issues');issuePanel.setAttribute('aria-label',t('待完成的短句'));issuePanel.hidden=true;document.querySelector('.form-actions').before(issuePanel);
+  const saveScope=el('div','save-scope');document.querySelector('.form-actions').before(saveScope);
+  function unsavedRoleIds(){return roles.filter(role=>role.id===activeRole?dirty:roleSessions.get(role.id)?.dirty).map(role=>role.id);}
+  function renderSaveOverview(){
+    const pending=unsavedRoleIds(),others=pending.filter(id=>id!==activeRole);
+    saveOverview.replaceChildren(el('span','',t('目前角色：{role} · {status}',{role:roleName(activeRole,getLanguage()),status:t(dirty?'尚未儲存':'已儲存')})));
+    if(others.length){saveOverview.append(el('span','',t('其他未儲存角色：')));for(const id of others){const button=el('button','',roleName(id,getLanguage()));button.type='button';button.onclick=()=>switchRole(id);saveOverview.append(button);}}
+    for(const button of roleCards.querySelectorAll('[data-role]')){const pendingRole=pending.includes(button.dataset.role);button.classList.toggle('has-unsaved',pendingRole);button.title=roleDescription(roles.find(r=>r.id===button.dataset.role),getLanguage())+(pendingRole?' · '+t('尚未儲存'):'');}
+    saveScope.textContent=t('儲存目前角色的完整短句；未完成草稿會保留。');
+  }
+  function renderIssues(){
+    issuePanel.hidden=!saveIssues.length;issuePanel.replaceChildren();
+    if(saveIssues.length)issuePanel.append(el('strong','',t('待完成的短句')));
+    for(const issue of saveIssues){const button=el('button','save-issue');button.type='button';
+      const fields=issue.fields.map(f=>t(f.field==='name'?'短句名稱':f.field==='text'?'短句內容':'適用情境')+'：'+t(f.reason==='required'?'必填':'超過字數上限')).join('、');
+      button.textContent=t('第 {index} 筆「{name}」：{fields}。{retained}',{index:issue.index+1,name:items[issue.index]?.name||t('未命名短句'),fields,retained:t(issue.retained?'保留上次已儲存版本':'僅保留於草稿，尚未加入快捷選單')});
+      button.onclick=()=>{stash();selected=issue.index;search.value='';render();showLibrary();const field=document.querySelector('#'+issue.fields[0].field);field.focus();field.scrollIntoView({block:'nearest'});};issuePanel.append(button);
+    }
+    for(const field of ['name','text','scenario'])document.querySelector('#'+field).setAttribute('aria-invalid',String(saveIssues.some(issue=>issue.index===selected&&issue.fields.some(f=>f.field===field))));
+  }
+  function refreshIssues(){if(saveIssues.length)saveIssues=items.flatMap((item,index)=>{const fields=snippetIssues(item);return fields.length?[{index,name:item.name,fields,retained:versions.has(item)}]:[]});}
+
   function updateRoleScroll(){previousRoles.disabled=roleCards.scrollLeft<2;nextRoles.disabled=roleCards.scrollLeft+roleCards.clientWidth>=roleCards.scrollWidth-2;}
   function scrollRoles(direction){roleCards.scrollBy({left:direction*Math.max(156,roleCards.clientWidth*.8),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
   previousRoles.onclick=()=>scrollRoles(-1);nextRoles.onclick=()=>scrollRoles(1);
@@ -136,19 +159,20 @@ if (picker) {
     previousRoles.setAttribute('aria-label',t('向左捲動角色'));nextRoles.setAttribute('aria-label',t('向右捲動角色'));
     previousRoles.title=t('向左捲動角色');nextRoles.title=t('向右捲動角色');
     roleCards.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});
-    requestAnimationFrame(updateRoleScroll);
+    renderSaveOverview();requestAnimationFrame(updateRoleScroll);
   }
   async function switchRole(id){
+    await saveTask;
     if(switchingRole||id===activeRole)return;
     stash();
-    roleSessions.set(activeRole,{items,selected,dirty,query:search.value,statusKey,statusParams,statusError});
+    roleSessions.set(activeRole,{items,selected,dirty,versions,saveIssues,query:search.value,statusKey,statusParams,statusError});
     switchingRole=true;renderRoles();
     document.querySelector('#editor').inert=true;document.querySelector('aside').inert=true;
     try{
       const saved=await invoke('switch_role',{role:id,defaults:getRoleDefaults(id,getLanguage())});
       activeRole=id;
       const cached=roleSessions.get(id);
-      items=cached?.items??saved;selected=cached?.selected??0;dirty=cached?.dirty??false;search.value=cached?.query??'';
+      items=cached?.items??saved;versions=cached?.versions??savedVersions(items);saveIssues=cached?.saveIssues??[];selected=cached?.selected??0;dirty=cached?.dirty??false;search.value=cached?.query??'';
       statusKey=cached?.statusKey??'已儲存';statusParams=cached?.statusParams??{};statusError=cached?.statusError??null;
       render();if(statusError)setSaveError(statusError);else setSaveStatus(statusKey,statusParams);
     }catch(error){setSaveError(error);}
@@ -167,8 +191,8 @@ if (picker) {
   }
   const name = document.querySelector('#name'), text = document.querySelector('#text'), search = document.querySelector('#search'), saveStatus = document.querySelector('#save-status');
   let statusKey = '已儲存', statusParams = {}, statusError = null;
-  function setSaveError(error) { statusError=error; saveStatus.textContent=errorMessage(error); }
-  function setSaveStatus(key, params = {}) { statusError=null; statusKey = key; statusParams = params; saveStatus.textContent = t(key, params); }
+  function setSaveError(error) { statusError=error; saveStatus.textContent=t('目前角色：{role} · {status}',{role:roleName(activeRole,getLanguage()),status:errorMessage(error)});renderSaveOverview(); }
+  function setSaveStatus(key, params = {}) { statusError=null; statusKey = key; statusParams = params; saveStatus.textContent = t('目前角色：{role} · {status}',{role:roleName(activeRole,getLanguage()),status:t(key, params)});renderSaveOverview(); }
   const workspace = document.querySelector('.workspace');
   const settingsButton = el('button', 'settings-link', '設定與 AI 教學');
   settingsButton.type = 'button'; settingsButton.setAttribute('aria-pressed', 'false');
@@ -177,9 +201,9 @@ if (picker) {
   const settings = createSettingsPage({ invoke, askConfirmation, onBack: showLibrary, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
     onReload: async () => {
       if (dirty && !await askConfirmation({title: '重新載入檔案？', message: '將以檔案內容取代目前編輯與未儲存草稿。請確認要保留的內容已儲存或另行備份。', confirmText: '重新載入'})) return false;
-      const refreshed = await invoke('reload_snippets'); items = refreshed; selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
+      const refreshed = await invoke('reload_snippets'); items = refreshed; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
     },
-    onImport: async imported => { await invoke('save_snippets', {items: imported}); items = imported; selected = 0; dirty = false; search.value = ''; render(); setSaveStatus('已儲存'); },
+    onImport: async imported => { await invoke('save_snippets', {items: imported}); items = imported; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; search.value = ''; render(); setSaveStatus('已儲存'); },
   });
   document.querySelector('.manager').append(settings.panel);
   settingsButton.onclick = async () => { stash(); workspace.hidden = true; settings.panel.hidden = false; settingsButton.setAttribute('aria-pressed', 'true'); await settings.refresh(); };
@@ -193,7 +217,7 @@ if (picker) {
     if (search.value.trim() || from === to || to < 0 || to >= items.length) return;
     stash();
     const result = reorderSnippets(items, from, to, selected);
-    items = result.items; selected = result.selected; dragging = -1; dirty = true;
+    items = result.items; selected = result.selected; dragging = -1; dirty = true;refreshIssues();
     render(); setSaveStatus('順序已調整，儲存後生效');
   }
   moveUp.onclick = () => { moveSnippet(selected, selected - 1); document.querySelector('.snippet.selected')?.scrollIntoView({block:'nearest'}); };
@@ -218,8 +242,8 @@ if (picker) {
     });
     if (!list.children.length) list.append(el('p', 'empty-search', '沒有符合的短句'));
   }
-  function render() { renderList(); renderScenario(); name.value = items[selected]?.name ?? ''; text.value = items[selected]?.text ?? ''; document.querySelector('#count').textContent = t('{count} 字', {count:text.value.length}); }
-  function changed() { stash(); renderScenario(); dirty = true; setSaveStatus('尚未儲存'); document.querySelector('#count').textContent = t('{count} 字', {count:text.value.length}); renderList(); }
+  function render() { renderList(); renderScenario();renderIssues();renderSaveOverview(); name.value = items[selected]?.name ?? ''; text.value = items[selected]?.text ?? ''; document.querySelector('#count').textContent = t('{count} 字', {count:text.value.length}); }
+  function changed() { stash();refreshIssues();renderIssues(); renderScenario(); dirty = true; setSaveStatus('尚未儲存'); document.querySelector('#count').textContent = t('{count} 字', {count:text.value.length}); renderList(); }
   scenario.oninput=()=>{scenarioEdited=true;changed();};
   name.oninput = text.oninput = changed; search.oninput = renderList;
   function addSnippet() { stash(); if (items.length >= 100) return askConfirmation({title:t('最多 100 句。'),message:'',notice:true,confirmText:t('知道了')}); search.value = ''; items.push({ name: t('新短句'), text: '' }); selected = items.length - 1; dirty = true; render(); showLibrary(); setSaveStatus('尚未儲存'); name.focus(); name.select(); }
@@ -228,13 +252,30 @@ if (picker) {
   await listen('new-snippet', consumeNewSnippet);
   async function consumeOpenSettings(){await roleSync;if(await invoke('consume_open_settings'))showLibrary();}
   await listen('open-settings',consumeOpenSettings);
-  document.querySelector('#delete').onclick = async () => { if (items.length === 1) { await askConfirmation({title: '請至少保留一句短句', message: '先新增另一句短句，再刪除這一句。', confirmText: '知道了', notice: true}); return; } stash(); const target = selected; if (!await askConfirmation({title: '刪除短句？', message: t('確定要刪除「{name}」嗎？刪除後需按「儲存短句」才會生效。', {name:items[target].name || t('未命名短句')}), confirmText: '刪除短句', danger: true})) return; items.splice(target, 1); selected = Math.min(target, items.length - 1); dirty = true; render(); setSaveStatus('尚未儲存'); };
-  document.querySelector('#editor').onsubmit = async e => { e.preventDefault(); stash(); try { const result = prepareSnippetSave(items); await invoke('save_snippets', { items: result.saved }); items = result.editorItems; dirty = result.draftCount > 0; render(); setSaveStatus(result.draftCount ? '已儲存 · {count} 筆空白草稿尚未儲存' : '已儲存', {count:result.draftCount}); } catch (error) { setSaveError(error); } };
+  document.querySelector('#delete').onclick = async () => { if (items.length === 1) { await askConfirmation({title: '請至少保留一句短句', message: '先新增另一句短句，再刪除這一句。', confirmText: '知道了', notice: true}); return; } stash(); const target = selected; if (!await askConfirmation({title: '刪除短句？', message: t('確定要刪除「{name}」嗎？刪除後需按「儲存短句」才會生效。', {name:items[target].name || t('未命名短句')}), confirmText: '刪除短句', danger: true})) return; items.splice(target, 1); selected = Math.min(target, items.length - 1); dirty = true;refreshIssues(); render(); setSaveStatus('尚未儲存'); };
+  document.querySelector('#editor').onsubmit = async e => {
+    e.preventDefault();if(saving)return;stash();saving=true;document.querySelector('#editor').inert=true;roleSwitcher.inert=true;document.querySelector('aside').inert=true;
+    saveTask=(async()=>{
+    try{const result=prepareSnippetSave(items,versions);await invoke('save_snippets',{items:result.saved});items=result.editorItems;versions=result.versions;saveIssues=result.issues;dirty=result.draftCount>0;render();setSaveStatus(result.draftCount?'完整短句已儲存 · {count} 筆草稿待完成':'已儲存',{count:result.draftCount});}
+    catch(error){if(error.issues){saveIssues=error.issues;renderIssues();}setSaveError(error);}
+    finally{saving=false;document.querySelector('#editor').inert=false;roleSwitcher.inert=false;document.querySelector('aside').inert=false;}
+    })();await saveTask;
+  };
   async function nativeStatus() { const status = await invoke('native_status'); const preview = status.startsWith('外觀預覽'); const ready = status.startsWith('已啟用') || preview; if (preview) document.querySelector('.workspace>footer').firstChild.textContent = t('外觀預覽 · 修改不會影響原有短句。'); document.querySelector('#native-status').classList.toggle('unavailable', !ready); document.querySelector('#native-status span').textContent = t(preview ? '外觀預覽' : ready ? '快捷鍵已啟用' : '快捷鍵需設定'); document.querySelector('#native-status').title = shortcutLabel(); document.querySelector('#native-error').hidden = ready; document.querySelector('#native-error').textContent = ready ? '' : errorMessage(status); document.querySelector('#retry').hidden = ready; }
   onShortcutChange(nativeStatus);
   document.querySelector('#retry').onclick = async () => { await invoke('restart_keyboard'); await nativeStatus(); };
   async function hide() { if (!dirty || await askConfirmation({title: '收起視窗？', message: '目前有尚未儲存的修改。收起後程式仍會執行，草稿會保留在此視窗中。', confirmText: '收起視窗'})) await invoke('hide_manager'); }
   await listen('native-status', nativeStatus); await listen('save-before-hide', hide);
+  let quitPromptOpen=false;
+  await listen('quit-requested',async()=>{
+    if(quitPromptOpen)return;quitPromptOpen=true;
+    try{await roleSync;await saveTask;stash();const pending=unsavedRoleIds();
+      if(pending.length){const names=pending.map(id=>roleName(id,getLanguage())).join('、');
+        if(!await askConfirmation({title:'仍有未儲存內容，確定退出？',message:t('未儲存角色：{roles}。退出會放棄這些修改與草稿；取消後可回到各角色儲存。',{roles:names}),confirmText:'放棄未儲存內容並退出',danger:true}))return;
+      }
+      await invoke('confirm_quit');
+    }catch(error){setSaveError(error);}finally{quitPromptOpen=false;}
+  });
   const bar = document.querySelector('.windowbar');
   bar.onpointerdown = e => { if (e.button === 0 && !e.target.closest('button')) invoke('window_action', { action: 'drag' }); };
   document.querySelectorAll('[data-action]').forEach(button => { button.onclick = () => button.dataset.action === 'close' ? hide() : invoke('window_action', { action: button.dataset.action }); });
@@ -253,8 +294,8 @@ if (picker) {
   },true);
   document.addEventListener('keydown', e => { if (document.querySelector('dialog[open]')) return; if (!settings.panel.hidden) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') e.preventDefault(); return; } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); document.querySelector('#editor').requestSubmit(); } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); search.focus(); } });
   await listen('active-role-changed',event=>{roleSync=roleSync.then(async()=>{await switchRole(event.payload);if(!settings.panel.hidden)await settings.refresh();}).catch(setSaveError);});
-  onLanguageChange(() => { renderRoles(); renderList(); renderScenario(); document.querySelector('#count').textContent=t('{count} 字',{count:text.value.length}); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
-  items = await invoke('get_snippets'); renderRoles(); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
+  onLanguageChange(() => { renderRoles(); renderList(); renderScenario();renderIssues();renderSaveOverview(); document.querySelector('#count').textContent=t('{count} 字',{count:text.value.length}); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
+  items = await invoke('get_snippets'); versions=savedVersions(items);renderRoles(); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
 }
 
 

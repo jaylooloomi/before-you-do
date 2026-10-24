@@ -84,6 +84,7 @@ struct State {
     tx: Sender<Action>,
     pending_new: AtomicBool,
     pending_settings: AtomicBool,
+    quit_approved: AtomicBool,
     shortcut: Mutex<shortcut::Shortcut>,
     shortcut_path: PathBuf,
     preview: bool,
@@ -411,6 +412,35 @@ fn start_keyboard(app: &tauri::AppHandle) {
         result.map(|_| "已啟用".to_string()).unwrap_or_else(|e| e),
     );
 }
+#[tauri::command]
+fn request_quit(app: tauri::AppHandle) -> Result<(), String> {
+    if !app.state::<State>().preview {
+        manage(&app);
+    }
+    app.emit_to("main", "quit-requested", ())
+        .map_err(|e| e.to_string())
+}
+#[tauri::command]
+fn confirm_quit(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "main" {
+        return Err("Only the manager may confirm exit".into());
+    }
+    let app = window.app_handle();
+    app.state::<State>()
+        .quit_approved
+        .store(true, Ordering::SeqCst);
+    if !app.state::<State>().preview {
+        app.exit(0);
+    }
+    Ok(())
+}
+#[tauri::command]
+fn preview_quit_approved(state: tauri::State<State>) -> Result<bool, String> {
+    if !state.preview {
+        return Err("Preview mode required".into());
+    }
+    Ok(state.quit_approved.load(Ordering::SeqCst))
+}
 fn manage(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -621,6 +651,9 @@ fn main() {
     };
     builder
         .invoke_handler(tauri::generate_handler![
+            request_quit,
+            confirm_quit,
+            preview_quit_approved,
             get_snippets,
             get_role,
             switch_role,
@@ -694,6 +727,7 @@ fn main() {
                 status: Mutex::new(String::new()),
                 path,
                 tx,
+                quit_approved: AtomicBool::new(false),
                 pending_new: AtomicBool::new(std::env::args().any(|arg| arg == "--new-snippet")),
                 pending_settings: AtomicBool::new(false),
             });
@@ -733,7 +767,9 @@ fn main() {
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "manage" => manage(app),
-                    "quit" => app.exit(0),
+                    "quit" => {
+                        let _ = request_quit(app.clone());
+                    }
                     _ => {}
                 })
                 .build(app)?;
@@ -820,8 +856,16 @@ fn main() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("無法啟動 before-you-do");
+        .build(tauri::generate_context!())
+        .expect("無法啟動 before-you-do")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                if !app.state::<State>().quit_approved.load(Ordering::SeqCst) {
+                    api.prevent_exit();
+                    let _ = request_quit(app.clone());
+                }
+            }
+        });
 }
 
 #[cfg(test)]
