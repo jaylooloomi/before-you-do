@@ -1,8 +1,9 @@
 use super::{Action, Sender};
+use crate::shortcut::Shortcut;
 use std::{
     ffi::{c_char, c_void},
     sync::{
-        atomic::{AtomicBool, AtomicPtr, Ordering},
+        atomic::{AtomicBool, AtomicPtr, AtomicU64, Ordering},
         OnceLock,
     },
     time::Duration,
@@ -12,6 +13,7 @@ static TX: OnceLock<Sender<Action>> = OnceLock::new();
 static ACTIVE: AtomicBool = AtomicBool::new(false);
 static STARTED: AtomicBool = AtomicBool::new(false);
 static TAP: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static CONFIG: AtomicU64 = AtomicU64::new(((1 << 19) << 16) | 4);
 const OPTION: u64 = 1 << 19;
 const COMMAND: u64 = 1 << 20;
 #[link(name = "ApplicationServices", kind = "framework")]
@@ -90,7 +92,13 @@ extern "C" fn event_callback(_: Ptr, kind: u32, event: Ptr, _: Ptr) -> Ptr {
         }
         let key = CGEventGetIntegerValueField(event, 9) as u16;
         let flags = CGEventGetFlags(event);
-        if kind == 10 && key == 4 && flags & OPTION != 0 && flags & COMMAND == 0 {
+        let config = CONFIG.load(Ordering::SeqCst);
+        let trigger = (config & 0xffff) as u16;
+        let required = config >> 16;
+        if kind == 10
+            && key == trigger
+            && flags & ((1 << 17) | (1 << 18) | OPTION | COMMAND) == required
+        {
             if CGEventGetIntegerValueField(event, 8) == 0 {
                 if ACTIVE.fetch_xor(true, Ordering::SeqCst) {
                     send(Action::Cancel);
@@ -101,7 +109,7 @@ extern "C" fn event_callback(_: Ptr, kind: u32, event: Ptr, _: Ptr) -> Ptr {
             return std::ptr::null_mut();
         }
         if ACTIVE.load(Ordering::SeqCst) {
-            if kind == 12 && flags & OPTION == 0 {
+            if kind == 12 && flags & required != required {
                 ACTIVE.store(false, Ordering::SeqCst);
                 send(Action::Commit);
             } else if key == 125 || key == 126 {
@@ -115,21 +123,39 @@ extern "C" fn event_callback(_: Ptr, kind: u32, event: Ptr, _: Ptr) -> Ptr {
                     send(Action::Cancel);
                 }
                 return std::ptr::null_mut();
-            } else if key == 4 && kind == 10 {
+            } else if key == trigger && kind == 10 {
                 return std::ptr::null_mut();
             }
         }
         event
     }
 }
-pub fn start(tx: Sender<Action>) -> Result<(), String> {
+pub fn configure(shortcut: Shortcut) -> Result<(), String> {
+    shortcut.validate()?;
+    if !STARTED.load(Ordering::SeqCst) {
+        return Err("error.shortcut_unavailable".into());
+    }
+    ACTIVE.store(false, Ordering::SeqCst);
+    send(Action::Cancel);
+    CONFIG.store(
+        (shortcut.mac_modifiers() << 16) | shortcut.mac_key() as u64,
+        Ordering::SeqCst,
+    );
+    Ok(())
+}
+pub fn start(tx: Sender<Action>, shortcut: Shortcut) -> Result<(), String> {
+    shortcut.validate()?;
     unsafe {
         if !AXIsProcessTrusted() {
             return Err("macOS 需要「輔助使用」權限才能貼入其他程式。請在系統設定 → 隱私權與安全性中允許 Before You Do，必要時也允許「輸入監控」，再重新啟用。".into());
         }
         if STARTED.swap(true, Ordering::SeqCst) {
-            return Ok(());
+            return configure(shortcut);
         }
+        CONFIG.store(
+            (shortcut.mac_modifiers() << 16) | shortcut.mac_key() as u64,
+            Ordering::SeqCst,
+        );
         let _ = TX.set(tx);
         let (ready_tx, ready_rx) = std::sync::mpsc::channel();
         std::thread::spawn(move || {
@@ -177,9 +203,19 @@ pub fn paste(target: usize, text: &str) -> Result<(), String> {
             if frontmost() != target {
                 return Err("已切換程式，這次貼入已取消。".into());
             }
-            if ![58, 61, 4, 55, 54, 56, 60, 59, 62]
-                .iter()
-                .any(|key| CGEventSourceKeyState(1, *key))
+            if ![
+                58,
+                61,
+                (CONFIG.load(Ordering::SeqCst) & 0xffff) as u16,
+                55,
+                54,
+                56,
+                60,
+                59,
+                62,
+            ]
+            .iter()
+            .any(|key| CGEventSourceKeyState(1, *key))
             {
                 let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
                 clipboard.set_text(text).map_err(|e| e.to_string())?;

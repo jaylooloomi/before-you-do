@@ -16,10 +16,15 @@ mod macos;
 #[cfg(target_os = "macos")]
 pub use macos::*;
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-pub fn start(_: Sender<Action>) -> Result<(), String> {
+pub fn start(_: Sender<Action>, _: crate::shortcut::Shortcut) -> Result<(), String> {
     Err("此版本的原生快捷鍵支援 Windows 與 macOS。".into())
 }
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn paste(_: usize, _: &str) -> Result<(), String> {
+    Err("不支援此平台".into())
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn configure(_: crate::shortcut::Shortcut) -> Result<(), String> {
     Err("不支援此平台".into())
 }

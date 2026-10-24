@@ -1,5 +1,20 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+['已啟用','已启用','Enabled','有効'],
+['快捷鍵設定','快捷键设置','Keyboard shortcut','キーボードショートカット'],
+['預設 Alt+H，可更換組合；按住喚出、放開貼入的操作不變。','默认 Alt+H，可更换组合；按住唤出、松开粘贴的操作不变。','Default: Alt+H. Choose another combination; hold to open and release to paste.','初期設定は Alt+H です。変更後も長押しで開き、離すと貼り付けます。'],
+['組合鍵','组合键','Modifiers','修飾キー'],['按鍵','按键','Key','キー'],['空白鍵','空格键','Space','スペース'],
+['目前快捷鍵：{shortcut}','当前快捷键：{shortcut}','Current shortcut: {shortcut}','現在のショートカット：{shortcut}'],
+['儲存快捷鍵','保存快捷键','Save shortcut','ショートカットを保存'],['恢復 Alt+H','恢复 Alt+H','Reset to Alt+H','Alt+H に戻す'],
+['快捷鍵已儲存，下次啟動也會沿用。','快捷键已保存，下次启动也会沿用。','Shortcut saved. It will be used next time you start the app.','保存しました。次回の起動時にも使用します。'],
+['選單開啟時再按一次設定的按鍵可取消。放開組合鍵後才會貼入；不使用單獨字母或常見的 Ctrl 複製、貼上、儲存組合。','菜单打开时，再按一次设置的按键可取消。松开组合键后粘贴；不使用单独字母或常见的 Ctrl 复制、粘贴、保存组合。','Press the chosen key again to cancel the open menu. Release the modifiers to paste. Bare letters and common Ctrl copy, paste and save combinations are not allowed.','選んだキーをもう一度押すとキャンセルします。修飾キーを離すと貼り付けます。単独の文字キーや一般的な Ctrl のコピー・貼り付け・保存操作は指定できません。'],
+['Windows 會檢查快捷鍵是否被占用；macOS 請避開其他 App 使用的組合。','Windows 会检查快捷键是否被占用；macOS 请避开其他 App 使用的组合。','Windows checks for shortcut conflicts. On macOS, choose a combination other apps do not use.','Windows では競合を確認します。macOS では他のアプリと重ならない組み合わせを選んでください。'],
+['已重新載入檔案，快捷選單也已同步更新。','已重新加载文件，快捷菜单也已同步更新。','File reloaded. The shortcut menu is up to date too.','再読み込みしました。ショートカットメニューにも反映済みです。'],
+['error.shortcut_invalid','请选择 Alt 或 Ctrl（可加 Shift），搭配 A–Z、0–9 或空格键。','Choose Alt or Ctrl (optionally with Shift), plus A–Z, 0–9 or Space.','Alt または Ctrl（Shift 追加可）と A–Z・0–9・スペースを選んでください。'],
+['error.shortcut_reserved','此组合用于常见编辑操作，请加上 Shift 或选择其他按键。','This combination is a common editing shortcut. Add Shift or choose another key.','一般的な編集操作と重複します。Shift を追加するか、別のキーを選んでください。'],
+['error.shortcut_conflict','新快捷键已被占用，原快捷键与设置未更改。请换一组再试。','The new shortcut is in use. Your previous shortcut and settings are unchanged. Choose another combination.','新しいキーは使用中です。元のキーと設定は変更していません。別の組み合わせを選んでください。'],
+['error.shortcut_unavailable','无法启用快捷键，请检查系统权限后重试。','Could not enable the shortcut. Check system permissions and try again.','ショートカットを有効にできません。システムの権限を確認して再試行してください。'],
+['error.shortcut_file','快捷键设置文件无效，本次暂用 Alt+H；请到设置中重新保存。','The shortcut file is invalid. Using Alt+H for this session; save a new shortcut in Settings.','設定ファイルが無効なため、一時的に Alt+H を使用します。設定画面で保存し直してください。'],
 ['無法監聽 Option+H，請允許輔助使用與輸入監控權限後重試。','无法监听 Option+H，请允许辅助功能和输入监控权限后重试。','Cannot monitor Option+H. Allow Accessibility and Input Monitoring, then try again.','Option+H を監視できません。アクセシビリティと入力監視を許可して再試行してください。'],
 ['新短句','新短句','New snippet','新しい短文'],
 ['已啟用 · Alt / Option + H，放開 Alt / Option 貼入。','已启用 · Alt / Option + H，松开 Alt / Option 粘贴。','Enabled · Alt / Option + H; release Alt / Option to paste.','有効・Alt / Option + H、Alt / Option を離すと貼り付けます。'],
@@ -77,6 +92,11 @@ export const rows = [
 ];
 
 export const specialTraditional = {
+ 'error.shortcut_invalid':'請選擇 Alt 或 Ctrl（可加 Shift），搭配 A–Z、0–9 或空白鍵。',
+ 'error.shortcut_reserved':'此組合用於常見編輯操作，請加上 Shift 或選擇其他按鍵。',
+ 'error.shortcut_conflict':'新快捷鍵已被占用，原快捷鍵與設定未更改。請換一組再試。',
+ 'error.shortcut_unavailable':'無法啟用快捷鍵，請檢查系統權限後重試。',
+ 'error.shortcut_file':'快捷鍵設定檔無效，本次暫用 Alt+H；請到設定中重新儲存。',
  'error.invalid_json':'JSON 格式錯誤，請檢查後再試。', 'error.storage_count':'請保留 1 至 100 句短句。',
  'error.storage_invalid':'短句名稱或內容無效。', 'error.no_file':'尚未有短句檔，請先儲存短句。',
  'error.read':'無法讀取短句檔，請檢查檔案或還原 .bak。', 'error.io':'檔案操作失敗，請檢查路徑與權限。',

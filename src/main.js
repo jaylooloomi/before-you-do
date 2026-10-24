@@ -1,3 +1,4 @@
+import { initializeShortcut, renderShortcut, onShortcutChange, modifierLabel, keyLabel, shortcutLabel } from './shortcut.js';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { prepareSnippetSave, reorderSnippets } from './model.js';
@@ -44,6 +45,8 @@ await applyAppearance();
 systemTheme.addEventListener('change', () => applyAppearance());
 window.addEventListener('storage', e => { if (e.key === 'quicksay.appearance') { try { appearance = JSON.parse(e.newValue); applyAppearance(); } catch {} } });
 
+await initializeShortcut();
+
 if (picker) {
   document.body.classList.add('picker');
   const box = el('main', 'picker-card');
@@ -60,12 +63,13 @@ if (picker) {
       const content = el('div', 'picker-content'); content.append(el('strong', '', item.name), el('p', '', templateInfo(item)?.scenario ?? item.text)); row.append(content, el('span', 'number', String(i + 1).padStart(2, '0'))); list.append(row);
     });
     addRow.classList.toggle('active', state.selected === state.items.length);
-    footer.children[1].innerHTML = `${t('放開')} <kbd>Alt / ⌥</kbd> ${t(state.selected === state.items.length ? '新增' : '貼入')}`;
+    footer.children[1].innerHTML = `${t('放開')} <kbd>${modifierLabel()}</kbd> ${t(state.selected === state.items.length ? '新增' : '貼入')}`;
     list.children[state.selected]?.scrollIntoView({ block: 'nearest' });
   }
   await listen('picker-state', event => render(event.payload));
   render(await invoke('picker_state'));
   onLanguageChange(() => { if (latestState) render(latestState); });
+  onShortcutChange(() => { if(latestState)render(latestState); });
 } else {
   let items = [], selected = 0, dirty = false;
   root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark">${icon('text')}</span>Before You Do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" maxlength="100" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" maxlength="20000" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="外觀主題"><option value="light">淺色</option><option value="dark">深色</option><option value="system">跟隨系統</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>BEFORE YOU DO · 0.2</span></footer></section></main></div>`;
@@ -135,7 +139,8 @@ if (picker) {
   await listen('new-snippet', consumeNewSnippet);
   document.querySelector('#delete').onclick = async () => { if (items.length === 1) { await askConfirmation({title: '請至少保留一句短句', message: '先新增另一句短句，再刪除這一句。', confirmText: '知道了', notice: true}); return; } stash(); const target = selected; if (!await askConfirmation({title: '刪除短句？', message: t('確定要刪除「{name}」嗎？刪除後需按「儲存短句」才會生效。', {name:items[target].name || t('未命名短句')}), confirmText: '刪除短句', danger: true})) return; items.splice(target, 1); selected = Math.min(target, items.length - 1); dirty = true; render(); setSaveStatus('尚未儲存'); };
   document.querySelector('#editor').onsubmit = async e => { e.preventDefault(); stash(); try { const result = prepareSnippetSave(items); await invoke('save_snippets', { items: result.saved }); items = result.editorItems; dirty = result.draftCount > 0; render(); setSaveStatus(result.draftCount ? '已儲存 · {count} 筆空白草稿尚未儲存' : '已儲存', {count:result.draftCount}); } catch (error) { setSaveError(error); } };
-  async function nativeStatus() { const status = await invoke('native_status'); const preview = status.startsWith('外觀預覽'); const ready = status.startsWith('已啟用') || preview; if (preview) document.querySelector('.workspace>footer').firstChild.textContent = t('外觀預覽 · 修改不會影響原有短句。'); document.querySelector('#native-status').classList.toggle('unavailable', !ready); document.querySelector('#native-status span').textContent = t(preview ? '外觀預覽' : ready ? '快捷鍵已啟用' : '快捷鍵需設定'); document.querySelector('#native-status').title = t(status); document.querySelector('#native-error').hidden = ready; document.querySelector('#native-error').textContent = ready ? '' : errorMessage(status); document.querySelector('#retry').hidden = ready; }
+  async function nativeStatus() { const status = await invoke('native_status'); const preview = status.startsWith('外觀預覽'); const ready = status.startsWith('已啟用') || preview; if (preview) document.querySelector('.workspace>footer').firstChild.textContent = t('外觀預覽 · 修改不會影響原有短句。'); document.querySelector('#native-status').classList.toggle('unavailable', !ready); document.querySelector('#native-status span').textContent = t(preview ? '外觀預覽' : ready ? '快捷鍵已啟用' : '快捷鍵需設定'); document.querySelector('#native-status').title = shortcutLabel(); document.querySelector('#native-error').hidden = ready; document.querySelector('#native-error').textContent = ready ? '' : errorMessage(status); document.querySelector('#retry').hidden = ready; }
+  onShortcutChange(nativeStatus);
   document.querySelector('#retry').onclick = async () => { await invoke('restart_keyboard'); await nativeStatus(); };
   async function hide() { if (!dirty || await askConfirmation({title: '收起視窗？', message: '目前有尚未儲存的修改。收起後程式仍會執行，草稿會保留在此視窗中。', confirmText: '收起視窗'})) await invoke('hide_manager'); }
   await listen('native-status', nativeStatus); await listen('save-before-hide', hide);
@@ -169,3 +174,5 @@ const syncNativeLanguage = () => invoke('set_ui_language', {language:getLanguage
 onLanguageChange(syncNativeLanguage);
 await syncNativeLanguage();
 document.documentElement.lang = getLanguage();
+
+renderShortcut();

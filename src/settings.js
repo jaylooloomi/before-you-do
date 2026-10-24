@@ -1,3 +1,4 @@
+import { getShortcut, onShortcutChange, shortcutLabel } from './shortcut.js';
 import { t, getLanguage, getPreference, setLanguage, onLanguageChange, errorMessage } from './i18n.js';
 import { filePrompt, chatPrompt } from './ai-prompts.js';
 import { getTemplates } from './template-locales.js';
@@ -7,6 +8,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
   const panel = document.createElement('section');
   panel.className = 'settings-panel'; panel.hidden = true;
   panel.innerHTML = `<header class="settings-heading"><div><h2>設定與 AI 教學</h2><p>用你習慣的 AI 管理短句，不需要串接 API。</p></div><button type="button" data-settings="back">返回短句</button></header>
+    <section class="settings-card"><h3>快捷鍵設定</h3><p>預設 Alt+H，可更換組合；按住喚出、放開貼入的操作不變。</p><div class="shortcut-setting"><label for="shortcut-modifier">組合鍵</label><select id="shortcut-modifier"><option value="alt">Alt / Option</option><option value="altShift">Alt / Option + Shift</option><option value="ctrl">Ctrl</option><option value="ctrlShift">Ctrl + Shift</option></select><label for="shortcut-key">按鍵</label><select id="shortcut-key"></select></div><p id="shortcut-current"></p><div class="settings-buttons"><button data-settings="shortcut-save">儲存快捷鍵</button><button data-settings="shortcut-reset">恢復 Alt+H</button></div><p>選單開啟時再按一次設定的按鍵可取消。放開組合鍵後才會貼入；不使用單獨字母或常見的 Ctrl 複製、貼上、儲存組合。</p><p>Windows 會檢查快捷鍵是否被占用；macOS 請避開其他 App 使用的組合。</p></section>
     <section class="settings-card"><h3>介面語言</h3><select id="language" aria-label="介面語言"><option value="system">跟隨系統</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select><p>切換語言不會翻譯或修改你的短句。</p></section>
     <section class="settings-card"><h3>範本庫</h3><p>預覽並新增範本；不會取代現有短句。</p><select id="template-language" aria-label="範本語言"><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select><select id="template-choice" aria-label="範本庫"></select><div id="template-preview"><h4></h4><p></p><pre></pre></div><button type="button" data-settings="template">新增此範本</button></section>
     <section class="settings-card"><h3>短句存在哪裡？</h3><p>以下是這台電腦的實際位置。名稱、內容與排序都存在同一份 JSON。</p><code id="data-path"></code><div class="settings-buttons"><button data-settings="folder">開啟資料夾</button><button data-settings="path">複製檔案路徑</button></div><p class="settings-backup">上一版備份：<code id="backup-path"></code></p><p id="file-exists"></p></section>
@@ -16,6 +18,10 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
     <section class="settings-card"><h3>備份與還原</h3><p>每次由 Before You Do 儲存時，snippets.json.bak 保留上一版，不是完整歷史紀錄。需要還原時，先從系統匣完整結束 Before You Do，另外保留目前檔案，再將備份複製成 snippets.json，最後重新啟動。外部 AI 修改前也應另做一份備份。</p></section>
     <p id="settings-status" role="status" aria-live="polite"></p>`;
   let info;
+  const shortcutModifier=panel.querySelector('#shortcut-modifier'), shortcutKey=panel.querySelector('#shortcut-key');
+  for(const key of [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789','Space']){const option=document.createElement('option');option.value=key;option.textContent=key==='Space'?t('空白鍵'):key;shortcutKey.append(option);}
+  function refreshShortcut(){const value=getShortcut();shortcutModifier.value=value.modifier;shortcutKey.value=value.key;panel.querySelector('#shortcut-current').textContent=t('目前快捷鍵：{shortcut}',{shortcut:shortcutLabel()});shortcutKey.querySelector('[value=Space]').textContent=t('空白鍵');}
+  onShortcutChange(refreshShortcut);refreshShortcut();
   const status = panel.querySelector('#settings-status');
   let reportKey='', reportParams={};
   const reportText = () => t(reportKey, {...reportParams, ...('error' in reportParams ? {error:errorMessage(reportParams.error)} : {})});
@@ -34,7 +40,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
       panel.querySelector('#backup-path').textContent = info.backup;
       panel.querySelector('#file-exists').textContent = info.exists ? '短句檔已建立。' : '尚未建立檔案：請先返回短句，按一次儲存。';
       panel.querySelector('#file-ai-prompt').value = filePrompt(info.path);
-      reportKey=''; status.textContent = '';
+      refreshShortcut(); reportKey=''; status.textContent = '';
     } catch (error) { report(errorMessage(error)); }
   }
   panel.addEventListener('click', async event => {
@@ -45,6 +51,10 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
     try {
       if (!info) await refresh();
       if (action === 'template') { onAddTemplate(getTemplates(templateLanguage.value)[Number(choice.value)||0]); report('已加入草稿，請返回短句儲存。'); }
+      if(action==='shortcut-save'||action==='shortcut-reset'){
+        const candidate=action==='shortcut-reset'?{modifier:'alt',key:'H'}:{modifier:shortcutModifier.value,key:shortcutKey.value};
+        await invoke('save_shortcut',{shortcut:candidate});refreshShortcut();report('快捷鍵已儲存，下次啟動也會沿用。');
+      }
       if (action === 'folder') { await invoke('open_data_folder'); report('已開啟資料夾。'); }
       if (action === 'path') { await invoke('copy_text', { text: info.path }); report('已複製檔案路徑。'); }
       if (action === 'file-prompt') { await invoke('copy_text', { text: panel.querySelector('#file-ai-prompt').value }); report('已複製修改指令，請貼給你的 AI 並補上需求。'); }
@@ -53,7 +63,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
         await invoke('copy_text', { text: chatPrompt(saved) });
         report('已複製指令與已儲存短句，請貼給你的 AI。');
       }
-      if (action === 'reload' && await onReload()) { await refresh(); report('已重新載入檔案，Alt+H 也已同步更新。'); }
+      if (action === 'reload' && await onReload()) { await refresh(); report('已重新載入檔案，快捷選單也已同步更新。'); }
       if (action === 'import') {
         const items = parseSnippetImport(panel.querySelector('#import-json').value);
         if (await askConfirmation({ title: '套用 AI 修改？', message: t('將用這 {count} 筆短句取代目前清單與未儲存草稿。原檔會備份為 snippets.json.bak。',{count:items.length}), confirmText: '套用並儲存' })) {

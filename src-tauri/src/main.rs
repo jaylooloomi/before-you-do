@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
+mod shortcut;
 mod storage;
 #[cfg(windows)]
 mod window_regression;
@@ -67,6 +68,9 @@ struct State {
     path: PathBuf,
     tx: Sender<Action>,
     pending_new: AtomicBool,
+    shortcut: Mutex<shortcut::Shortcut>,
+    shortcut_path: PathBuf,
+    preview: bool,
 }
 struct UiMenu {
     manage: tauri::menu::MenuItem<tauri::Wry>,
@@ -77,8 +81,16 @@ fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String
     let (manage_text, quit_text, title) = match language.as_str() {
         "zh-TW" => ("管理短句", "結束 Before You Do", "Before You Do · 常用短句"),
         "zh-CN" => ("管理短句", "退出 Before You Do", "Before You Do · 常用短句"),
-        "ja" => ("短文を管理", "Before You Do を終了", "Before You Do · 短文ライブラリ"),
-        _ => ("Manage snippets", "Quit Before You Do", "Before You Do · Snippets"),
+        "ja" => (
+            "短文を管理",
+            "Before You Do を終了",
+            "Before You Do · 短文ライブラリ",
+        ),
+        _ => (
+            "Manage snippets",
+            "Quit Before You Do",
+            "Before You Do · Snippets",
+        ),
     };
     let menu = app.state::<UiMenu>();
     menu.manage
@@ -122,6 +134,38 @@ fn preview_picker(
     app.emit_to("picker", "picker-state", picker.clone())
         .map_err(|e| e.to_string())?;
     Ok(result)
+}
+#[tauri::command]
+fn get_shortcut(state: tauri::State<State>) -> shortcut::Shortcut {
+    state.shortcut.lock().unwrap().clone()
+}
+#[tauri::command]
+fn save_shortcut(
+    app: tauri::AppHandle,
+    shortcut: shortcut::Shortcut,
+) -> Result<shortcut::Shortcut, String> {
+    shortcut.validate()?;
+    let state = app.state::<State>();
+    let mut current = state.shortcut.lock().unwrap();
+    let previous = current.clone();
+    if !state.preview {
+        platform::start(state.tx.clone(), shortcut.clone())?;
+    }
+    if let Err(error) = shortcut::save(&state.shortcut_path, &shortcut) {
+        if !state.preview {
+            if let Err(rollback) = platform::configure(previous) {
+                set_status(&app, rollback);
+            }
+        }
+        return Err(error);
+    }
+    *current = shortcut.clone();
+    drop(current);
+    let _ = app.emit("shortcut-changed", shortcut.clone());
+    if !state.preview {
+        set_status(&app, "已啟用".into());
+    }
+    Ok(shortcut)
 }
 #[tauri::command]
 fn get_snippets(state: tauri::State<State>) -> Vec<Snippet> {
@@ -264,12 +308,15 @@ fn set_status(app: &tauri::AppHandle, message: String) {
     let _ = app.emit_to("main", "native-status", ());
 }
 fn start_keyboard(app: &tauri::AppHandle) {
-    let result = platform::start(app.state::<State>().tx.clone());
+    let state = app.state::<State>();
+    if state.preview {
+        return;
+    }
+    let shortcut = state.shortcut.lock().unwrap().clone();
+    let result = platform::start(state.tx.clone(), shortcut);
     set_status(
         app,
-        result
-            .map(|_| "已啟用 · Alt / Option + H，放開 Alt / Option 貼入。".to_string())
-            .unwrap_or_else(|e| e),
+        result.map(|_| "已啟用".to_string()).unwrap_or_else(|e| e),
     );
 }
 fn manage(app: &tauri::AppHandle) {
@@ -361,6 +408,8 @@ fn main() {
     builder
         .invoke_handler(tauri::generate_handler![
             get_snippets,
+            get_shortcut,
+            save_shortcut,
             save_snippets,
             storage_info,
             copy_text,
@@ -397,9 +446,16 @@ fn main() {
                 storage::load(if preview { &source_path } else { &path }, old.as_deref())
                     .map_err(std::io::Error::other)?
             };
+            let shortcut_path = path.with_file_name("shortcut.json");
+            let loaded_shortcut = shortcut::load(&shortcut_path);
+            let shortcut_error = loaded_shortcut.as_ref().err().cloned();
+            let initial_shortcut = loaded_shortcut.unwrap_or_default();
             let (tx, rx) = mpsc::channel();
             app.manage(State {
                 items: Mutex::new(items),
+                shortcut: Mutex::new(initial_shortcut),
+                shortcut_path,
+                preview,
                 picker: Mutex::new(Picker::default()),
                 status: Mutex::new(String::new()),
                 path,
@@ -419,8 +475,13 @@ fn main() {
                 true,
                 None::<&str>,
             )?;
-            let quit_item =
-                tauri::menu::MenuItem::with_id(app, "quit", "Quit Before You Do", true, None::<&str>)?;
+            let quit_item = tauri::menu::MenuItem::with_id(
+                app,
+                "quit",
+                "Quit Before You Do",
+                true,
+                None::<&str>,
+            )?;
             let menu = tauri::menu::Menu::with_items(app, &[&manage_item, &quit_item])?;
             app.manage(UiMenu {
                 manage: manage_item,
@@ -433,7 +494,7 @@ fn main() {
             );
             tauri::tray::TrayIconBuilder::new()
                 .icon(icon)
-                .tooltip("Before You Do · Alt / Option + H")
+                .tooltip("Before You Do")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "manage" => manage(app),
@@ -518,6 +579,9 @@ fn main() {
                 );
             } else {
                 start_keyboard(app.handle());
+                if let Some(error) = shortcut_error {
+                    set_status(app.handle(), error);
+                }
             }
             Ok(())
         })

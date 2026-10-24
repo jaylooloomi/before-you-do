@@ -137,3 +137,6 @@ body.windows .appearance-bar{justify-content:flex-end}
 .settings-heading h2{overflow-wrap:anywhere}
 .picker-footer{gap:6px;flex-wrap:wrap}
 .sidebar-foot{font-size:11px;text-align:center}
+.shortcut-setting{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.shortcut-setting select{margin-bottom:0}
+option{background:var(--palette-field);color:var(--ink)}
