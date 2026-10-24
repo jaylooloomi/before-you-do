@@ -1,3 +1,4 @@
+import { roleName } from './roles.js';
 import { getShortcut, onShortcutChange, shortcutLabel } from './shortcut.js';
 import { t, getLanguage, getPreference, setLanguage, onLanguageChange, errorMessage } from './i18n.js';
 import { filePrompt, chatPrompt } from './ai-prompts.js';
@@ -14,9 +15,13 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
     <section class="settings-card"><h3>短句存在哪裡？</h3><p>以下是這台電腦的實際位置。名稱、內容與排序都存在同一份 JSON。</p><code id="data-path"></code><div class="settings-buttons"><button data-settings="folder">開啟資料夾</button><button data-settings="path">複製檔案路徑</button></div><p class="settings-backup">上一版備份：<code id="backup-path"></code></p><p id="file-exists"></p></section>
     <section class="settings-card"><h3>讓能操作本機檔案的 AI 直接修改</h3><p>適用於已取得此檔案存取權限的桌面／程式開發 AI 工具。一般網頁聊天不能僅憑路徑讀寫你的電腦。</p><ol><li>先在 before-you-do 儲存要保留的編輯。</li><li>複製下方指令，貼給你的 AI，再補上想修改的需求。</li><li>AI 修改檔案後，回到這裡按「重新載入檔案」。不要先按舊編輯畫面的儲存，以免蓋回舊內容。</li></ol><textarea id="file-ai-prompt" readonly aria-label="直接修改檔案的 AI 指令"></textarea><div class="settings-buttons"><button data-settings="file-prompt">複製修改指令</button><button data-settings="reload">重新載入檔案</button></div></section>
     <section class="settings-card"><h3>使用一般聊天 AI：複製 → 修改 → 套用</h3><p>複製的指令會包含目前已儲存的短句。貼給 AI 修改後，把完整 JSON 貼回下方；也接受 JSON 程式碼區塊。</p><div class="settings-buttons"><button data-settings="chat-prompt">複製聊天 AI 指令與短句</button></div><textarea id="import-json" spellcheck="false" placeholder='貼上 AI 回傳的完整 JSON，例如 [{"name":"短句名稱","text":"短句內容"}]' aria-label="AI 回傳的短句 JSON"></textarea><p>套用會取代整份清單與排序，並先備份原檔；確認前會檢查格式。未完成草稿也會被取代。</p><div class="settings-buttons"><button data-settings="import">檢查並套用 JSON</button></div></section>
-    <section class="settings-card"><h3>怎麼請 AI 修改比較有效？</h3><ul><li><b>交代用途：</b>例如「補在開發需求後，請 AI 自主完成並回報」。</li><li><b>交代修改範圍：</b>例如「只改第三句，其他名稱、內容和順序不變」。</li><li><b>描述期待行為：</b>例如「先整理理解再做，不用逐步確認；遇到缺少權限時再問我」。</li><li><b>用實際任務試用：</b>觀察回覆與操作結果，再調整短句；提示詞無法保證 AI 一定完成或沒有錯誤。</li></ul><p>只改名稱不會影響原範本的情境提示；改寫正文後，原情境提示會隱藏。資料檔請保留 name、text 兩個文字欄位，不要放入其他設定。</p></section>
-    <section class="settings-card"><h3>備份與還原</h3><p>每次由 before-you-do 儲存時，snippets.json.bak 保留上一版，不是完整歷史紀錄。需要還原時，先從系統匣完整結束 before-you-do，另外保留目前檔案，再將備份複製成 snippets.json，最後重新啟動。外部 AI 修改前也應另做一份備份。</p></section>
+    <section class="settings-card"><h3>怎麼請 AI 修改比較有效？</h3><ul><li><b>交代用途：</b>例如「補在開發需求後，請 AI 自主完成並回報」。</li><li><b>交代修改範圍：</b>例如「只改第三句，其他名稱、內容和順序不變」。</li><li><b>描述期待行為：</b>例如「先整理理解再做，不用逐步確認；遇到缺少權限時再問我」。</li><li><b>用實際任務試用：</b>觀察回覆與操作結果，再調整短句；提示詞無法保證 AI 一定完成或沒有錯誤。</li></ul><p>資料檔需保留 name、text，另可加入選填的 scenario（最多 1,000 字）。自訂情境不會自動翻譯，也不會一起貼入；未自訂時才使用內建範本的情境提示。</p></section>
+    <section class="settings-card"><h3>備份與還原</h3><p>每次儲存會在目前角色的 .json.bak 檔保留上一版，不是完整歷史紀錄。還原前請完整結束 App，另存目前檔案，再將備份複製回上方顯示的短句路徑。外部 AI 修改前也應另做備份。</p></section>
     <p id="settings-status" role="status" aria-live="polite"></p>`;
+  const roleNote=document.createElement('p');roleNote.className='role-settings-note';panel.querySelector('.settings-heading').after(roleNote);
+  let currentRole='personal';
+  function renderRoleNote(){roleNote.textContent=t('目前角色：{role}。匯入、重新載入與 AI 修改指令只針對此角色。',{role:roleName(currentRole,getLanguage())});}
+  onLanguageChange(renderRoleNote);
   let info;
   const shortcutModifier=panel.querySelector('#shortcut-modifier'), shortcutKey=panel.querySelector('#shortcut-key');
   for(const key of [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789','Space']){const option=document.createElement('option');option.value=key;option.textContent=key==='Space'?t('空白鍵'):key;shortcutKey.append(option);}
@@ -35,6 +40,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
   onLanguageChange(()=>{ language.value=getPreference(); templateLanguage.value=getLanguage(); renderTemplates(); if(info)panel.querySelector('#file-ai-prompt').value=filePrompt(info.path); panel.querySelector('#file-exists').textContent=info ? t(info.exists ? '短句檔已建立。' : '尚未建立檔案：請先返回短句，按一次儲存。') : ''; status.textContent=reportText(); });
   async function refresh() {
     try {
+      currentRole=await invoke('get_role');renderRoleNote();
       info = await invoke('storage_info');
       panel.querySelector('#data-path').textContent = info.path;
       panel.querySelector('#backup-path').textContent = info.backup;
@@ -66,7 +72,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
       if (action === 'reload' && await onReload()) { await refresh(); report('已重新載入檔案，快捷選單也已同步更新。'); }
       if (action === 'import') {
         const items = parseSnippetImport(panel.querySelector('#import-json').value);
-        if (await askConfirmation({ title: '套用 AI 修改？', message: t('將用這 {count} 筆短句取代目前清單與未儲存草稿。原檔會備份為 snippets.json.bak。',{count:items.length}), confirmText: '套用並儲存' })) {
+        if (await askConfirmation({ title: '套用 AI 修改？', message: t('將用這 {count} 筆短句取代目前角色的清單與未儲存草稿，並先備份原檔。',{count:items.length}), confirmText: '套用並儲存' })) {
           await onImport(items); panel.querySelector('#import-json').value = ''; await refresh(); report('已套用並儲存 {count} 筆短句。',{count:items.length});
         }
       }

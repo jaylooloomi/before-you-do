@@ -5,6 +5,8 @@ use std::{fs, io::Write, path::Path};
 pub struct Snippet {
     pub name: String,
     pub text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scenario: Option<String>,
 }
 
 pub fn defaults() -> Vec<Snippet> {
@@ -17,6 +19,12 @@ pub fn validate(items: &[Snippet]) -> Result<(), String> {
         return Err("error.storage_count".into());
     }
     for s in items {
+        if s.scenario
+            .as_ref()
+            .is_some_and(|v| v.chars().count() > 1000)
+        {
+            return Err("error.scenario_invalid".into());
+        }
         if s.name.trim().is_empty()
             || s.text.trim().is_empty()
             || s.name.chars().count() > 100
@@ -54,6 +62,7 @@ fn legacy(xml: &str) -> Result<Vec<Snippet>, String> {
         .map(|s| Snippet {
             name: s.name,
             text: s.text,
+            scenario: None,
         })
         .collect();
     validate(&items)?;
@@ -92,6 +101,22 @@ pub fn save(path: &Path, items: &[Snippet]) -> Result<(), String> {
 mod tests {
     use super::*;
     #[test]
+    fn optional_scenario_is_backward_compatible_and_persistent() {
+        let old = r#"{"name":"a","text":"body"}"#;
+        let mut item: Snippet = serde_json::from_str(old).unwrap();
+        assert_eq!(item.scenario, None);
+        assert_eq!(serde_json::to_string(&item).unwrap(), old);
+        for scenario in ["適合需要驗證時", ""] {
+            item.scenario = Some(scenario.into());
+            let restored: Snippet =
+                serde_json::from_str(&serde_json::to_string(&item).unwrap()).unwrap();
+            assert_eq!(restored, item);
+            assert!(validate(&[restored]).is_ok());
+        }
+        item.scenario = Some("字".repeat(1001));
+        assert_eq!(validate(&[item]).unwrap_err(), "error.scenario_invalid");
+    }
+    #[test]
     fn imports_dotnet_unicode_xml() {
         let xml = r#"<?xml version="1.0"?><Settings><Modifiers>1</Modifiers><Key>72</Key><Items><Snippet><Name>中文 &amp; 名稱</Name><Text>第一行
 第二行</Text></Snippet></Items></Settings>"#;
@@ -104,7 +129,8 @@ mod tests {
         assert!(validate(&[]).is_err());
         assert!(validate(&[Snippet {
             name: "a".into(),
-            text: " ".into()
+            text: " ".into(),
+            scenario: None
         }])
         .is_err());
     }

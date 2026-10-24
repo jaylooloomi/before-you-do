@@ -142,3 +142,58 @@ body.windows .appearance-bar{justify-content:flex-end}
 .shortcut-setting{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .shortcut-setting select{margin-bottom:0}
 option{background:var(--palette-field);color:var(--ink)}
+/* Role cards share the manager palette and keep a compact horizontal layout. */
+.role-cards{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 6px;scrollbar-width:thin;scroll-snap-type:x proximity}
+.role-card{display:flex;align-items:center;gap:9px;flex:1 0 128px;min-width:0;padding:12px 10px;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--palette-field);color:var(--muted);scroll-snap-align:start}
+.role-card:hover:not(:disabled){background:var(--hover)}
+.role-card.selected{background:var(--selected);border-color:var(--accent);color:var(--ink)}
+.role-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.role-mark{display:grid;place-items:center;width:26px;height:28px;flex-shrink:0;border-radius:6px;background:var(--palette-icon);font-size:20px;color:var(--accent)}
+.role-card-content{min-width:0;display:flex;flex-direction:column;gap:5px}
+.role-card strong{font-size:13px;font-weight:600;white-space:nowrap}
+.role-card small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)}
+.workspace:has(.role-cards){gap:12px}
+.workspace:has(.role-cards) #editor{min-height:310px;flex-basis:310px}
+.workspace:has(.role-cards) #editor:has(.scenario-box:not([hidden])){min-height:340px;flex-basis:340px}
+@media(forced-colors:active){.role-card.selected{border-color:Highlight;outline:1px solid Highlight}}
+.workspace:has(.role-cards) .editor-card{padding:16px 20px 12px}
+.workspace:has(.role-cards) .field-heading{margin-bottom:6px;flex-shrink:0}
+.workspace:has(.role-cards) #name{font-size:22px;padding-bottom:10px;flex-shrink:0}
+.workspace:has(.role-cards) .scenario-box{margin-top:8px;padding:6px 10px;line-height:1.5}
+.workspace:has(.role-cards) .scenario-box strong{font-size:11px}
+.workspace:has(.role-cards) .scenario-box p{margin:2px 0}
+.workspace:has(.role-cards) .scenario-box small{font-size:10px}
+.workspace:has(.role-cards) .content-label{margin:12px 0 8px;flex-shrink:0}
+.workspace:has(.role-cards) #text{flex:1 1 60px;min-height:60px}
+.workspace:has(.role-cards) .editor-bottom{flex-shrink:0;margin-top:8px;padding-top:8px;font-size:11px}
+.role-settings-note{margin:0;padding:10px 12px;border-left:3px solid var(--accent);border-radius:4px;background:var(--hover);color:var(--muted);line-height:1.7}
+@media(max-width:800px){.role-card{flex-basis:112px;padding:10px 8px;gap:6px}.role-mark{width:22px;font-size:18px}.role-card strong{font-size:12px}}
+@media(max-height:740px){.workspace:has(.role-cards) #editor:has(.scenario-box:not([hidden])){min-height:385px;flex-basis:385px}}
+/* Fixed-width role cards remain readable as the catalog grows. */
+.role-switcher{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;gap:6px;align-items:center;min-width:0}
+.role-switcher .role-cards{position:relative;padding:2px 1px 6px;scrollbar-width:thin;overscroll-behavior-x:contain}
+.role-switcher .role-card{flex:0 0 148px;max-width:148px;padding:11px 10px;gap:8px}
+.role-scroll{display:grid;place-items:center;align-self:stretch;margin:2px 0 6px;border:1px solid var(--line);border-radius:7px;background:var(--palette-field);color:var(--ink);font-size:24px;line-height:1;padding:0}
+.role-scroll:hover:not(:disabled){background:var(--selected)}
+.role-scroll:disabled{opacity:.3;cursor:default}
+.role-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.picker-rolebar.picker-label{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;min-height:58px;padding:10px 9px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.role-neighbor{display:flex;align-items:center;gap:7px;min-width:0;color:var(--faint);font-size:11px}
+.role-neighbor>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.role-neighbor.next{justify-content:flex-end}
+.picker-role-current{display:flex;align-items:center;gap:7px;white-space:nowrap;color:var(--ink)}
+.picker-role-current strong{font-size:14px;font-weight:600}
+.picker-role-current small{font-size:10px;font-variant-numeric:tabular-nums;color:var(--faint)}
+.picker-role-mark{font-size:18px;color:var(--accent)}
+.picker-rolebar kbd{height:20px;min-width:20px;font-size:11px}
+.picker .picker-footer>span:first-child{gap:3px}
+@media(max-width:450px){.role-neighbor>span{display:none}.picker-rolebar.picker-label{gap:6px}}
+.brand-mark,.picker .brand-mark{background:transparent;border:0;box-shadow:none;overflow:hidden;padding:0}
+.brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+.window-brand .brand-mark{width:25px;height:25px;border-radius:6px}
+.picker-header .brand-mark{width:32px;height:32px;border-radius:8px}
+/* The scenario is optional editable metadata, separate from pasted instructions. */
+.scenario-editor label{display:block;font-size:11px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.scenario-editor #scenario{display:block;width:100%;min-height:38px;height:38px;max-height:110px;resize:vertical;margin:0;padding:2px 0;border:0;background:transparent;color:var(--ink);font-size:12px;line-height:1.6;border-radius:3px}
+.scenario-editor #scenario:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+.scenario-editor small{display:block;margin-top:3px}

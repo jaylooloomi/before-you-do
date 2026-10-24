@@ -30,7 +30,7 @@
         "title": "before-you-do",
         "url": "index.html?picker",
         "width": 580,
-        "height": 360,
+        "height": 480,
         "visible": false,
         "focus": false,
         "focusable": false,
@@ -53,7 +53,8 @@
     "targets": "all",
     "icon": [
       "icons/icon.ico",
-      "icons/icon.png"
+      "icons/icon.png",
+      "icons/icon.icns"
     ],
     "macOS": {
       "minimumSystemVersion": "11.0",

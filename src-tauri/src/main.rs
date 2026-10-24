@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
+mod roles;
 mod shortcut;
 mod storage;
 #[cfg(windows)]
@@ -23,6 +24,7 @@ struct Picker {
     items: Vec<Snippet>,
     selected: usize,
     target: usize,
+    role: String,
     active: bool,
 }
 #[derive(Debug, PartialEq)]
@@ -37,8 +39,16 @@ impl Picker {
             items,
             selected: 0,
             target,
+            role: "personal".into(),
             active: true,
         };
+    }
+    fn change_role(&mut self, role: String, items: Vec<Snippet>) {
+        if self.active {
+            self.role = role;
+            self.items = items;
+            self.selected = 0;
+        }
     }
     fn step(&mut self, delta: i32) {
         if self.active {
@@ -69,6 +79,8 @@ struct State {
     picker: Mutex<Picker>,
     status: Mutex<String>,
     path: PathBuf,
+    role: Mutex<String>,
+    language: Mutex<String>,
     tx: Sender<Action>,
     pending_new: AtomicBool,
     pending_settings: AtomicBool,
@@ -82,6 +94,7 @@ struct UiMenu {
 }
 #[tauri::command]
 fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
+    *app.state::<State>().language.lock().unwrap() = language.clone();
     let (manage_text, quit_text, title) = match language.as_str() {
         "zh-TW" => ("管理短句", "結束 before-you-do", "before-you-do · 常用短句"),
         "zh-CN" => ("管理短句", "退出 before-you-do", "before-you-do · 常用短句"),
@@ -121,12 +134,24 @@ fn preview_picker(
     let mut picker = state.picker.lock().unwrap();
     let mut result = serde_json::Value::Null;
     match action.as_str() {
-        "begin" => picker.begin(state.items.lock().unwrap().clone(), 0),
+        "begin" => {
+            picker.begin(state.items.lock().unwrap().clone(), 0);
+            picker.role = state.role.lock().unwrap().clone();
+        }
+        "role" => change_picker_role(&state, &mut picker, delta.unwrap_or(1))?,
         "move" => picker.step(delta.unwrap_or(1)),
         "commit" => {
-            result = match picker.finish(true) {
+            let chosen = picker.finish(true);
+            if chosen.is_some() {
+                activate_picker_role(&app, &picker.role, &picker.items)?;
+            }
+            result = match chosen {
                 Some(Selection::Paste(_, text)) => serde_json::json!({"kind":"paste","text":text}),
-                Some(Selection::Add) => serde_json::json!({"kind":"add"}),
+                Some(Selection::Add) => {
+                    state.pending_new.store(true, Ordering::SeqCst);
+                    let _ = app.emit_to("main", "new-snippet", ());
+                    serde_json::json!({"kind":"add"})
+                }
                 Some(Selection::Settings) => {
                     request_settings(&app, false);
                     serde_json::json!({"kind":"settings"})
@@ -176,18 +201,57 @@ fn save_shortcut(
     Ok(shortcut)
 }
 #[tauri::command]
+fn get_role(state: tauri::State<State>) -> String {
+    state.role.lock().unwrap().clone()
+}
+#[tauri::command]
+fn switch_role(
+    app: tauri::AppHandle,
+    role: String,
+    defaults: Vec<Snippet>,
+) -> Result<Vec<Snippet>, String> {
+    let state = app.state::<State>();
+    let mut current = state.role.lock().unwrap();
+    if *current == role {
+        return Ok(state.items.lock().unwrap().clone());
+    }
+    let path = roles::path(&state.path, &role)?;
+    let items = roles::load(&state.path, &role, &defaults)?;
+    // Seed only a new role; the original personal file is never overwritten here.
+    if !path.exists() {
+        storage::save(&path, &items)?;
+    }
+    let previous_path = roles::path(&state.path, &current)?;
+    if !previous_path.exists() {
+        storage::save(&previous_path, &state.items.lock().unwrap())?;
+    }
+    roles::remember(&state.path, &role)?;
+    *state.items.lock().unwrap() = items.clone();
+    *current = role.clone();
+    drop(current);
+    state.picker.lock().unwrap().finish(false);
+    if let Some(window) = app.get_webview_window("picker") {
+        let _ = window.hide();
+    }
+    let _ = app.emit("role-changed", role);
+    Ok(items)
+}
+#[tauri::command]
 fn get_snippets(state: tauri::State<State>) -> Vec<Snippet> {
     state.items.lock().unwrap().clone()
 }
 #[tauri::command]
 fn save_snippets(items: Vec<Snippet>, state: tauri::State<State>) -> Result<(), String> {
-    storage::save(&state.path, &items)?;
+    let role = state.role.lock().unwrap();
+    storage::save(&roles::path(&state.path, &role)?, &items)?;
     *state.items.lock().unwrap() = items;
     Ok(())
 }
 #[tauri::command]
 fn storage_info(state: tauri::State<State>) -> serde_json::Value {
-    serde_json::json!({"path": state.path.to_string_lossy(), "backup": state.path.with_extension("json.bak").to_string_lossy(), "exists": state.path.exists()})
+    let role = state.role.lock().unwrap();
+    let path = roles::path(&state.path, &role).expect("validated role");
+    serde_json::json!({"path": path.to_string_lossy(), "backup": path.with_extension("json.bak").to_string_lossy(), "exists": path.exists()})
 }
 #[tauri::command]
 fn copy_text(text: String) -> Result<(), String> {
@@ -212,10 +276,12 @@ fn open_data_folder(state: tauri::State<State>) -> Result<(), String> {
 }
 #[tauri::command]
 fn reload_snippets(state: tauri::State<State>) -> Result<Vec<Snippet>, String> {
-    if !state.path.exists() {
+    let role = state.role.lock().unwrap();
+    let path = roles::path(&state.path, &role)?;
+    if !path.exists() {
         return Err("error.no_file".into());
     }
-    let items = storage::load(&state.path, None)?;
+    let items = storage::load(&path, None)?;
     *state.items.lock().unwrap() = items.clone();
     Ok(items)
 }
@@ -238,6 +304,20 @@ fn native_status(state: tauri::State<State>) -> String {
 #[tauri::command]
 fn restart_keyboard(app: tauri::AppHandle) {
     start_keyboard(&app);
+}
+#[tauri::command]
+fn dismiss_manager_shortcut(app: tauri::AppHandle) -> Result<(), String> {
+    platform::cancel_selection();
+    app.state::<State>().picker.lock().unwrap().finish(false);
+    if let Some(window) = app.get_webview_window("picker") {
+        window.hide().map_err(|e| e.to_string())?;
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        window.hide().map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    app.hide().map_err(|e| e.to_string())?;
+    Ok(())
 }
 #[tauri::command]
 fn hide_manager(app: tauri::AppHandle) {
@@ -352,26 +432,120 @@ fn request_settings(app: &tauri::AppHandle, activate: bool) {
         let _ = app.emit_to("main", "open-settings", ());
     }
 }
+// The manager is dismiss-only. An external target must remain unchanged.
+fn picker_target(original: usize, from_manager: bool, foreground: Option<usize>) -> Option<usize> {
+    if from_manager {
+        None
+    } else {
+        foreground.filter(|target| *target == original)
+    }
+}
+fn prepare_shortcut_target(app: &tauri::AppHandle, original: usize) -> Option<usize> {
+    let from_manager = platform::is_app_target(original);
+    let handle = app.clone();
+    let (tx, rx) = mpsc::channel();
+    app.run_on_main_thread(move || {
+        let result = if let Some(window) = handle.get_webview_window("main") {
+            if window.is_visible().unwrap_or(false) {
+                window.hide()
+            } else {
+                Ok(())
+            }
+        } else {
+            Ok(())
+        };
+        #[cfg(target_os = "macos")]
+        let result = result.and_then(|_| if from_manager { handle.hide() } else { Ok(()) });
+        let _ = tx.send(result.is_ok());
+    })
+    .ok()?;
+    if !rx.recv_timeout(std::time::Duration::from_secs(2)).ok()? {
+        return None;
+    }
+    picker_target(original, from_manager, platform::foreground_target())
+}
+fn change_picker_role(state: &State, picker: &mut Picker, delta: i32) -> Result<(), String> {
+    if !picker.active {
+        return Ok(());
+    }
+    let id = roles::next_id(&picker.role, delta).to_string();
+    let current = state.role.lock().unwrap();
+    let items = if *current == id {
+        state.items.lock().unwrap().clone()
+    } else {
+        let defaults = roles::defaults(&id, &state.language.lock().unwrap())?;
+        roles::load(&state.path, &id, &defaults)?
+    };
+    picker.change_role(id, items);
+    Ok(())
+}
+fn activate_picker_role(app: &tauri::AppHandle, id: &str, items: &[Snippet]) -> Result<(), String> {
+    let state = app.state::<State>();
+    let mut current = state.role.lock().unwrap();
+    if *current == id {
+        return Ok(());
+    }
+    let path = roles::path(&state.path, id)?;
+    if !path.exists() {
+        storage::save(&path, items)?;
+    }
+    let previous = roles::path(&state.path, &current)?;
+    if !previous.exists() {
+        storage::save(&previous, &state.items.lock().unwrap())?;
+    }
+    roles::remember(&state.path, id)?;
+    *state.items.lock().unwrap() = items.to_vec();
+    *current = id.to_string();
+    drop(current);
+    let _ = app.emit("active-role-changed", id);
+    Ok(())
+}
 fn handle_action(app: &tauri::AppHandle, action: Action) {
     diagnostic(&format!("action: {action:?}"));
     let state = app.state::<State>();
     match action {
+        Action::Dismiss => {
+            let _ = dismiss_manager_shortcut(app.clone());
+        }
         Action::Begin(target) => {
+            let Some(target) = prepare_shortcut_target(app, target) else {
+                state.picker.lock().unwrap().finish(false);
+                return;
+            };
             let items = state.items.lock().unwrap().clone();
             {
                 let mut picker = state.picker.lock().unwrap();
                 picker.begin(items, target);
+                picker.role = state.role.lock().unwrap().clone();
                 let _ = app.emit_to("picker", "picker-state", picker.clone());
             }
             let handle = app.clone();
             let _ = app.run_on_main_thread(move || {
                 if let Some(w) = handle.get_webview_window("picker") {
+                    // Keep three complete snippet rows above the fixed actions.
+                    // On a smaller work area, retain scrolling instead of clipping the window.
+                    if let Ok(Some(monitor)) = w.current_monitor() {
+                        let scale = monitor.scale_factor();
+                        let area = monitor.work_area();
+                        let width = 580.0_f64.min((area.size.width as f64 / scale - 32.0).max(1.0));
+                        let height =
+                            480.0_f64.min((area.size.height as f64 / scale - 32.0).max(1.0));
+                        let _ = w.set_size(tauri::LogicalSize::new(width, height));
+                    }
+                    #[cfg(target_os = "macos")]
+                    platform::unhide_without_activation();
                     let _ = w.center();
                     let _ = w.show();
                     #[cfg(windows)]
                     window_regression::record("alt-h-open", &w);
                 }
             });
+        }
+        Action::Role(delta) => {
+            let mut picker = state.picker.lock().unwrap();
+            if change_picker_role(&state, &mut picker, delta).is_ok() {
+                let _ = app.emit_to("picker", "picker-state", picker.clone());
+            }
         }
         Action::Move(delta) => {
             let mut picker = state.picker.lock().unwrap();
@@ -380,7 +554,19 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
         }
         Action::Commit | Action::Cancel => {
             let paste = matches!(action, Action::Commit);
-            let chosen = state.picker.lock().unwrap().finish(paste);
+            let (chosen, role, items) = {
+                let mut picker = state.picker.lock().unwrap();
+                (
+                    picker.finish(paste),
+                    picker.role.clone(),
+                    picker.items.clone(),
+                )
+            };
+            let chosen = if chosen.is_some() && activate_picker_role(app, &role, &items).is_err() {
+                None
+            } else {
+                chosen
+            };
             let handle = app.clone();
             let (tx, rx) = mpsc::channel();
             let _ = app.run_on_main_thread(move || {
@@ -436,6 +622,8 @@ fn main() {
     builder
         .invoke_handler(tauri::generate_handler![
             get_snippets,
+            get_role,
+            switch_role,
             get_shortcut,
             save_shortcut,
             save_snippets,
@@ -449,6 +637,7 @@ fn main() {
             native_status,
             restart_keyboard,
             hide_manager,
+            dismiss_manager_shortcut,
             window_action,
             configure_glass,
             consume_new_snippet,
@@ -469,11 +658,25 @@ fn main() {
             };
             let old =
                 std::env::var_os("APPDATA").map(|p| PathBuf::from(p).join("QuickSay/settings.xml"));
+            let initial_role = roles::active(if preview { &source_path } else { &path })
+                .map_err(std::io::Error::other)?;
+            let role_path = roles::path(if preview { &source_path } else { &path }, &initial_role)
+                .map_err(std::io::Error::other)?;
+            if initial_role != "personal" && !role_path.exists() {
+                return Err(std::io::Error::other("error.no_file").into());
+            }
             let items = if integration {
                 storage::defaults().into_iter().take(2).collect()
             } else {
-                storage::load(if preview { &source_path } else { &path }, old.as_deref())
-                    .map_err(std::io::Error::other)?
+                storage::load(
+                    &role_path,
+                    if initial_role == "personal" {
+                        old.as_deref()
+                    } else {
+                        None
+                    },
+                )
+                .map_err(std::io::Error::other)?
             };
             let shortcut_path = path.with_file_name("shortcut.json");
             let loaded_shortcut = shortcut::load(&shortcut_path);
@@ -482,6 +685,8 @@ fn main() {
             let (tx, rx) = mpsc::channel();
             app.manage(State {
                 items: Mutex::new(items),
+                role: Mutex::new(initial_role),
+                language: Mutex::new("en".into()),
                 shortcut: Mutex::new(initial_shortcut),
                 shortcut_path,
                 preview,
@@ -622,6 +827,33 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn manager_shortcut_uses_only_a_valid_external_target() {
+        assert_eq!(picker_target(10, true, Some(20)), None);
+        assert_eq!(picker_target(10, true, None), None);
+        assert_eq!(picker_target(20, false, Some(20)), Some(20));
+        assert_eq!(picker_target(20, false, Some(30)), None);
+        assert_eq!(picker_target(20, false, None), None);
+    }
+    #[test]
+    fn role_navigation_resets_selection_and_preserves_target() {
+        assert_eq!(roles::next_id("personal", -1), "project");
+        assert_eq!(roles::next_id("project", 1), "personal");
+        let mut picker = Picker::default();
+        picker.begin(storage::defaults(), 123);
+        picker.step(-1);
+        let items = roles::defaults("designer", "zh-TW").unwrap();
+        picker.change_role("designer".into(), items.clone());
+        assert_eq!(picker.selected, 0);
+        assert_eq!(picker.target, 123);
+        assert_eq!(picker.role, "designer");
+        assert_eq!(
+            picker.finish(true),
+            Some(Selection::Paste(123, items[0].text.clone()))
+        );
+        picker.change_role("writer".into(), storage::defaults());
+        assert_eq!(picker.role, "designer");
+    }
     #[test]
     fn selection_wraps_and_commits_once() {
         let mut p = Picker::default();

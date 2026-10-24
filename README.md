@@ -1,3 +1,5 @@
+<p align="center"><img src="src/assets/app-icon.png" alt="before-you-do: add a saved instruction to a conversation" width="96" height="96"></p>
+
 <h1 align="center">before-you-do</h1>
 
 <p align="center">
@@ -38,7 +40,7 @@ Save the instructions you keep repeating to AI — “plan first,” “change o
 
 ## Use cases
 
-Six built-in templates cover common ways of working with AI. Each includes a usage scenario, and you can rewrite it in your own voice.
+My snippets includes six common working instructions. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
 
 | Your situation | Choose this template | What you want AI to do |
 |---|---|---|
@@ -63,7 +65,7 @@ Suppose you want to add language support:
 
 1. Write your request in the AI chat box, insert a newline, and leave the cursor where you want the extra instruction.
 2. **Hold Alt, then press H** to open your snippets.
-3. Keep holding Alt and use **↑ / ↓** to select “Implement, test and report.”
+3. Keep holding Alt, use **← / →** to choose “My snippets,” then **↑ / ↓** to select “Implement, test and report.”
 4. **Release Alt** to paste the snippet into the original input field.
 5. Review the text and send the message yourself.
 
@@ -80,13 +82,15 @@ When finished, report what you tested, the results, and anything still unverifie
 Do not wait for my confirmation at every step.
 ```
 
-<p align="center"><img src="docs/images/picker-settings.png" alt="Actual shortcut picker with snippets and fixed Add a prompt and Settings rows; Traditional Chinese interface shown" width="580"></p>
+<p align="center"><img src="docs/images/picker-settings.png" alt="Actual shortcut picker with current and neighboring roles, snippets and fixed Add a prompt and Settings rows; Traditional Chinese interface shown" width="580"></p>
 
-The picker preserves focus in the original input field. The screenshot shows the Traditional Chinese interface; the app supports four interface languages. You review and send the pasted message yourself.
+The picker preserves focus in the original input field. Its role bar shows the current role, position and neighboring roles; Add and Settings remain fixed below the list. Settings is selected in this screenshot: releasing the modifiers opens the snippet manager. The screenshot shows the Traditional Chinese interface; the app supports four interface languages. You review and send pasted messages yourself.
 
 ## Installation
 
 ### Windows
+
+> This README describes the current source. Downloaded builds follow their individual release notes. If a release does not yet contain a feature described here, wait for a newer release or build from source using the instructions below.
 
 Download the **Windows x64 portable ZIP** from [Releases](https://github.com/jaylooloomi/before-you-do/releases/latest). macOS Apple Silicon and Intel archives are also available, but have not been tested on real Mac hardware. These builds are unsigned.
 
@@ -111,16 +115,19 @@ Linux, phones, tablets and browser extensions are not currently supported.
 
 ## Keyboard controls
 
+When the manager has keyboard focus, the shortcut only hides it: no picker opens and nothing is pasted. Unsaved drafts stay in the app. Focus an external input and press the shortcut again to select a snippet. When invoked from an external app, the manager is hidden before the picker opens.
+
 The table uses the default **Alt+H**. Change it under **Settings & AI guide → Keyboard shortcut**. The picker updates its hints; pressing your newly configured key a second time cancels it.
 
 | Key | Action |
 |---|---|
-| **Hold Alt, then press H** | Open the picker; keep holding Alt |
+| **Hold Alt, then press H** | Open the picker from an external input; keep holding Alt |
+| **← / →** | Browse the previous / next role; selection resets to its first saved snippet |
 | **↑ / ↓** | Select a snippet; wrap around the list, including the Add and Settings rows |
-| **Release Alt** | Paste the selected snippet, create a draft if Add is selected, or open settings if Settings is selected |
+| **Release Alt** | Paste the selected snippet, create a draft if Add is selected, or open the snippet manager if Settings is selected |
 | **Press H again while the picker is open** | Cancel and close; releasing Alt afterward does not paste |
 | **Esc** | Cancel and close |
-| **Ctrl + S** | Save all snippets in the manager |
+| **Ctrl + S** | Save all valid snippets in the current role; drafts in other roles are not saved together |
 | **/** | Search in the manager, unless you are editing text |
 
 - Put your most-used snippet first: **a quick press and release of Alt+H pastes the first snippet**.
@@ -130,7 +137,52 @@ The table uses the default **Alt+H**. Change it under **Settings & AI guide → 
 
 ## Make the instructions your own
 
-The bottom of the Alt+H picker contains “Add a prompt” followed by “Settings.” Select Settings and release the shortcut modifiers to open **Settings & AI guide**, without pasting text or creating a draft.
+The bottom of the Alt+H picker contains “Add a prompt” followed by “Settings.” Select Settings and release the shortcut modifiers to open the **snippet manager**, without pasting text or creating a draft. Use the sidebar’s **Settings & AI guide** button for the settings page.
+
+While holding the shortcut modifiers, use **← / →** to browse roles and **↑ / ↓** to select a snippet. The role bar shows neighboring roles and the current position. Releasing commits the selected role; Esc or the second trigger key cancels without changing the active role. Unsaved manager drafts are preserved.
+
+### Role cards and separate snippet lists
+
+Browse **12 roles** using the horizontal cards, left/right buttons, mouse wheel or horizontal trackpad gestures. Your existing snippets stay in My snippets. Each other role has its own list, which you can edit, add to, delete from and reorder independently.
+
+| Role | When to use it | Default snippets |
+|---|---|---|
+| My snippets | General instructions: clarify, plan, execute and report | 6 |
+| Development | Implement features, limit scope and demonstrate working results | 3 |
+| Writing | Polish drafts, adapt tone and get ready-to-use text | 3 |
+| Research | Verify facts, compare options and find blind spots | 3 |
+| UI design | Define visual rules and inspect states and screen sizes | 2 |
+| Frontend | Build interactive interfaces and measure performance bottlenecks | 2 |
+| Backend | Define API contracts and check failures and recovery | 2 |
+| Code review | Find actionable issues and neighboring regressions | 2 |
+| QA testing | Run acceptance checks, reproduce bugs and retest fixes | 2 |
+| Product | Turn ideas into requirements and prioritize features | 2 |
+| Marketing | Adapt content to an audience and plan concrete topics | 2 |
+| Project planning | Break down work, dependencies, progress and blockers | 2 |
+
+Counts describe the initial presets; upgrading does not reset edited content. Roles organize snippets. They do not call AI or execute tasks inside the app.
+
+<p align="center"><img src="docs/images/manager-roles.png" alt="Snippet manager with the new icon, horizontal role cards, reordering and usage scenarios; Traditional Chinese interface shown" width="940"></p>
+
+Alt+H uses the active role’s **saved** snippets. Switching preserves each role’s unsaved edits and selection in the current app session, and remembers the active role across restarts. Save edits before quitting. Imports, reloads and AI editing instructions apply only to the active role.
+
+My snippets keeps using `snippets.json`. Other roles use `snippets-<role ID>.json` in the same folder, such as `snippets-developer.json`, `snippets-designer.json` and `snippets-product.json`. Each has a corresponding `.json.bak` backup. The active role is stored separately in `roles.json`; settings show the actual file path for the current role.
+
+### Add a usage scenario
+
+When creating or editing a snippet, use the optional **Usage scenario** field below its name to describe when to use it (up to 1,000 characters). Alt+H displays it as a selection hint; pasting inserts only the snippet content. Save to retain it. JSON imports and AI editing instructions support the optional `scenario` field alongside `name` and `text`. Existing files still work. Built-in hints appear until you customize the scenario; clearing a customized scenario removes that hint.
+
+For example, a scenario can say “Use after implementation, when the main workflow needs testing.” Store it separately from the instruction:
+
+```json
+[
+  {
+    "name": "Test and report",
+    "scenario": "Use after implementation, when the main workflow needs testing.",
+    "text": "Test the main workflow, fix any bugs and retest. Report what you tested, the results and anything still unverified."
+  }
+]
+```
 
 ### Customize the shortcut
 
@@ -144,7 +196,7 @@ Click “Add snippet” in the manager, enter a name and content, then click “
 
 Search the sidebar, drag snippets to reorder them, or use their ↑ / ↓ buttons. **Once saved, the next Alt+H picker uses the updated content and order.** Unsaved edits do not change the picker.
 
-The list supports 1–100 snippets, with up to 100 characters per name and 20,000 per content field. Untouched default empty drafts are skipped when saving and remain in the current editor; other incomplete entries must be completed. Save any edits you want to keep before quitting.
+Each role supports 1–100 snippets, with up to 100 characters per name and 20,000 per content field. Untouched default empty drafts are skipped when saving and remain in the current editor; other incomplete entries must be completed. Save the edits in each role you want to keep before quitting.
 
 ### Four interface and template languages
 
@@ -159,7 +211,7 @@ Settings & AI guide provides two workflows without connecting the app to an AI s
 - **Chat-based AI:** Copy the instructions and saved snippets, ask your AI to edit them, then paste the complete JSON back into settings. The app validates it and, after your confirmation, applies it and backs up the previous file.
 - **AI with local file access:** Copy the editing instructions containing the actual file path. Have your AI back up and edit the file, then click “Reload file” in the app so stale editor content does not overwrite the updated file.
 
-Importing and reloading replace the current list and unsaved drafts. Preserve any edits you need first. An ordinary web chat cannot read or write local files just because you give it a path.
+Importing and reloading replace the current role’s list and unsaved drafts. Preserve any edits you need first. An ordinary web chat cannot read or write local files just because you give it a path.
 
 ## Why this exists
 
@@ -174,14 +226,14 @@ The name echoes a family member calling out before you leave: “Wait — one mo
 ```text
 Write your request
       ↓
-Hold Alt + H → use ↑ ↓ to choose an instruction
+Hold Alt + H → use ← → to choose a role → ↑ ↓ to choose an instruction
       ↓
 Release Alt → paste at the original cursor position
       ↓
 Review the text and send it yourself
 ```
 
-The app remembers the target and displays a picker without taking focus. After you release Alt, it inserts text using the system clipboard and paste operation. If the target changes, it cancels the paste. Choosing Add opens a draft; choosing Settings opens the settings page. Neither pastes text.
+The app remembers the target and displays a picker without taking focus. After you release Alt, it inserts text using the system clipboard and paste operation. If the target changes, it cancels the paste. Choosing Add opens a draft; choosing Settings opens the snippet manager. Neither pastes text.
 
 This is a local text tool. It does not read your AI conversations to select an instruction or send requests to a model.
 
@@ -205,7 +257,7 @@ Snippets are stored in a local JSON file. The app has no built-in cloud sync and
 | Windows | `%APPDATA%\dev.quicksay.desktop\snippets.json` |
 | macOS | `~/Library/Application Support/dev.quicksay.desktop/snippets.json` |
 
-Shortcut settings are stored separately in `shortcut.json` in the same folder. Settings & AI guide shows the actual paths and lets you open the folder. Saving retains the previous version as `snippets.json.bak`; this is not a full version history. Before manually restoring it, quit the app, keep a separate copy of the current file, then copy the backup to `snippets.json`.
+Shortcut settings are stored separately in `shortcut.json` in the same folder. Settings & AI guide shows the actual paths and lets you open the folder. Saving retains each role’s previous version in its corresponding `.json.bak` file; this is not a full version history. Before restoring, quit the app, keep a separate copy of the current file, then copy that role’s backup to the original file name shown in settings.
 
 The app was previously named QuickSay. Its `dev.quicksay.desktop` identifier, data paths and preferences remain unchanged to preserve existing data. Legacy WPF XML compatibility still reads `%APPDATA%\QuickSay\settings.xml`.
 
@@ -224,6 +276,14 @@ No. You choose when to open the picker, which snippet to use and when to send. Y
 **What if Alt+H does nothing?**
 
 Check the shortcut status in the manager, quit older versions or apps using the same combination, then choose “Enable shortcut again.” On macOS, also check Accessibility and Input Monitoring permissions. You can choose another shortcut in settings if the current one conflicts with another app.
+
+**Why does Alt+H only hide the manager when I am working inside it?**
+
+This prevents pasting a snippet back into the app’s own editor. Your drafts remain in the app. Focus an external chat box, then press the shortcut again to choose a snippet.
+
+**Why does canceling return to the previous role?**
+
+Left/right navigation temporarily previews a role. Releasing the modifiers to paste, add a snippet or open the manager commits the role. Esc or a second trigger key cancels the operation.
 
 **Why was nothing pasted?**
 
@@ -266,14 +326,21 @@ The Windows executable is at `src-tauri/target/release/before-you-do.exe`; the m
 | `src/templates.json`, `src/template-locales.js` | Built-in templates, usage scenarios and four language versions |
 | `src/locales.js`, `src/i18n.js` | Interface translations and language switching |
 | `src/settings.js`, `src/ai-prompts.js` | Settings, AI instructions and import workflows |
+| `src/roles.js`, `src/extra-role-presets.js` | 12 roles and their localized snippets |
+| `src/role-defaults.json`, `scripts/generate-role-defaults.mjs` | Build-time defaults consumed by the native picker |
+| `src-tauri/icons/`, `scripts/icons.py` | Conversation-and-snippet icon artwork and platform exports |
 | `src-tauri/src/` | Native shortcuts, paste, storage and window handling |
 | `tests/`, `scripts/` | Tests and build tools |
+
+The conversation bubble and inserted snippet card represent adding one more instruction before sending. The desktop app, tray and title bar use the same artwork. [Icon master and design notes](docs/branding/app-icon.md).
 
 GitHub Actions includes Windows and two Mac build jobs. A successful build does not verify real shortcut, focus and paste behavior on every platform. `scripts/test-windows.ps1` provides Windows desktop integration tests; it operates system keys and the clipboard, so run it during a dedicated testing session.
 
 </details>
 
 ## Template sources and licensing
+
+The eight specialist roles added after Research contain two short prompts each, adapted from [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh). They include usage scenarios and source references. These are short insertable instructions, not the upstream full system prompts or an automatic multi-agent integration. The upstream [MIT license and attribution](docs/third-party/agency-agents-zh-LICENSE.txt) are preserved.
 
 “Choose and carry out a recommendation” and “Change only what is necessary” draw on the [Get Shit Done execution workflow](https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md). “Show it working” draws on the [Superpowers verification principles](https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md). These are adaptations with translated versions, not verbatim text from the original authors.
 

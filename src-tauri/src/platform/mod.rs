@@ -2,7 +2,9 @@ use std::sync::mpsc::Sender;
 #[derive(Debug)]
 pub enum Action {
     Begin(usize),
+    Dismiss,
     Move(i32),
+    Role(i32),
     Commit,
     Cancel,
     Error(String),
@@ -28,3 +30,15 @@ pub fn paste(_: usize, _: &str) -> Result<(), String> {
 pub fn configure(_: crate::shortcut::Shortcut) -> Result<(), String> {
     Err("不支援此平台".into())
 }
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn is_app_target(_: usize) -> bool {
+    false
+}
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn foreground_target() -> Option<usize> {
+    None
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn cancel_selection() {}

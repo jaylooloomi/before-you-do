@@ -54,6 +54,12 @@ unsafe extern "system" fn keyboard(code: i32, wp: WPARAM, lp: LPARAM) -> LRESULT
                     send(Action::Commit);
                 }
             }
+            0x25 | 0x27 => {
+                if !up {
+                    send(Action::Role(if key == 0x25 { -1 } else { 1 }));
+                }
+                return 1;
+            }
             0x26 | 0x28 => {
                 if !up {
                     send(Action::Move(if key == 0x26 { -1 } else { 1 }));
@@ -184,7 +190,13 @@ pub fn start(tx: Sender<Action>, shortcut: Shortcut) -> Result<(), String> {
                 && (msg.lParam as u32 & 0xf) == (CONFIG.load(Ordering::SeqCst) >> 16)
                 && !ACTIVE.swap(true, Ordering::SeqCst)
             {
-                send(Action::Begin(GetForegroundWindow() as usize));
+                let target = GetForegroundWindow() as usize;
+                if is_app_target(target) {
+                    ACTIVE.store(false, Ordering::SeqCst);
+                    send(Action::Dismiss);
+                    continue;
+                }
+                send(Action::Begin(target));
                 if !modifiers_held(CONFIG.load(Ordering::SeqCst) >> 16) {
                     ACTIVE.store(false, Ordering::SeqCst);
                     send(Action::Commit);
@@ -401,4 +413,21 @@ mod tests {
             UnregisterHotKey(std::ptr::null_mut(), 701);
         }
     }
+}
+
+// Foreground handles are validated again after the manager has been hidden.
+pub fn is_app_target(target: usize) -> bool {
+    let mut pid = 0;
+    unsafe {
+        GetWindowThreadProcessId(target as HWND, &mut pid);
+    }
+    pid != 0 && pid == std::process::id()
+}
+pub fn foreground_target() -> Option<usize> {
+    let target = unsafe { GetForegroundWindow() } as usize;
+    (target != 0 && !is_app_target(target)).then_some(target)
+}
+
+pub fn cancel_selection() {
+    ACTIVE.store(false, Ordering::SeqCst);
 }

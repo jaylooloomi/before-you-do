@@ -32,10 +32,21 @@ test('rejects unusable snippets before saving', () => {
   assert.throws(() => validateSnippets([{ name: 'a'.repeat(101), text: '內容' }]));
 });
 test('AI JSON import accepts a fenced response, preserves newlines and strips unrelated fields', () => {
-  assert.deepEqual(parseSnippetImport('```json\n[{"name":" 測試 ","text":"第一行\\n第二行","scenario":"不匯入"}]\n```'), [{name:'測試', text:'第一行\n第二行'}]);
+  assert.deepEqual(parseSnippetImport('```json\n[{"name":" 測試 ","text":"第一行\\n第二行","scenario":"適合測試","unrelated":"不匯入"}]\n```'), [{name:'測試', text:'第一行\n第二行',scenario:'適合測試'}]);
 });
 test('invalid AI imports are rejected before any persistence', () => {
   for (const input of ['invalid', '{}', '[]', '[{"name":"標題","text":""}]', JSON.stringify(Array.from({length:101},()=>({name:'a',text:'b'})))]) {
     assert.throws(()=>parseSnippetImport(input));
   }
+});
+
+test('optional scenarios survive save, import and reorder without changing text',()=>{
+ const item={name:'提示',text:'Only paste this.',scenario:'  適合初稿 日本語  '};
+ const expected={name:'提示',text:'Only paste this.',scenario:'適合初稿 日本語'};
+ assert.deepEqual(prepareSnippetSave([item]).saved,[expected]);
+ assert.deepEqual(parseSnippetImport(JSON.stringify([item])),[expected]);
+ assert.deepEqual(validateSnippets([{name:'a',text:'b',scenario:''}]),[{name:'a',text:'b',scenario:''}]);
+ assert.throws(()=>validateSnippets([{name:'a',text:'b',scenario:42}]));
+ assert.throws(()=>validateSnippets([{name:'a',text:'b',scenario:'x'.repeat(1001)}]));
+ assert.throws(()=>prepareSnippetSave([{name:'新短句',text:'',scenario:'Important draft context'}]));
 });

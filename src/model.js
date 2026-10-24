@@ -5,7 +5,12 @@ export function validateSnippets(items) {
     const text = String(item.text ?? '').trim();
     if (!name || !text) throw new Error('每句短句都需要名稱與內容。');
     if (name.length > 100 || text.length > 20000) throw new Error('名稱最多 100 字，內容最多 20,000 字。');
-    return { name, text };
+    const result={name,text};
+    if(Object.hasOwn(item,'scenario')){
+      if(typeof item.scenario!=='string'||item.scenario.length>1000)throw new Error('情境最多 1,000 字，且必須是文字。');
+      result.scenario=item.scenario.trim();
+    }
+    return result;
   });
 }
 
@@ -17,7 +22,7 @@ export function parseSnippetImport(input) {
 }
 
 export function isEmptyDraft(item) {
-  return ['新短句', 'New snippet', '新しい短文'].includes(String(item.name ?? '').trim()) && !String(item.text ?? '').trim();
+  return ['新短句', 'New snippet', '新しい短文'].includes(String(item.name ?? '').trim()) && !String(item.text ?? '').trim() && !String(item.scenario ?? '').trim();
 }
 
 export function reorderSnippets(items, from, to, selected) {

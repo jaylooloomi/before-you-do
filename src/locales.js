@@ -1,5 +1,21 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["適用情境（選填）","适用场景（选填）","Usage scenario (optional)","使用場面（任意）"],
+["例如：需求已確定，希望 AI 實作後測試並回報。","例如：需求已确定，希望 AI 实现后测试并汇报。","For example: requirements are settled; implement, test and report.","例：要件が決まり、実装・テスト・結果報告を依頼するとき。"],
+["僅作為選句提示，不會一起貼入。","仅作为选句提示，不会一起粘贴。","For choosing a snippet; not included in pasted text.","短文を選ぶための説明です。貼り付け内容には含まれません。"],
+["自訂情境","自定义场景","Custom scenario","カスタム使用場面"],
+["情境最多 1,000 字，且必須是文字。","场景必须是文字，最多 1,000 字。","The scenario must be text, up to 1,000 characters.","使用場面は文字列で、最大 1,000 文字です。"],
+["error.scenario_invalid","场景最多 1,000 字。","Scenarios can contain up to 1,000 characters.","使用場面は最大 1,000 文字です。"],
+["資料檔需保留 name、text，另可加入選填的 scenario（最多 1,000 字）。自訂情境不會自動翻譯，也不會一起貼入；未自訂時才使用內建範本的情境提示。","数据文件需保留 name、text，另可添加可选的 scenario（最多 1,000 字）。自定义场景不会自动翻译，也不会一起粘贴；未自定义时才使用内置模板的场景提示。","Keep name and text in each record; optionally add scenario (up to 1,000 characters). Custom scenarios are not automatically translated or pasted. Built-in hints apply only when no custom scenario is set.","name と text を保ち、任意で scenario（最大 1,000 文字）を追加できます。カスタム使用場面は自動翻訳や貼り付けの対象外です。カスタム設定がない場合のみ内蔵の説明を使います。"],
+['角色','角色','Role','ロール'],
+['向左捲動角色','向左滚动角色','Scroll roles left','ロールを左へスクロール'],
+['向右捲動角色','向右滚动角色','Scroll roles right','ロールを右へスクロール'],
+["將用這 {count} 筆短句取代目前角色的清單與未儲存草稿，並先備份原檔。","将用这 {count} 条短句替换当前角色的列表及未保存草稿，并先备份原文件。","Replace this role’s list and unsaved drafts with these {count} snippets? The previous file will be backed up first.","このロールの一覧と未保存の下書きを {count} 件の短文で置き換え、元のファイルを先にバックアップします。"],
+["每次儲存會在目前角色的 .json.bak 檔保留上一版，不是完整歷史紀錄。還原前請完整結束 App，另存目前檔案，再將備份複製回上方顯示的短句路徑。外部 AI 修改前也應另做備份。","每次保存会在当前角色的 .json.bak 文件保留上一版，并非完整历史记录。还原前请退出 App，另存当前文件，再将备份复制回上方显示的短句路径。外部 AI 修改前也应另做备份。","Saving keeps this role’s previous version in its .json.bak file, not a full history. Before restoring, quit the app, keep a separate copy of the current file, and copy the backup to the snippet path shown above. Make another backup before external AI edits.","保存時にこのロールの直前の版を .json.bak に残します。全履歴ではありません。復元前にアプリを終了し、現在のファイルを別途保管してから、上に表示した短文のパスにバックアップをコピーしてください。外部 AI の編集前にも別途バックアップしてください。"],
+['選擇角色','选择角色','Choose a role','ロールを選択'],
+['目前角色：{role}。匯入、重新載入與 AI 修改指令只針對此角色。','当前角色：{role}。导入、重新加载与 AI 修改指令只针对该角色。','Current role: {role}. Import, reload and AI editing instructions apply only to this role.','現在のロール：{role}。インポート・再読み込み・AI 編集指示はこのロールのみが対象です。'],
+['error.role_invalid','角色设置无效，请检查 roles.json。','Invalid role settings. Please check roles.json.','ロール設定が無効です。roles.json を確認してください。'],
+
 ['設定','设置','Settings','設定'],['開啟','打开','Open','開く'],
 ['已啟用','已启用','Enabled','有効'],
 ['快捷鍵設定','快捷键设置','Keyboard shortcut','キーボードショートカット'],
@@ -93,6 +109,8 @@ export const rows = [
 ];
 
 export const specialTraditional = {
+ 'error.scenario_invalid':'情境最多 1,000 字。',
+ 'error.role_invalid':'角色設定無效，請檢查 roles.json。',
  'error.shortcut_invalid':'請選擇 Alt 或 Ctrl（可加 Shift），搭配 A–Z、0–9 或空白鍵。',
  'error.shortcut_reserved':'此組合用於常見編輯操作，請加上 Shift 或選擇其他按鍵。',
  'error.shortcut_conflict':'新快捷鍵已被占用，原快捷鍵與設定未更改。請換一組再試。',

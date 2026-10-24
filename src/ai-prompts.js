@@ -1,9 +1,9 @@
 import { getLanguage } from './i18n.js';
 const format = {
- 'zh-TW':'格式：JSON 陣列，每筆只含 name、text 字串。1～100 筆；名稱最多 100 字，內容最多 20,000 字，皆不可空白。陣列順序即 Alt+H 順序。換行請使用合法的 \\n 跳脫。',
- 'zh-CN':'格式：JSON 数组，每项仅含 name、text 字符串。1～100 项；名称最多 100 字，内容最多 20,000 字，均不能为空。数组顺序即 Alt+H 顺序。换行请使用合法的 \\n 转义。',
- en:'Format: a JSON array of 1–100 objects containing only name and text strings. Names: up to 100 characters; text: up to 20,000. Neither can be blank. Array order is the Alt+H order. Encode line breaks with valid \\n escapes.',
- ja:'形式：name と text の文字列のみを持つ JSON 配列（1～100 件）。名前は最大 100 文字、内容は最大 20,000 文字。空欄不可。配列順が Alt+H の順番です。改行には正しい \\n エスケープを使用してください。',
+ 'zh-TW':'格式：JSON 陣列，每筆含必填 name、text 字串，可選填 scenario 情境字串（最多 1,000 字，保留既有情境，包含明確清空的空字串；情境不會貼入對話）。1～100 筆；名稱最多 100 字，內容最多 20,000 字，皆不可空白。陣列順序即 Alt+H 順序。換行請使用合法的 \\n 跳脫。',
+ 'zh-CN':'格式：JSON 数组，每项含必填 name、text 字符串，可选填 scenario 场景字符串（最多 1,000 字，保留现有场景，包括明确清空的空字符串；场景不会粘贴到对话）。1～100 项；名称最多 100 字，内容最多 20,000 字，均不能为空。数组顺序即 Alt+H 顺序。换行请使用合法的 \\n 转义。',
+ en:'Format: a JSON array of 1–100 objects with required name and text strings and an optional scenario string (up to 1,000 characters). Preserve existing scenarios, including explicitly empty strings; scenarios are not pasted into conversations. Names: up to 100 characters; text: up to 20,000. Neither can be blank. Array order is the Alt+H order. Encode line breaks with valid \\n escapes.',
+ ja:'形式：必須の name・text 文字列と任意の scenario 文字列（最大 1,000 文字）を持つ JSON 配列。空文字列を含め既存の使用場面を保持してください。使用場面は会話には貼り付けません。JSON 配列（1～100 件）。名前は最大 100 文字、内容は最大 20,000 文字。空欄不可。配列順が Alt+H の順番です。改行には正しい \\n エスケープを使用してください。',
 };
 export function filePrompt(path) {
  const lang=getLanguage();

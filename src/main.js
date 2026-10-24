@@ -1,4 +1,6 @@
-import { initializeShortcut, renderShortcut, onShortcutChange, modifierLabel, keyLabel, shortcutLabel } from './shortcut.js';
+import appIcon from './assets/app-icon.png';
+import { matchesShortcutEvent } from './shortcut-match.js';
+import { getShortcut, initializeShortcut, renderShortcut, onShortcutChange, modifierLabel, keyLabel, shortcutLabel } from './shortcut.js';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { prepareSnippetSave, reorderSnippets } from './model.js';
@@ -7,7 +9,11 @@ import { askConfirmation } from './dialog.js';
 import { t, getLanguage, onLanguageChange, bindTranslations, errorMessage } from './i18n.js';
 import { findTemplate } from './template-locales.js';
 import { createSettingsPage } from './settings.js';
-const templateInfo = item => findTemplate(item, getLanguage());
+import { roles, roleName, roleDescription, getRoleDefaults, findRoleTemplate } from './roles.js';
+const templateInfo = item => {
+  if(item&&Object.hasOwn(item,'scenario'))return {scenario:item.scenario,source:t('自訂情境')};
+  return findTemplate(item,getLanguage())??findRoleTemplate(item,getLanguage());
+};
 
 const root = document.querySelector('#app');
 if (/Win/i.test(navigator.platform)) document.body.classList.add('windows');
@@ -51,18 +57,30 @@ await initializeShortcut();
 if (picker) {
   document.body.classList.add('picker');
   const box = el('main', 'picker-card');
-  box.innerHTML = `<header class="picker-header"><span class="app-mark">${icon('text')}</span><div><strong>快捷提示詞</strong></div><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span></header><div class="picker-label">我的短句</div>`;
+  box.innerHTML = `<header class="picker-header"><span class="app-mark brand-mark"><img src="${appIcon}" alt=""></span><div><strong>快捷提示詞</strong></div><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span></header><div class="picker-label">我的短句</div>`;
   const list = el('div', 'picker-list'); box.append(list);
   const addRow = el('div', 'picker-row picker-add'); addRow.innerHTML = `<span class="item-icon">${icon('plus')}</span><div class="picker-content"><strong>新增快捷提示詞</strong></div>`; box.append(addRow);
   const settingsRow=el('div','picker-row picker-settings');settingsRow.innerHTML=`<span class="item-icon">${icon('settings')}</span><div class="picker-content"><strong>設定</strong></div>`;box.append(settingsRow);
-  const footer = el('footer', 'picker-footer'); footer.innerHTML = '<span><kbd>↑</kbd><kbd>↓</kbd> 選擇</span><span>放開 <kbd>Alt / ⌥</kbd> 貼入</span><span><kbd>Esc</kbd> 取消</span>'; box.append(footer); root.append(box);
+  const footer = el('footer', 'picker-footer'); footer.innerHTML = '<span><kbd>←</kbd><kbd>→</kbd> 角色 <kbd>↑</kbd><kbd>↓</kbd> 選擇</span><span>放開 <kbd>Alt / ⌥</kbd> 貼入</span><span><kbd>Esc</kbd> 取消</span>'; box.append(footer); root.append(box);
+  const roleLabel=box.querySelector('.picker-label');roleLabel.classList.add('picker-rolebar');
+  roleLabel.innerHTML='<span class="role-neighbor previous"><kbd>←</kbd><span></span></span><span class="picker-role-current"><span class="picker-role-mark"></span><strong></strong><small></small></span><span class="role-neighbor next"><span></span><kbd>→</kbd></span>';
+  let activeRole=await invoke('get_role');
+  function renderRoleLabel(){
+    const index=Math.max(0,roles.findIndex(role=>role.id===activeRole));
+    roleLabel.querySelector('.previous>span').textContent=roleName(roles[(index+roles.length-1)%roles.length].id,getLanguage());
+    roleLabel.querySelector('.next>span').textContent=roleName(roles[(index+1)%roles.length].id,getLanguage());
+    roleLabel.querySelector('strong').textContent=roleName(activeRole,getLanguage());
+    roleLabel.querySelector('.picker-role-mark').textContent=roles[index].mark;
+    roleLabel.querySelector('small').textContent=(index+1)+' / '+roles.length;
+  }
   let latestState;
   function render(state) { latestState = state;
+    if(state.role)activeRole=state.role;renderRoleLabel();
     list.replaceChildren();
     state.items.forEach((item, i) => {
       const row = el('div', `picker-row ${i === state.selected ? 'active' : ''}`);
       const badge = el('span', 'item-icon'); badge.innerHTML = icon('text'); row.append(badge);
-      const content = el('div', 'picker-content'); content.append(el('strong', '', item.name), el('p', '', templateInfo(item)?.scenario ?? item.text)); row.append(content, el('span', 'number', String(i + 1).padStart(2, '0'))); list.append(row);
+      const content = el('div', 'picker-content'); content.append(el('strong', '', item.name), el('p', '', templateInfo(item)?.scenario || item.text)); row.append(content, el('span', 'number', String(i + 1).padStart(2, '0'))); list.append(row);
     });
     addRow.classList.toggle('active', state.selected === state.items.length);
     settingsRow.classList.toggle('active',state.selected === state.items.length+1);
@@ -70,16 +88,83 @@ if (picker) {
     list.children[state.selected]?.scrollIntoView({ block: 'nearest' });
   }
   await listen('picker-state', event => render(event.payload));
+  await listen('role-changed',event=>{activeRole=event.payload;renderRoleLabel();});
+  onLanguageChange(renderRoleLabel);renderRoleLabel();
   render(await invoke('picker_state'));
   onLanguageChange(() => { if (latestState) render(latestState); });
   onShortcutChange(() => { if(latestState)render(latestState); });
 } else {
   let items = [], selected = 0, dirty = false;
-  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark">${icon('text')}</span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" maxlength="100" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" maxlength="20000" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="外觀主題"><option value="light">淺色</option><option value="dark">深色</option><option value="system">跟隨系統</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.2</span></footer></section></main></div>`;
-  const scenarioBox = el('div', 'scenario-box'); scenarioBox.hidden = true;
-  scenarioBox.innerHTML = '<strong>適用情境</strong><p></p><small></small>';
+  let activeRole = await invoke('get_role'), switchingRole = false;
+  const roleSessions = new Map();
+  let roleSync=Promise.resolve();
+  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" maxlength="100" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" maxlength="20000" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="外觀主題"><option value="light">淺色</option><option value="dark">深色</option><option value="system">跟隨系統</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.2</span></footer></section></main></div>`;
+  const roleCards = el('div','role-cards');roleCards.setAttribute('role','group');roleCards.setAttribute('aria-label',t('選擇角色'));
+  const roleSwitcher=el('div','role-switcher');
+  const previousRoles=el('button','role-scroll','‹'),nextRoles=el('button','role-scroll','›');
+  previousRoles.type=nextRoles.type='button';
+  roleSwitcher.append(previousRoles,roleCards,nextRoles);
+  document.querySelector('.editor-heading').before(roleSwitcher);
+  function updateRoleScroll(){previousRoles.disabled=roleCards.scrollLeft<2;nextRoles.disabled=roleCards.scrollLeft+roleCards.clientWidth>=roleCards.scrollWidth-2;}
+  function scrollRoles(direction){roleCards.scrollBy({left:direction*Math.max(156,roleCards.clientWidth*.8),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
+  previousRoles.onclick=()=>scrollRoles(-1);nextRoles.onclick=()=>scrollRoles(1);
+  roleCards.addEventListener('scroll',updateRoleScroll,{passive:true});
+  new ResizeObserver(updateRoleScroll).observe(roleCards);
+  roleCards.addEventListener('wheel',event=>{
+    if(event.ctrlKey||Math.abs(event.deltaX)>=Math.abs(event.deltaY))return;
+    const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?roleCards.clientWidth:1);
+    if((delta<0&&roleCards.scrollLeft>0)||(delta>0&&roleCards.scrollLeft+roleCards.clientWidth<roleCards.scrollWidth-1)){
+      event.preventDefault();roleCards.scrollLeft+=delta;
+    }
+  },{passive:false});
+  roleCards.addEventListener('keydown',event=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    const buttons=[...roleCards.querySelectorAll('button')],index=buttons.indexOf(event.target);if(index<0)return;
+    event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:Math.max(0,Math.min(buttons.length-1,index+(event.key==='ArrowLeft'?-1:1)));
+    buttons[next]?.focus({preventScroll:true});buttons[next]?.scrollIntoView({block:'nearest',inline:'nearest'});
+  });
+  function renderRoles(){
+    roleCards.replaceChildren(...roles.map(role=>{
+      const button=el('button','role-card'+(role.id===activeRole?' selected':''));
+      button.type='button';button.dataset.role=role.id;button.setAttribute('aria-pressed',String(role.id===activeRole));button.disabled=switchingRole;
+      const mark=el('span','role-mark',role.mark);mark.setAttribute('aria-hidden','true');
+      const content=el('span','role-card-content');content.append(el('strong','',roleName(role.id,getLanguage())),el('small','',roleDescription(role,getLanguage())));
+      button.append(mark,content);button.title=roleDescription(role,getLanguage());button.onclick=()=>switchRole(role.id);return button;
+    }));
+    roleCards.setAttribute('aria-label',t('選擇角色'));
+    document.querySelector('aside .section-label').textContent=roleName(activeRole,getLanguage());
+    previousRoles.setAttribute('aria-label',t('向左捲動角色'));nextRoles.setAttribute('aria-label',t('向右捲動角色'));
+    previousRoles.title=t('向左捲動角色');nextRoles.title=t('向右捲動角色');
+    roleCards.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});
+    requestAnimationFrame(updateRoleScroll);
+  }
+  async function switchRole(id){
+    if(switchingRole||id===activeRole)return;
+    stash();
+    roleSessions.set(activeRole,{items,selected,dirty,query:search.value,statusKey,statusParams,statusError});
+    switchingRole=true;renderRoles();
+    document.querySelector('#editor').inert=true;document.querySelector('aside').inert=true;
+    try{
+      const saved=await invoke('switch_role',{role:id,defaults:getRoleDefaults(id,getLanguage())});
+      activeRole=id;
+      const cached=roleSessions.get(id);
+      items=cached?.items??saved;selected=cached?.selected??0;dirty=cached?.dirty??false;search.value=cached?.query??'';
+      statusKey=cached?.statusKey??'已儲存';statusParams=cached?.statusParams??{};statusError=cached?.statusError??null;
+      render();if(statusError)setSaveError(statusError);else setSaveStatus(statusKey,statusParams);
+    }catch(error){setSaveError(error);}
+    finally{switchingRole=false;document.querySelector('#editor').inert=false;document.querySelector('aside').inert=false;renderRoles();}
+  }
+  const scenarioBox = el('div', 'scenario-box scenario-editor');
+  scenarioBox.innerHTML = '<label for="scenario">適用情境（選填）</label><textarea id="scenario" maxlength="1000" rows="2" placeholder="例如：需求已確定，希望 AI 實作後測試並回報。"></textarea><small></small>';
+  const scenario=scenarioBox.querySelector('#scenario');let scenarioEdited=false;
   document.querySelector('#name').after(scenarioBox);
-  function renderScenario() { const info = templateInfo(items[selected]); scenarioBox.hidden = !info; if (info) { scenarioBox.querySelector('p').textContent = info.scenario; scenarioBox.querySelector('small').textContent = info.source; scenarioBox.querySelector('small').title = info.url ?? ''; } }
+  function renderScenario() {
+    const item=items[selected],info=templateInfo(item),value=info?.scenario??'';
+    if(scenario.value!==value)scenario.value=value;
+    scenarioEdited=!!item&&Object.hasOwn(item,'scenario');
+    scenarioBox.querySelector('small').textContent=info?.source??t('僅作為選句提示，不會一起貼入。');
+    scenarioBox.querySelector('small').title=info?.url??'';
+  }
   const name = document.querySelector('#name'), text = document.querySelector('#text'), search = document.querySelector('#search'), saveStatus = document.querySelector('#save-status');
   let statusKey = '已儲存', statusParams = {}, statusError = null;
   function setSaveError(error) { statusError=error; saveStatus.textContent=errorMessage(error); }
@@ -89,7 +174,7 @@ if (picker) {
   settingsButton.type = 'button'; settingsButton.setAttribute('aria-pressed', 'false');
   document.querySelector('.sidebar-foot').before(settingsButton);
   function showLibrary() { settings.panel.hidden = true; workspace.hidden = false; settingsButton.setAttribute('aria-pressed', 'false'); }
-  const settings = createSettingsPage({ invoke, askConfirmation, onBack: showLibrary, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
+  const settings = createSettingsPage({ invoke, askConfirmation, onBack: showLibrary, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
     onReload: async () => {
       if (dirty && !await askConfirmation({title: '重新載入檔案？', message: '將以檔案內容取代目前編輯與未儲存草稿。請確認要保留的內容已儲存或另行備份。', confirmText: '重新載入'})) return false;
       const refreshed = await invoke('reload_snippets'); items = refreshed; selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
@@ -98,7 +183,7 @@ if (picker) {
   });
   document.querySelector('.manager').append(settings.panel);
   settingsButton.onclick = async () => { stash(); workspace.hidden = true; settings.panel.hidden = false; settingsButton.setAttribute('aria-pressed', 'true'); await settings.refresh(); };
-  function stash() { if (items[selected]) { items[selected].name = name.value; items[selected].text = text.value; } }
+  function stash() { if (items[selected]) { items[selected].name = name.value; items[selected].text = text.value; if(scenarioEdited)items[selected].scenario=scenario.value; } }
   let dragging = -1;
   const sortTools = el('div', 'sort-tools');
   sortTools.innerHTML = '<span>拖曳排序</span><button type="button" aria-label="上移短句" title="上移選取短句">↑</button><button type="button" aria-label="下移短句" title="下移選取短句">↓</button>';
@@ -119,7 +204,7 @@ if (picker) {
     moveUp.disabled = !!query || selected === 0; moveDown.disabled = !!query || selected === items.length - 1;
     sortTools.querySelector('span').textContent = query ? '清除搜尋後可排序' : '拖曳排序';
     items.forEach((item, i) => {
-      if (query && !(item.name + ' ' + item.text).toLocaleLowerCase().includes(query)) return;
+      if (query && !(item.name + ' ' + item.text + ' ' + (templateInfo(item)?.scenario??'')).toLocaleLowerCase().includes(query)) return;
       const button = el('button', `snippet ${i === selected ? 'selected' : ''}`);
       button.draggable = !query;
       button.ondragstart = event => { if (query) { event.preventDefault(); return; } stash(); dragging = i; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', String(i)); button.classList.add('dragging'); };
@@ -135,12 +220,13 @@ if (picker) {
   }
   function render() { renderList(); renderScenario(); name.value = items[selected]?.name ?? ''; text.value = items[selected]?.text ?? ''; document.querySelector('#count').textContent = t('{count} 字', {count:text.value.length}); }
   function changed() { stash(); renderScenario(); dirty = true; setSaveStatus('尚未儲存'); document.querySelector('#count').textContent = t('{count} 字', {count:text.value.length}); renderList(); }
+  scenario.oninput=()=>{scenarioEdited=true;changed();};
   name.oninput = text.oninput = changed; search.oninput = renderList;
   function addSnippet() { stash(); if (items.length >= 100) return askConfirmation({title:t('最多 100 句。'),message:'',notice:true,confirmText:t('知道了')}); search.value = ''; items.push({ name: t('新短句'), text: '' }); selected = items.length - 1; dirty = true; render(); showLibrary(); setSaveStatus('尚未儲存'); name.focus(); name.select(); }
   document.querySelector('#add').onclick = addSnippet;
-  async function consumeNewSnippet() { if (items.length && await invoke('consume_new_snippet')) addSnippet(); }
+  async function consumeNewSnippet() { await roleSync; if (items.length && await invoke('consume_new_snippet')) addSnippet(); }
   await listen('new-snippet', consumeNewSnippet);
-  async function consumeOpenSettings(){if(await invoke('consume_open_settings')){await settingsButton.onclick();settings.panel.scrollTop=0;}}
+  async function consumeOpenSettings(){await roleSync;if(await invoke('consume_open_settings'))showLibrary();}
   await listen('open-settings',consumeOpenSettings);
   document.querySelector('#delete').onclick = async () => { if (items.length === 1) { await askConfirmation({title: '請至少保留一句短句', message: '先新增另一句短句，再刪除這一句。', confirmText: '知道了', notice: true}); return; } stash(); const target = selected; if (!await askConfirmation({title: '刪除短句？', message: t('確定要刪除「{name}」嗎？刪除後需按「儲存短句」才會生效。', {name:items[target].name || t('未命名短句')}), confirmText: '刪除短句', danger: true})) return; items.splice(target, 1); selected = Math.min(target, items.length - 1); dirty = true; render(); setSaveStatus('尚未儲存'); };
   document.querySelector('#editor').onsubmit = async e => { e.preventDefault(); stash(); try { const result = prepareSnippetSave(items); await invoke('save_snippets', { items: result.saved }); items = result.editorItems; dirty = result.draftCount > 0; render(); setSaveStatus(result.draftCount ? '已儲存 · {count} 筆空白草稿尚未儲存' : '已儲存', {count:result.draftCount}); } catch (error) { setSaveError(error); } };
@@ -158,9 +244,17 @@ if (picker) {
   let effectTimer;
   transparency.oninput = () => { appearance.transparency = Number(transparency.value); document.querySelector('#transparency-value').value = `${appearance.transparency}%`; clearTimeout(effectTimer); effectTimer = setTimeout(() => applyAppearance(true), 70); };
   theme.onchange = () => { appearance.theme = theme.value; applyAppearance(true); };
+  // WebView key handling can consume a registered hotkey before the global path.
+  // The focused manager always treats its shortcut as dismiss-only.
+  document.addEventListener('keydown', e => {
+    if(!matchesShortcutEvent(e,getShortcut()))return;
+    e.preventDefault();e.stopImmediatePropagation();
+    if(!e.repeat)invoke('dismiss_manager_shortcut').catch(setSaveError);
+  },true);
   document.addEventListener('keydown', e => { if (document.querySelector('dialog[open]')) return; if (!settings.panel.hidden) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') e.preventDefault(); return; } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); document.querySelector('#editor').requestSubmit(); } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); search.focus(); } });
-  onLanguageChange(() => { renderList(); renderScenario(); document.querySelector('#count').textContent=t('{count} 字',{count:text.value.length}); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
-  items = await invoke('get_snippets'); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
+  await listen('active-role-changed',event=>{roleSync=roleSync.then(async()=>{await switchRole(event.payload);if(!settings.panel.hidden)await settings.refresh();}).catch(setSaveError);});
+  onLanguageChange(() => { renderRoles(); renderList(); renderScenario(); document.querySelector('#count').textContent=t('{count} 字',{count:text.value.length}); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
+  items = await invoke('get_snippets'); renderRoles(); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
 }
 
 

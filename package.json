@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
-    "build:ui": "vite build",
+    "build:ui": "node scripts/generate-role-defaults.mjs && vite build",
     "dev:ui": "vite --host 127.0.0.1",
     "test": "node --test tests/*.test.js"
   },

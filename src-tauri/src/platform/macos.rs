@@ -103,7 +103,13 @@ extern "C" fn event_callback(_: Ptr, kind: u32, event: Ptr, _: Ptr) -> Ptr {
                 if ACTIVE.fetch_xor(true, Ordering::SeqCst) {
                     send(Action::Cancel);
                 } else {
-                    send(Action::Begin(frontmost()));
+                    let target = frontmost();
+                    if is_app_target(target) {
+                        ACTIVE.store(false, Ordering::SeqCst);
+                        send(Action::Dismiss);
+                    } else {
+                        send(Action::Begin(target));
+                    }
                 }
             }
             return std::ptr::null_mut();
@@ -112,6 +118,11 @@ extern "C" fn event_callback(_: Ptr, kind: u32, event: Ptr, _: Ptr) -> Ptr {
             if kind == 12 && flags & required != required {
                 ACTIVE.store(false, Ordering::SeqCst);
                 send(Action::Commit);
+            } else if key == 123 || key == 124 {
+                if kind == 10 {
+                    send(Action::Role(if key == 123 { -1 } else { 1 }));
+                }
+                return std::ptr::null_mut();
             } else if key == 125 || key == 126 {
                 if kind == 10 {
                     send(Action::Move(if key == 126 { -1 } else { 1 }));
@@ -245,4 +256,33 @@ pub fn paste(target: usize, text: &str) -> Result<(), String> {
         }
         Err("按鍵仍被按住，這次貼入已取消。".into())
     }
+}
+
+pub fn is_app_target(target: usize) -> bool {
+    target == std::process::id() as usize
+}
+pub fn foreground_target() -> Option<usize> {
+    let target = frontmost();
+    (target != 0 && !is_app_target(target)).then_some(target)
+}
+
+// A hidden NSApplication must be unhidden without stealing the paste target's focus.
+pub fn unhide_without_activation() {
+    unsafe {
+        let pool = objc_autoreleasePoolPush();
+        let send: unsafe extern "C" fn(Ptr, Ptr) -> Ptr =
+            std::mem::transmute(objc_msgSend as unsafe extern "C" fn());
+        let send_void: unsafe extern "C" fn(Ptr, Ptr) =
+            std::mem::transmute(objc_msgSend as unsafe extern "C" fn());
+        let app = send(
+            objc_getClass(c"NSApplication".as_ptr()),
+            sel_registerName(c"sharedApplication".as_ptr()),
+        );
+        send_void(app, sel_registerName(c"unhideWithoutActivation".as_ptr()));
+        objc_autoreleasePoolPop(pool);
+    }
+}
+
+pub fn cancel_selection() {
+    ACTIVE.store(false, Ordering::SeqCst);
 }
