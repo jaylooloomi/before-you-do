@@ -48,3 +48,5 @@
 | 06（候選09） | UTF8 BOM短句檔相容 | scores-07.md：12.3 | Unicode BOM FAQ、Microsoft UTF8Encoding、RFC8259 8.1 | 計畫：只改storage.rs既有load小區塊及本項測試，不碰05snapshot區。先測出BOM失敗再修；保留正文FEFF、原檔不寫入、雙BOM/UTF16拒絕 | cargo test --offline；本機offline build | 待實作 | 否決猜測UTF16編碼（不確定轉換）；否決自動重寫原檔（資料風險） |
 
 - 回合8：加分06已先實際重現 UTF8 BOM 載入失敗，再修成只忽略單一檔頭BOM。Rust19通過+1略過（含正文FEFF、雙BOM、UTF16與不覆寫檔案）、offline release compile成功。只改storage.rs原有load區與本項測試，未改05區塊。
+
+| 07（候選11） | 情境說明固定顯示不貼入 | scores-08.md：7.5 | Textfold live preview、Alfred snippet格式說明（設計推論） | 計畫：scenario-hint.js與測試，main原renderScenario小區塊使用helper；保留來源與既有翻譯。測四語內建/自訂/空值，不洩正文到說明、不改原物件 | npm test；npm run build:ui | 待實作 | 否決把情境一起貼入（違反原需求）；否決移除來源（失去範本出處） |

@@ -1,3 +1,5 @@
+29358e4 feat(night-shift/bonus-06): load UTF-8 BOM snippet files without rewriting them
+153088d chore(night-shift): select UTF-8 BOM file compatibility
 a80c1f0 feat(night-shift/bonus-05): isolate cached saved snapshots from editable drafts
 8e61708 feat(night-shift/bonus-05): reject saves over externally changed snippet files
 09e1b65 chore(night-shift): select stale-file save protection
