@@ -70,8 +70,10 @@ fn legacy(xml: &str) -> Result<Vec<Snippet>, String> {
 }
 pub fn load(path: &Path, old: Option<&Path>) -> Result<Vec<Snippet>, String> {
     let items = if path.exists() {
-        serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
-            .map_err(|e| format!("error.read: {e}"))?
+        let bytes = fs::read(path).map_err(|e| e.to_string())?;
+        // Accept a single UTF-8 signature from Windows editors; never alter text values.
+        let json = bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(&bytes);
+        serde_json::from_slice(json).map_err(|e| format!("error.read: {e}"))?
     } else if let Some(old) = old.filter(|p| p.exists()) {
         legacy(&fs::read_to_string(old).map_err(|e| e.to_string())?)?
     } else {
@@ -135,6 +137,30 @@ mod tests {
         item.scenario = Some("字".repeat(1001));
         assert_eq!(validate(&[item]).unwrap_err(), "error.scenario_invalid");
     }
+    #[test]
+    fn load_utf8_bom_without_rewriting_content_or_guessing_other_encodings() {
+        let dir = std::env::temp_dir().join(format!("quicksay-bom-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("snippets.json");
+        let mut items = defaults();
+        items[0].text.push('\u{feff}');
+        let json = serde_json::to_vec(&items).unwrap();
+        fs::write(&path, &json).unwrap();
+        assert_eq!(load(&path, None).unwrap(), items);
+        let bytes = [b"\xef\xbb\xbf".as_slice(), json.as_slice()].concat();
+        fs::write(&path, &bytes).unwrap();
+        assert_eq!(load(&path, None).unwrap(), items);
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        let duplicate = [b"\xef\xbb\xbf".as_slice(), bytes.as_slice()].concat();
+        fs::write(&path, &duplicate).unwrap();
+        assert!(load(&path, None).is_err());
+        let utf16 = [0xff, 0xfe, 0x5b, 0x00, 0x5d, 0x00];
+        fs::write(&path, utf16).unwrap();
+        assert!(load(&path, None).is_err());
+        assert_eq!(fs::read(&path).unwrap(), utf16);
+        let _ = fs::remove_dir_all(dir);
+    }
+
     #[test]
     fn imports_dotnet_unicode_xml() {
         let xml = r#"<?xml version="1.0"?><Settings><Modifiers>1</Modifiers><Key>72</Key><Items><Snippet><Name>中文 &amp; 名稱</Name><Text>第一行

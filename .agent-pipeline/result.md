@@ -46,3 +46,5 @@
 - 回合7：加分05續片完成，同編號抽出saved-snapshot.js，兩項純測試驗證draft不共享原文/情境及跨角色baseline不被新讀取偷偷取代；JS27/27、build:ui成功。兩片各≤5檔，無新增套件。
 
 | 06（候選09） | UTF8 BOM短句檔相容 | scores-07.md：12.3 | Unicode BOM FAQ、Microsoft UTF8Encoding、RFC8259 8.1 | 計畫：只改storage.rs既有load小區塊及本項測試，不碰05snapshot區。先測出BOM失敗再修；保留正文FEFF、原檔不寫入、雙BOM/UTF16拒絕 | cargo test --offline；本機offline build | 待實作 | 否決猜測UTF16編碼（不確定轉換）；否決自動重寫原檔（資料風險） |
+
+- 回合8：加分06已先實際重現 UTF8 BOM 載入失敗，再修成只忽略單一檔頭BOM。Rust19通過+1略過（含正文FEFF、雙BOM、UTF16與不覆寫檔案）、offline release compile成功。只改storage.rs原有load區與本項測試，未改05區塊。
