@@ -87,7 +87,7 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 
 ### Windows
 
-> 本文件說明目前原始碼的功能；下載檔的功能以各 Release 說明為準。若下載版尚未包含本文的新功能，請等候新版發布，或依「開發與建置」自行建置。
+> v0.3.0 起包含角色切換與自訂使用情境。升級前請儲存編輯並完整結束舊版；既有短句檔案會保留。
 
 到 [Releases 下載最新版](https://github.com/jaylooloomi/before-you-do/releases/latest) 的 **Windows x64 可攜版 ZIP**。另提供 macOS Apple Silicon 與 Intel 版本，但尚未經 Mac 實機驗證；目前發布檔皆未簽章。
 

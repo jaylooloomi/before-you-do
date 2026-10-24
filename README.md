@@ -90,7 +90,7 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ### Windows
 
-> This README describes the current source. Downloaded builds follow their individual release notes. If a release does not yet contain a feature described here, wait for a newer release or build from source using the instructions below.
+> Role switching and editable usage scenarios are included in v0.3.0 and later. Save your edits and fully quit the old app before upgrading; existing snippet files are preserved.
 
 Download the **Windows x64 portable ZIP** from [Releases](https://github.com/jaylooloomi/before-you-do/releases/latest). macOS Apple Silicon and Intel archives are also available, but have not been tested on real Mac hardware. These builds are unsigned.
 
