@@ -54,3 +54,5 @@
 - 回合9：加分07完成，內建/自訂/空情境均固定保留不會貼入說明，來源仍保留；JS28/28與build:ui成功；無貼入邏輯變更。
 
 | 08（候選10） | AI匯入前名稱預覽 | scores-09.md：4.7 | Textfold官方import preview | 計畫：import-preview.js與純test，settings既有import確認小區塊顯示已存數/將取代數/前5名稱/餘數/草稿覆蓋警告，locales新增列；測多行/emoji/多筆/四語/原文不變。確認仍使用textContent純文字 | npm test；npm run build:ui | 待實作 | 否決自動合併（改既有取代語意）；否決列出100筆完整正文（確認窗過長） |
+
+- 回合10：加分08完成，套用確認含已存筆數、將取代筆數、前5個名稱與未列出筆數，保留草稿覆蓋/備份提醒；多行名稱顯示正規化但原文不變，長emoji不拆斷；JS31/31、build:ui成功。

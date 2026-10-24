@@ -1,3 +1,4 @@
+import { importPreview } from './import-preview.js';
 import { roleName } from './roles.js';
 import { getShortcut, onShortcutChange, shortcutLabel } from './shortcut.js';
 import { t, getLanguage, getPreference, setLanguage, onLanguageChange, errorMessage } from './i18n.js';
@@ -81,7 +82,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
       if (action === 'reload' && await onReload()) { await refresh(); report('已重新載入檔案，快捷選單也已同步更新。'); }
       if (action === 'import') {
         const items = parseSnippetImport(panel.querySelector('#import-json').value);
-        if (await askConfirmation({ title: '套用 AI 修改？', message: t('將用這 {count} 筆短句取代目前角色的清單與未儲存草稿，並先備份原檔。',{count:items.length}), confirmText: '套用並儲存' })) {
+        if (await askConfirmation({ title: '套用 AI 修改？', message: importPreview(items,(await invoke('get_snippets')).length,getLanguage()), confirmText: '套用並儲存' })) {
           await onImport(items); panel.querySelector('#import-json').value = ''; await refresh(); report('已套用並儲存 {count} 筆短句。',{count:items.length});
         }
       }

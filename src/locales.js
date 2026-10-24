@@ -1,5 +1,8 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["目前角色已儲存 {current} 筆；將用這 {count} 筆取代清單與未儲存草稿，並先備份原檔。","当前角色已保存 {current} 项；将用这 {count} 项替换列表与未保存草稿，并先备份原文件。","This role has {current} saved snippets. Replace its list and unsaved drafts with these {count} snippets, backing up the original file first.","このロールの保存済み短文は {current} 件です。この {count} 件で一覧と未保存の下書きを置き換え、元のファイルを先にバックアップします。"],
+["名稱預覽（{shown}/{count}）：{names}","名称预览（{shown}/{count}）：{names}","Name preview ({shown}/{count}): {names}","名前のプレビュー（{shown}/{count}）：{names}"],
+["另有 {count} 筆未列出，請在 JSON 欄確認完整內容。","还有 {count} 项未列出，请在 JSON 栏确认完整内容。","{count} more are not shown. Check the JSON field for the complete content.","他に {count} 件あります。JSON 欄で内容全体を確認してください。"],
 ["error.external_change","文件已在外部更改或角色已切换，尚未保存。请先另行保留草稿，再到设置重新加载文件后编辑。","The file changed outside the app or the role changed. Nothing was saved. Keep a separate copy of your drafts, then reload the file in Settings before editing.","外部でファイルが変更されたか、ロールが変わりました。保存していません。下書きを別途保管し、設定からファイルを再読み込みして編集してください。"],
 ["匯出目前角色","导出当前角色","Export current role","現在のロールを書き出す"],
 ["只複製目前角色已儲存的短句 JSON，包含情境與排序，不含未儲存草稿。","仅复制当前角色已保存的短句 JSON，包括场景和顺序，不含未保存草稿。","Copy this role’s saved snippets as JSON, including scenarios and order. Unsaved drafts are excluded.","このロールの保存済み短文を使用場面・順番を含む JSON としてコピーします。未保存の下書きは含みません。"],
