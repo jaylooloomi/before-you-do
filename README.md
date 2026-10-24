@@ -1,4 +1,4 @@
-<h1 align="center">Before You Do</h1>
+<h1 align="center">before-you-do</h1>
 
 <p align="center">
   <b>在 AI 動手之前，把該交代的補上。</b><br>
@@ -89,9 +89,9 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 3. 完整結束舊版或占用 Alt+H 的 AHK，開啟新版。
 4. 儲存短句，在 AI 對話框按 Alt+H 試用。
 
-本機整理的執行檔名稱為 `BeforeYouDo.exe`；直接建置或 CI 產物為 `before-you-do.exe`。目前沒有自動更新功能。
+本機整理的執行檔名稱為 `before-you-do.exe`；直接建置或 CI 產物為 `before-you-do.exe`。目前沒有自動更新功能。
 
-關閉管理視窗只會收起程式，Alt+H 仍可使用。要完全退出，請從系統匣圖示選單選「結束 Before You Do」。
+關閉管理視窗只會收起程式，Alt+H 仍可使用。要完全退出，請從系統匣圖示選單選「結束 before-you-do」。
 
 ### macOS 與其他平台
 
@@ -153,7 +153,7 @@ Linux、手機、平板與瀏覽器擴充套件目前未提供。
 
 每次開新對話，真正重複的常常是工作方式：「先整理理解」「先規劃，不實作」「做完請回報測過什麼」。重打費時，切去筆記找文字又會打斷思路。
 
-Before You Do 把這些交代留在手邊。需求每次不同，你習慣的工作方式可以重複使用；不必綁定單一模型，也不用在每個網站各裝擴充套件。
+before-you-do 把這些交代留在手邊。需求每次不同，你習慣的工作方式可以重複使用；不必綁定單一模型，也不用在每個網站各裝擴充套件。
 
 名字就像家人在你出門前叫住你：「等一下，還有一件事要交代。」
 
@@ -243,7 +243,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --locked
 npm run build
 ```
 
-Windows 執行檔位於 `src-tauri/target/release/before-you-do.exe`；macOS App 位於 `src-tauri/target/release/bundle/macos/Before You Do.app`。也可用 `npm run build -- --bundles none` 僅建置執行檔，或在 Mac 使用 `--bundles app`。
+Windows 執行檔位於 `src-tauri/target/release/before-you-do.exe`；macOS App 位於 `src-tauri/target/release/bundle/macos/before-you-do.app`。也可用 `npm run build -- --bundles none` 僅建置執行檔，或在 Mac 使用 `--bundles app`。
 
 <details>
 <summary><b>原始碼導覽與桌面整合測試</b></summary>

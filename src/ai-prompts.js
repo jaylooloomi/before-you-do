@@ -8,18 +8,18 @@ const format = {
 export function filePrompt(path) {
  const lang=getLanguage();
  const instructions={
- 'zh-TW':`請修改我的 Before You Do 短句檔。\n檔案路徑：${path}\n${format[lang]}\n先讀取原檔並另存備份，只修改我指定的項目，保留其他短句與排序，勿自動翻譯現有內容。保持 UTF-8 與合法 JSON，寫入後重讀驗證。無法讀寫此路徑時請明說，改為提供完整 JSON。完成後回報修改與備份位置，提醒我回 Before You Do 按「重新載入檔案」，避免舊內容覆蓋新檔。\n\n我的修改需求：〔在這裡補充〕`,
- 'zh-CN':`请修改我的 Before You Do 短句文件。\n文件路径：${path}\n${format[lang]}\n先读取原文件并另存备份，仅修改指定项目，保留其他短句和排序，不要自动翻译现有内容。保持 UTF-8 及合法 JSON，写入后重新读取验证。无法读写此路径时请说明，并提供完整 JSON。完成后汇报修改及备份位置，提醒我回 Before You Do 点击“重新加载文件”，避免旧内容覆盖新文件。\n\n修改需求：[在这里补充]`,
- en:`Edit my Before You Do snippet file.\nFile path: ${path}\n${format[lang]}\nRead the current file and make a separate backup first. Change only the requested entries; preserve all other snippets and their order. Do not translate existing text automatically. Keep UTF-8 and valid JSON, then read the file back to verify. If you cannot access this path, say so and provide complete JSON instead. Report the edits and backup location. Remind me to click Reload file in Before You Do before saving stale editor contents.\n\nRequested changes: [add here]`,
- ja:`Before You Do の短文ファイルを編集してください。\nファイルのパス：${path}\n${format[lang]}\n元のファイルを読み、先に別のバックアップを作成してください。指定項目のみ変更し、他の短文と順番は保持してください。既存の内容を自動翻訳しないでください。UTF-8 と正しい JSON を維持し、書き込み後に再読込して検証してください。アクセスできない場合は明示し、代わりに JSON 全体を提示してください。変更点とバックアップ先を報告し、古い編集内容で上書きする前に Before You Do の「ファイルを再読み込み」を押すよう案内してください。\n\n変更依頼：[ここに追記]`,
+ 'zh-TW':`請修改我的 before-you-do 短句檔。\n檔案路徑：${path}\n${format[lang]}\n先讀取原檔並另存備份，只修改我指定的項目，保留其他短句與排序，勿自動翻譯現有內容。保持 UTF-8 與合法 JSON，寫入後重讀驗證。無法讀寫此路徑時請明說，改為提供完整 JSON。完成後回報修改與備份位置，提醒我回 before-you-do 按「重新載入檔案」，避免舊內容覆蓋新檔。\n\n我的修改需求：〔在這裡補充〕`,
+ 'zh-CN':`请修改我的 before-you-do 短句文件。\n文件路径：${path}\n${format[lang]}\n先读取原文件并另存备份，仅修改指定项目，保留其他短句和排序，不要自动翻译现有内容。保持 UTF-8 及合法 JSON，写入后重新读取验证。无法读写此路径时请说明，并提供完整 JSON。完成后汇报修改及备份位置，提醒我回 before-you-do 点击“重新加载文件”，避免旧内容覆盖新文件。\n\n修改需求：[在这里补充]`,
+ en:`Edit my before-you-do snippet file.\nFile path: ${path}\n${format[lang]}\nRead the current file and make a separate backup first. Change only the requested entries; preserve all other snippets and their order. Do not translate existing text automatically. Keep UTF-8 and valid JSON, then read the file back to verify. If you cannot access this path, say so and provide complete JSON instead. Report the edits and backup location. Remind me to click Reload file in before-you-do before saving stale editor contents.\n\nRequested changes: [add here]`,
+ ja:`before-you-do の短文ファイルを編集してください。\nファイルのパス：${path}\n${format[lang]}\n元のファイルを読み、先に別のバックアップを作成してください。指定項目のみ変更し、他の短文と順番は保持してください。既存の内容を自動翻訳しないでください。UTF-8 と正しい JSON を維持し、書き込み後に再読込して検証してください。アクセスできない場合は明示し、代わりに JSON 全体を提示してください。変更点とバックアップ先を報告し、古い編集内容で上書きする前に before-you-do の「ファイルを再読み込み」を押すよう案内してください。\n\n変更依頼：[ここに追記]`,
  }; return instructions[lang];
 }
 export function chatPrompt(items) {
  const lang=getLanguage(), json=JSON.stringify(items,null,2);
  return {
- 'zh-TW':`請依需求修改以下 Before You Do 短句。${format[lang]}\n只修改指定項目，保留其他名稱、內容與排序，不要自動翻譯。只回覆完整可匯入 JSON，不省略未修改項目，不加入說明。\n\n目前已儲存內容：\n${json}\n\n我的修改需求：〔在這裡補充〕`,
- 'zh-CN':`请按需求修改以下 Before You Do 短句。${format[lang]}\n仅修改指定项目，保留其他名称、内容和排序，不要自动翻译。仅返回完整可导入 JSON，不省略未修改项目，不添加说明。\n\n已保存内容：\n${json}\n\n修改需求：[在这里补充]`,
- en:`Edit these Before You Do snippets as requested. ${format[lang]}\nChange only the requested entries. Preserve all other names, text and order; do not translate automatically. Return only the complete importable JSON, with no omitted entries or commentary.\n\nSaved snippets:\n${json}\n\nRequested changes: [add here]`,
- ja:`依頼に従って以下の Before You Do 短文を編集してください。${format[lang]}\n指定項目のみ変更し、他の名前・内容・順番は保持してください。自動翻訳はしないでください。未変更項目も省略せず、説明を付けずにインポート可能な JSON 全体のみを返してください。\n\n保存済みの短文：\n${json}\n\n変更依頼：[ここに追記]`,
+ 'zh-TW':`請依需求修改以下 before-you-do 短句。${format[lang]}\n只修改指定項目，保留其他名稱、內容與排序，不要自動翻譯。只回覆完整可匯入 JSON，不省略未修改項目，不加入說明。\n\n目前已儲存內容：\n${json}\n\n我的修改需求：〔在這裡補充〕`,
+ 'zh-CN':`请按需求修改以下 before-you-do 短句。${format[lang]}\n仅修改指定项目，保留其他名称、内容和排序，不要自动翻译。仅返回完整可导入 JSON，不省略未修改项目，不添加说明。\n\n已保存内容：\n${json}\n\n修改需求：[在这里补充]`,
+ en:`Edit these before-you-do snippets as requested. ${format[lang]}\nChange only the requested entries. Preserve all other names, text and order; do not translate automatically. Return only the complete importable JSON, with no omitted entries or commentary.\n\nSaved snippets:\n${json}\n\nRequested changes: [add here]`,
+ ja:`依頼に従って以下の before-you-do 短文を編集してください。${format[lang]}\n指定項目のみ変更し、他の名前・内容・順番は保持してください。自動翻訳はしないでください。未変更項目も省略せず、説明を付けずにインポート可能な JSON 全体のみを返してください。\n\n保存済みの短文：\n${json}\n\n変更依頼：[ここに追記]`,
  }[lang];
 }

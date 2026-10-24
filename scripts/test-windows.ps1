@@ -12,7 +12,7 @@ if($LASTEXITCODE -ne 0){throw 'Cannot build test target'}
 $appProcess=Start-Process -FilePath $AppPath -ArgumentList '--integration-test' -WindowStyle Hidden -PassThru
 try {
     Start-Sleep -Seconds 4
-    if($appProcess.HasExited){throw 'Before You Do exited before integration test'}
+    if($appProcess.HasExited){throw 'before-you-do exited before integration test'}
     # A visible isolated input window is required to verify focus and real key release.
     $result=Join-Path $out 'windows-integration.txt'
     if(Test-Path -LiteralPath $result){Remove-Item -LiteralPath $result}

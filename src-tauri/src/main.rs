@@ -79,17 +79,17 @@ struct UiMenu {
 #[tauri::command]
 fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
     let (manage_text, quit_text, title) = match language.as_str() {
-        "zh-TW" => ("管理短句", "結束 Before You Do", "Before You Do · 常用短句"),
-        "zh-CN" => ("管理短句", "退出 Before You Do", "Before You Do · 常用短句"),
+        "zh-TW" => ("管理短句", "結束 before-you-do", "before-you-do · 常用短句"),
+        "zh-CN" => ("管理短句", "退出 before-you-do", "before-you-do · 常用短句"),
         "ja" => (
             "短文を管理",
-            "Before You Do を終了",
-            "Before You Do · 短文ライブラリ",
+            "before-you-do を終了",
+            "before-you-do · 短文ライブラリ",
         ),
         _ => (
             "Manage snippets",
-            "Quit Before You Do",
-            "Before You Do · Snippets",
+            "Quit before-you-do",
+            "before-you-do · Snippets",
         ),
     };
     let menu = app.state::<UiMenu>();
@@ -478,7 +478,7 @@ fn main() {
             let quit_item = tauri::menu::MenuItem::with_id(
                 app,
                 "quit",
-                "Quit Before You Do",
+                "Quit before-you-do",
                 true,
                 None::<&str>,
             )?;
@@ -494,7 +494,7 @@ fn main() {
             );
             tauri::tray::TrayIconBuilder::new()
                 .icon(icon)
-                .tooltip("Before You Do")
+                .tooltip("before-you-do")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "manage" => manage(app),
@@ -586,7 +586,7 @@ fn main() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("無法啟動 Before You Do");
+        .expect("無法啟動 before-you-do");
 }
 
 #[cfg(test)]

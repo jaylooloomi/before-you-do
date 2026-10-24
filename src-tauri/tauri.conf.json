@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Before You Do",
+  "productName": "before-you-do",
   "version": "0.2.0",
   "identifier": "dev.quicksay.desktop",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Before You Do · 常用短句",
+        "title": "before-you-do · 常用短句",
         "width": 940,
         "height": 820,
         "minWidth": 780,
@@ -27,7 +27,7 @@
       },
       {
         "label": "picker",
-        "title": "Before You Do",
+        "title": "before-you-do",
         "url": "index.html?picker",
         "width": 580,
         "height": 360,

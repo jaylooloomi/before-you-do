@@ -147,7 +147,7 @@ pub fn start(tx: Sender<Action>, shortcut: Shortcut) -> Result<(), String> {
     shortcut.validate()?;
     unsafe {
         if !AXIsProcessTrusted() {
-            return Err("macOS 需要「輔助使用」權限才能貼入其他程式。請在系統設定 → 隱私權與安全性中允許 Before You Do，必要時也允許「輸入監控」，再重新啟用。".into());
+            return Err("macOS 需要「輔助使用」權限才能貼入其他程式。請在系統設定 → 隱私權與安全性中允許 before-you-do，必要時也允許「輸入監控」，再重新啟用。".into());
         }
         if STARTED.swap(true, Ordering::SeqCst) {
             return configure(shortcut);

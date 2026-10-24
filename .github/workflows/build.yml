@@ -28,11 +28,11 @@ jobs:
       - if: runner.os == 'macOS'
         run: |
           mkdir -p artifacts
-          ditto -c -k --sequesterRsrc --keepParent "src-tauri/target/release/bundle/macos/Before You Do.app" artifacts/BeforeYouDo-mac.zip
+          ditto -c -k --sequesterRsrc --keepParent "src-tauri/target/release/bundle/macos/before-you-do.app" artifacts/before-you-do-mac.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: BeforeYouDo-${{ matrix.os }}
+          name: before-you-do-${{ matrix.os }}
           path: |
             src-tauri/target/release/before-you-do.exe
-            artifacts/BeforeYouDo-mac.zip
+            artifacts/before-you-do-mac.zip
           if-no-files-found: error
