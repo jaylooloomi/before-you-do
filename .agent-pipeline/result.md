@@ -22,3 +22,5 @@
 - 結束原因：進行中。
 
 - scope-reviewer 獨立複核：VERDICT: OK。無確定收尾工作；所有存疑項跳過。
+
+| 01 | AI JSON 匯入型別與逐筆錯誤 | scores-01.md：10.7 | Raycast Snippets、MDN JSON.parse | 預計動 model.js 的import新區塊、i18n.js errorMessage小區塊、locales.js新增列、model.test.js新增區塊；測數字/null/欄位/四語/不變性 | npm test；npm run build:ui | 待實作 | 否決自動把物件轉字串（資料誤入）；否決引入schema套件（技能禁新增依賴） |
