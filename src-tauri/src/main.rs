@@ -242,9 +242,21 @@ fn get_snippets(state: tauri::State<State>) -> Vec<Snippet> {
     state.items.lock().unwrap().clone()
 }
 #[tauri::command]
-fn save_snippets(items: Vec<Snippet>, state: tauri::State<State>) -> Result<(), String> {
+fn save_snippets(
+    items: Vec<Snippet>,
+    expected: Option<storage::SavedSnapshot>,
+    expected_role: Option<String>,
+    state: tauri::State<State>,
+) -> Result<(), String> {
     let role = state.role.lock().unwrap();
-    storage::save(&roles::path(&state.path, &role)?, &items)?;
+    if expected_role.as_ref().is_some_and(|id| id != &*role) {
+        return Err("error.external_change".into());
+    }
+    let path = roles::path(&state.path, &role)?;
+    if let Some(snapshot) = expected.as_ref() {
+        storage::check_snapshot(&path, snapshot)?;
+    }
+    storage::save(&path, &items)?;
     *state.items.lock().unwrap() = items;
     Ok(())
 }

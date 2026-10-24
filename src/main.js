@@ -100,6 +100,9 @@ if (picker) {
   let activeRole = await invoke('get_role'), switchingRole = false;
   const roleSessions = new Map();
   let roleSync=Promise.resolve(), saveTask=Promise.resolve(), saving=false;
+  // Bonus-05: snapshots never share objects with editable drafts, including cached roles.
+  let loadedSnapshot;
+  async function snapshotFor(saved){return {items:structuredClone(saved),exists:(await invoke('storage_info')).exists};}
   root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" title="可輸入多個關鍵字，搜尋名稱、內容與情境。" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" maxlength="100" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" maxlength="20000" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="外觀主題"><option value="light">淺色</option><option value="dark">深色</option><option value="system">跟隨系統</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.3.1</span></footer></section></main></div>`;
   const roleCards = el('div','role-cards');roleCards.setAttribute('role','group');roleCards.setAttribute('aria-label',t('選擇角色'));
   const roleSwitcher=el('div','role-switcher');
@@ -167,14 +170,14 @@ if (picker) {
     await saveTask;
     if(switchingRole||id===activeRole)return;
     stash();
-    roleSessions.set(activeRole,{items,selected,dirty,versions,saveIssues,query:search.value,statusKey,statusParams,statusError});
+    roleSessions.set(activeRole,{items,selected,dirty,versions,saveIssues,loadedSnapshot,query:search.value,statusKey,statusParams,statusError});
     switchingRole=true;renderRoles();
     document.querySelector('#editor').inert=true;document.querySelector('aside').inert=true;
     try{
       const saved=await invoke('switch_role',{role:id,defaults:getRoleDefaults(id,getLanguage())});
       activeRole=id;
       const cached=roleSessions.get(id);
-      items=cached?.items??saved;versions=cached?.versions??savedVersions(items);saveIssues=cached?.saveIssues??[];selected=cached?.selected??0;dirty=cached?.dirty??false;search.value=cached?.query??'';
+      loadedSnapshot=cached?.loadedSnapshot??await snapshotFor(saved);items=cached?.items??saved;versions=cached?.versions??savedVersions(items);saveIssues=cached?.saveIssues??[];selected=cached?.selected??0;dirty=cached?.dirty??false;search.value=cached?.query??'';
       statusKey=cached?.statusKey??'已儲存';statusParams=cached?.statusParams??{};statusError=cached?.statusError??null;
       render();if(statusError)setSaveError(statusError);else setSaveStatus(statusKey,statusParams);
     }catch(error){setSaveError(error);}
@@ -203,9 +206,9 @@ if (picker) {
   const settings = createSettingsPage({ invoke, askConfirmation, onBack: showLibrary, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
     onReload: async () => {
       if (dirty && !await askConfirmation({title: '重新載入檔案？', message: '將以檔案內容取代目前編輯與未儲存草稿。請確認要保留的內容已儲存或另行備份。', confirmText: '重新載入'})) return false;
-      const refreshed = await invoke('reload_snippets'); items = refreshed; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
+      const refreshed = await invoke('reload_snippets'); loadedSnapshot=await snapshotFor(refreshed);items = refreshed; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
     },
-    onImport: async imported => { await invoke('save_snippets', {items: imported}); items = imported; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; search.value = ''; render(); setSaveStatus('已儲存'); },
+    onImport: async imported => { await invoke('save_snippets', {items: imported,expected:loadedSnapshot,expectedRole:activeRole});loadedSnapshot={items:structuredClone(imported),exists:true}; items = imported; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; search.value = ''; render(); setSaveStatus('已儲存'); },
   });
   document.querySelector('.manager').append(settings.panel);
   settingsButton.onclick = async () => { stash(); workspace.hidden = true; settings.panel.hidden = false; settingsButton.setAttribute('aria-pressed', 'true'); await settings.refresh(); };
@@ -258,7 +261,7 @@ if (picker) {
   document.querySelector('#editor').onsubmit = async e => {
     e.preventDefault();if(saving)return;stash();saving=true;document.querySelector('#editor').inert=true;roleSwitcher.inert=true;document.querySelector('aside').inert=true;
     saveTask=(async()=>{
-    try{const result=prepareSnippetSave(items,versions);await invoke('save_snippets',{items:result.saved});items=result.editorItems;versions=result.versions;saveIssues=result.issues;dirty=result.draftCount>0;render();setSaveStatus(result.draftCount?'完整短句已儲存 · {count} 筆草稿待完成':'已儲存',{count:result.draftCount});}
+    try{const result=prepareSnippetSave(items,versions);await invoke('save_snippets',{items:result.saved,expected:loadedSnapshot,expectedRole:activeRole});loadedSnapshot={items:structuredClone(result.saved),exists:true};items=result.editorItems;versions=result.versions;saveIssues=result.issues;dirty=result.draftCount>0;render();setSaveStatus(result.draftCount?'完整短句已儲存 · {count} 筆草稿待完成':'已儲存',{count:result.draftCount});}
     catch(error){if(error.issues){saveIssues=error.issues;renderIssues();}setSaveError(error);}
     finally{saving=false;document.querySelector('#editor').inert=false;roleSwitcher.inert=false;document.querySelector('aside').inert=false;}
     })();await saveTask;
@@ -305,7 +308,7 @@ if (picker) {
   document.addEventListener('keydown', e => { if (document.querySelector('dialog[open]')) return; if (!settings.panel.hidden) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') e.preventDefault(); return; } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); document.querySelector('#editor').requestSubmit(); } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); search.focus(); } });
   await listen('active-role-changed',event=>{roleSync=roleSync.then(async()=>{await switchRole(event.payload);if(!settings.panel.hidden)await settings.refresh();}).catch(setSaveError);});
   onLanguageChange(() => { renderRoles(); renderList(); renderScenario();renderIssues();renderSaveOverview(); document.querySelector('#count').textContent=t('{count} 字',{count:text.value.length}); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
-  items = await invoke('get_snippets'); versions=savedVersions(items);renderRoles(); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
+  items = await invoke('get_snippets');loadedSnapshot=await snapshotFor(items); versions=savedVersions(items);renderRoles(); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();
 }
 
 

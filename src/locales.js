@@ -1,5 +1,6 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["error.external_change","文件已在外部更改或角色已切换，尚未保存。请先另行保留草稿，再到设置重新加载文件后编辑。","The file changed outside the app or the role changed. Nothing was saved. Keep a separate copy of your drafts, then reload the file in Settings before editing.","外部でファイルが変更されたか、ロールが変わりました。保存していません。下書きを別途保管し、設定からファイルを再読み込みして編集してください。"],
 ["匯出目前角色","导出当前角色","Export current role","現在のロールを書き出す"],
 ["只複製目前角色已儲存的短句 JSON，包含情境與排序，不含未儲存草稿。","仅复制当前角色已保存的短句 JSON，包括场景和顺序，不含未保存草稿。","Copy this role’s saved snippets as JSON, including scenarios and order. Unsaved drafts are excluded.","このロールの保存済み短文を使用場面・順番を含む JSON としてコピーします。未保存の下書きは含みません。"],
 ["複製短句 JSON","复制短句 JSON","Copy snippets as JSON","短文の JSON をコピー"],
@@ -136,6 +137,7 @@ export const rows = [
 ];
 
 export const specialTraditional = {
+ 'error.external_change':'檔案已在外部更改或角色已切換，尚未儲存。請先另行保留草稿，再到設定重新載入檔案後編輯。',
  'error.import_entry':'第 {index} 筆的 {field}：{reason}',
  'error.import_object':'每筆必須是含 name、text 的物件。',
  'error.import_string':'必須是文字，不能是數字、null 或物件。',

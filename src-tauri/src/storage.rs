@@ -80,6 +80,25 @@ pub fn load(path: &Path, old: Option<&Path>) -> Result<Vec<Snippet>, String> {
     validate(&items)?;
     Ok(items)
 }
+// Bonus-05: optimistic check against the data this editor actually loaded.
+#[derive(Clone, Deserialize)]
+pub struct SavedSnapshot {
+    pub items: Vec<Snippet>,
+    pub exists: bool,
+}
+pub fn check_snapshot(path: &Path, expected: &SavedSnapshot) -> Result<(), String> {
+    if path.exists() {
+        let current = load(path, None).map_err(|_| "error.external_change".to_string())?;
+        if current != expected.items {
+            return Err("error.external_change".into());
+        }
+        // A role switch may seed a previously absent file with these same defaults.
+    } else if expected.exists {
+        return Err("error.external_change".into());
+    }
+    Ok(())
+}
+
 pub fn save(path: &Path, items: &[Snippet]) -> Result<(), String> {
     validate(items)?;
     fs::create_dir_all(path.parent().ok_or("error.io")?).map_err(|e| e.to_string())?;
@@ -146,6 +165,45 @@ mod tests {
         assert_eq!(load(&path.with_extension("json.bak"), None).unwrap(), first);
         let _ = fs::remove_dir_all(dir);
     }
+    #[test]
+    fn snapshot_detects_external_changes_without_touching_file_or_backup() {
+        let dir = std::env::temp_dir().join(format!("quicksay-snapshot-{}", std::process::id()));
+        let path = dir.join("snippets.json");
+        let original = defaults();
+        save(&path, &original).unwrap();
+        let expected = SavedSnapshot {
+            items: original.clone(),
+            exists: true,
+        };
+        assert!(check_snapshot(&path, &expected).is_ok());
+        fs::write(&path, serde_json::to_string(&original).unwrap()).unwrap();
+        assert!(check_snapshot(&path, &expected).is_ok());
+        let changed = vec![original[1].clone()];
+        save(&path, &changed).unwrap();
+        let bytes = fs::read(&path).unwrap();
+        let backup = fs::read(path.with_extension("json.bak")).unwrap();
+        assert_eq!(
+            check_snapshot(&path, &expected).unwrap_err(),
+            "error.external_change"
+        );
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        assert_eq!(fs::read(path.with_extension("json.bak")).unwrap(), backup);
+        fs::write(&path, "broken").unwrap();
+        assert!(check_snapshot(&path, &expected).is_err());
+        fs::remove_file(&path).unwrap();
+        assert!(check_snapshot(&path, &expected).is_err());
+        let absent = SavedSnapshot {
+            items: original.clone(),
+            exists: false,
+        };
+        assert!(check_snapshot(&path, &absent).is_ok());
+        save(&path, &original).unwrap();
+        assert!(check_snapshot(&path, &absent).is_ok());
+        save(&path, &changed).unwrap();
+        assert!(check_snapshot(&path, &absent).is_err());
+        let _ = fs::remove_dir_all(dir);
+    }
+
     #[test]
     fn corrupt_data_is_not_silently_replaced() {
         let dir = std::env::temp_dir().join(format!("quicksay-corrupt-{}", std::process::id()));
