@@ -28,7 +28,7 @@
 
 ## 05 — 草稿自動持久化／復原（需大幅切片，建議不採）
 因為原始需求是 **保留所有未儲存短句與草稿**，所以頂尖做法會順便做 **程式中斷後恢復草稿**；目前的成果 **沒有**持久化草稿，正常退出確認已有，故不能重作457bf48。
-- 參考：VS Code 官方 Hot Exit：https://code.visualstudio.com/docs/editor/codebasics#_hot-exit。
+- 參考：VS Code 官方 Hot Exit：https://code.visualstudio.com/docs/editing/getting-started/tips-and-tricks#_preventing-dirty-writes#_hot-exit。
 - 規模風險：要新增原生路徑／schema、跨角色同步及恢復 UI，很可能>5檔／300行；可能觸及設定圍欄。若評分仍高，須先切為純規劃或明確獨立第一片，否則往下。
 - 本輪不新增依賴，真實用戶資料不得讀寫。
 
@@ -71,3 +71,20 @@
 - 參考：Textfold官方文件live preview/明確觸發說明：https://textfold.app/；Alfred官方建議plain text與目的地格式：https://www.alfredapp.com/help/features/snippets/。
 - 範圍：新增scenario-hint.js+test，main.js既有renderScenario小區塊把現有「僅作為選句提示，不會一起貼入」固定顯示，來源附後；使用既有翻譯，不改先前加分區（3檔≤70行）。
 - 驗證：內建、自訂、空情境、來源字串、四語與使用者內容不變；不改貼入邏輯。
+
+# Candidates — 第四輪（scores-10 TOP:none後重新調研）
+
+## 12 — 跨格式匯入 Espanso YAML／Alfred 封裝
+因為原始需求是 **快速建立自己的短句庫**，所以頂尖做法會順便做 **匯入既有文字擴展器套件**；目前的成果 **只有自己JSON格式**。
+- 參考：Espanso官方packages：https://espanso.org/docs/packages/basics/；Alfred sharing/snippet collections：https://www.alfredapp.com/help/features/snippets/。
+- 需要可靠YAML／封裝解析與格式轉換；現有依賴沒有YAML parser，不能用易錯regex猜測。需要新增第三方套件，因此依技能本夜不做，僅列待使用者決定。JSON原生格式已支援，非緊急。
+
+## 13 — 在快捷選單直接打字搜尋
+因為原始需求是 **多角色中快速選取適合的短句**，所以頂尖做法會順便做 **在選單搜尋名稱**；目前的成果 **只有管理畫面搜尋**。
+- 參考：Raycast search bar：https://manual.raycast.com/search-bar；Alfred Snippets Viewer：https://www.alfredapp.com/help/features/snippets/。
+- 目前picker明確不搶焦點、需要按住Alt且放開貼入。直接收字可能觸發目標App快捷鍵；須重設native鍵盤狀態、平台hook、focus政策、UI和測試，至少6檔；沒有可保持現有行為且獨立可用的≤5檔第一片。技能禁止系統輸入實測，故不能確認新手流程安全。本輪不直接改。
+
+## 14 — App內一鍵回復歷史備份
+因為原始需求是 **安全保留可快速補上的指令**，所以頂尖做法會順便做 **查看並還原歷史版本**；目前的成果 **只有上一版.bak與手動教學**。
+- 參考：VS Code官方 Timeline/local history：https://code.visualstudio.com/docs/editing/getting-started/userinterface#_timeline-view；Alfred snippets分享匯出流程作為人工備份參考：https://www.alfredapp.com/help/features/snippets/。
+- 需新增多版本歷史儲存政策／清理、原生restore與備份、跨角色草稿處理、預覽確認與持久化原子性，估≥7檔。既有上一版備份/JSON複製匯出足以人工備份；本夜不可為功能外觀直接做破壞性還原。若未來決定，先另立資料復原合約。

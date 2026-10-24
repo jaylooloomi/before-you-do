@@ -1,3 +1,6 @@
+e405297 fix(night-shift/bonus-05): preserve external role deletions during switching
+75b850e feat(night-shift/bonus-08): preview incoming snippet names before replacement
+5f6eb45 chore(night-shift): select bounded AI import preview
 31d9f8b feat(night-shift/bonus-07): keep scenario paste boundaries visible
 78c00b3 chore(night-shift): select persistent scenario guidance
 29358e4 feat(night-shift/bonus-06): load UTF-8 BOM snippet files without rewriting them

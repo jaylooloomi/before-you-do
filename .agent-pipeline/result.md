@@ -1,62 +1,93 @@
 # Night Shift Result（2026-10-25）
 
+開始 2026-10-25 01:48｜結束 2026-10-25 02:15｜實際執行 0h27m／預定 8h00m｜提早 7h33m 收工
+
 ## 收尾
 | 項目 | 狀態 | commit | 備註 |
 |---|---|---|---|
-| 對話合約獨立複核 | 進行中 | 待提交 | 無明確未完成承諾；存疑項目跳過 |
+| 無明確未完成承諾 | 0項收尾、0項失敗 | 1f174c5 | scope-reviewer獨立複核 VERDICT: OK；存疑的OS貼上/Mac實機不做 |
 
-## 加分項（每行一個，可獨立 revert）
-| # | 名稱 | Score | 參考來源（競品 / 專案 / 文章） | 做了什麼 | 驗證指令 | 測試狀態 | 否決的替代作法 |
+## 加分項（八項，分別審閱與回退）
+| # | 名稱 | Score | 參考來源 | 做了什麼／commit | 驗證指令 | 測試狀態 | 否決的替代作法 |
 |---|---|---|---|---|---|---|---|
+| 01 | AI JSON型別與逐筆錯誤 | [10.7](scores-01.md) | [Raycast Snippets](https://manual.raycast.com/snippets)、MDN JSON.parse | 不再將數字/物件誤存成短句；四語指出列與欄位；b490a6f | npm test、npm run build:ui | ✅ | 自動轉字串；新增schema套件 |
+| 02 | 四語Unicode多詞搜尋 | [10.5](scores-02.md) | Raycast Snippets、[MDN normalize](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize) | 名稱/正文/有效情境跨欄AND搜尋，全半形/日文/重音統一查找但不改原文；751ef9f | npm test、build:ui | ✅ | 修改使用者資料；引入模糊搜尋套件 |
+| 03 | 快捷操作說明 | [8.2](scores-03.md) | Alfred Snippets、Raycast quickstart | 先點輸入框、自訂快捷鍵、取消與管理視窗只收起的四語提示；21702f7 | npm test、build:ui | ✅純訊息測試；未視覺驗證 | 強制導覽；改快捷鍵核心 |
+| 04 | 目前角色JSON匯出 | [5.8](scores-04.md) | Raycast JSON import/export、Alfred sharing | 明示只複製已存內容，包含情境/排序，無草稿；20dd3aa | npm test、build:ui | ✅序列化往返；未碰剪貼簿 | 第三方備份服務；把草稿混稱已存 |
+| 05 | 外部AI改檔衝突保護 | [2.9](scores-05.md) | [VSCode Preventing dirty writes](https://code.visualstudio.com/docs/editing/getting-started/tips-and-tricks#_preventing-dirty-writes) | 各角色深複製baseline，儲存/匯入前偵測外部內容變更或刪除，不自動重建已知被刪角色；8e61708、a80c1f0、e405297（同項續片，回退需逆序三筆） | cargo test --offline、npm test、build | ✅tempfile與快照單元；未App整合 | 直接覆寫；自動merge/新增鎖套件 |
+| 06 | Windows UTF8 BOM相容 | [12.3](scores-07.md) | [Unicode BOM](https://unicode.org/faq/utf_bom.html)、Microsoft UTF8Encoding、RFC8259 8.1 | 先重現載入失敗，再僅忽略一個檔頭BOM，正文/原檔不變；29358e4 | cargo test --offline、build | ✅ | 猜測UTF16；自動重寫原檔 |
+| 07 | 情境固定註明不貼入 | [7.5](scores-08.md) | [Textfold](https://textfold.app/)、Alfred（設計推論） | 內建/自訂情境始終顯示不貼入正文，仍保留來源；31d9f8b | npm test、build:ui | ✅ | 把情境一起貼入；移除出處 |
+| 08 | AI匯入前名稱預覽 | [4.7](scores-09.md) | [Textfold importing](https://textfold.app/docs) | 確認前顯示已存數、取代數、前5個名稱與未列出數，長名不拆emoji，保留草稿/備份提醒；75b850e | npm test、build:ui | ✅純預覽測試；未原生視覺驗證 | 自動合併；在確認窗塞100筆正文 |
 
 ## 判斷不值得做
-- 尚待調研與獨立評分。
+6項新候選未達門檻：草稿自動復原0.6、自訂角色0.3、動態模板0.3、歷史版本回復0.3、picker打字搜尋0.3、跨格式YAML匯入0（需新依賴）。已完成候選標DUPLICATE，不重做。最後兩輪 [scores-10](scores-10.md) 與 [scores-11](scores-11.md) 連續 TOP:none；依技能提前收工，並非已跑足8小時。
 
 ## 需要你決定的事
-- 未追蹤設計草稿已完整 stash（docs/design/ 及兩張 hero 草圖），SHA 見 PRE_STASH；使用者決定何時還原。
-- 真實 OS 跨程序貼上、Mac 實機及系統退出仍未驗證，本夜不操作正式環境。
-- 初始化腳本自動審查回傳 blocked by policy，未執行；移除不必要的刪除步驟後，已以分開的非破壞指令完成分支與旗標。
+1. 既有未追蹤設計稿已完整保存在 stash `e46764077fc9ef0ed02ace7b2aa69d4f0c51d0f5`（night-shift pre-stash 2026-10-25；docs/design/ 與兩張hero草圖）。未刪除、未套用；由你決定何時還原。
+2. 如要跨格式YAML/Alfred封裝匯入，需另行決定是否允許新依賴與資料轉換範圍，本夜未加套件。
+
+## 驗證限制與資料保護
+- 本夜只跑離線單元測試。正式App未操作、未重啟、未替換；未讀寫你的短句、設定或未儲存草稿；沒有Computer Use、系統輸入、外部對話框或剪貼簿測試。
+- 最終31項JS通過；20項Rust通過、1項會註冊原生快捷鍵的測試略過。前端Vite建置與 CARGO_NET_OFFLINE=true 的 npm run build -- --no-bundle 成功（Windows）。
+- Native artifact在 src-tauri/target/release/before-you-do.exe，沒有複製到正在使用的根目錄正式版，也沒有上Release。未修改CI、package/lock、環境或設定檔。
+- 新增UI僅經單元與建置驗證，未宣稱視覺/跨程序貼上/Mac實機/系統退出通過。外部改檔比較不是跨程序交易鎖，仍有比較與rename間的短暫競爭窗口；已知刪除會阻止重建，需人工還原檔案再繼續。
+- 自動審查曾拒絕含不必要清除步驟的初始化腳本，原因僅 blocked by policy。該腳本未執行；省略刪除後以非破壞指令完成初始化。
 
 ## 統計
-- 開始 START，截止 DEADLINE（預定 8 小時）。回合 1：建立分支、合約與資料圍欄。
-- 結束原因：進行中。
+- 收尾0完成／0失敗；加分8完成／0失敗（05分三片，其他各一筆）。獨立scope/scorer審查已執行。
+- 工作/調研回合12；20個commit、41個修改檔（含夜班證據；產品/測試19檔），淨增803行。
+- 最後建置：Windows Tauri --no-bundle成功；最後測試：JS31/31、Rust20通過1略過；fmt與diff檢查通過。
+- 結束原因：無候選（連續兩輪TOP:none），時間紀錄見上方與TIMING。
+- 分支 night-shift/2026-10-25，基於BASE中的main；僅收工推送此分支，不合併、不推main、不發布Release。
 
-- scope-reviewer 獨立複核：VERDICT: OK。無確定收尾工作；所有存疑項跳過。
+<details>
+<summary>TOP:none 的獨立評分原表（完整保留）</summary>
 
-| 01 | AI JSON 匯入型別與逐筆錯誤 | scores-01.md：10.7 | Raycast Snippets、MDN JSON.parse | 預計動 model.js 的import新區塊、i18n.js errorMessage小區塊、locales.js新增列、model.test.js新增區塊；測數字/null/欄位/四語/不變性 | npm test；npm run build:ui | 19/19 JS單元測試通過、前端build成功；4程式/測試檔，新增約70行 | 否決自動把物件轉字串（資料誤入）；否決引入schema套件（技能禁新增依賴） |
+### scores-06.md
 
-- 回合 2：加分01完成，嚴格JSON型別與四語欄位錯誤，npm test 19/19、build:ui成功；未執行外部或原生桌面測試。
+| # | Candidate | Impact | Urgency | Effort | Blast | Score | Reason |
+|---|---|---|---|---|---|---|---|
+| 05 | 草稿自動持久化／復原 | 8 | 5 | 9 | 8 | 0.6 | 僅評意外中斷復原，排除 457bf48 已完成退出確認；超過規模門檻且可能觸設定圍欄，本輪不可直接實作。 |
+| 07 | 角色自訂建立／刪除 | 7 | 4 | 9 | 9 | 0.3 | 有分類參考但固定角色已能完成核心流程；跨原生白名單、持久化及 picker 超過規模，不能直接實作完整候選。 |
+| 08 | 動態模板參數 | 6 | 3 | 8 | 8 | 0.3 | 有官方參考但填值流程牽動核心放開即貼行為，相容風險高；不得自動解讀既有大括號，需先切片。 |
+| 01 | AI JSON 匯入嚴格型別與逐筆錯誤 | 8 | 8 | 3 | 2 | 0.0 | DUPLICATE：b490a6f 已完成；去重覆寫公式得分。 |
+| 02 | 四語管理搜尋的 Unicode 與多詞匹配 | 7 | 6 | 2 | 2 | 0.0 | DUPLICATE：751ef9f 已完成；去重覆寫公式得分。 |
+| 03 | 純 JSON 複製匯出目前角色 | 7 | 5 | 3 | 2 | 0.0 | DUPLICATE：20dd3aa 已完成；去重覆寫公式得分。 |
+| 04 | 管理畫面首次操作提示補齊 | 7 | 7 | 2 | 3 | 0.0 | DUPLICATE：21702f7 已完成；去重覆寫公式得分。 |
+| 06 | 外部 AI 改檔後阻止舊內容覆蓋 | 9 | 8 | 5 | 5 | 0.0 | DUPLICATE：8e61708、a80c1f0 已完成原生比較與跨角色快照隔離；去重覆寫公式得分。 |
 
-| 02 | 四語 Unicode 多詞搜尋 | scores-02.md：10.5 | Raycast Snippets、MDN normalize | 計畫：新增snippet-search.js及純測試，main.js只改搜尋判斷與title，locales.js僅新增本項提示列；測全半形、日文、重音、跨欄多詞、原文不變 | npm test；npm run build:ui | 待實作 | 否決重排／改寫使用者資料（只做搜尋索引）；否決模糊搜尋套件（依賴與結果不可預期） |
+TOP: none (all below 2)
 
-- 回合3：加分02完成：多詞AND搜尋跨名稱/正文/有效情境，NFKC搜尋索引支援全半形與日文濁音，原文不變；npm test 22/22、build:ui成功。4個程式/測試檔。
+### scores-10.md
 
-| 03（候選04） | 管理畫面快捷操作指引 | scores-03.md：8.2 | Alfred browsing、Raycast quickstart | 計畫：新增usage-help.js純訊息、usage-help.test.js、main獨立usageBar區塊、locales新增列。主句先點輸入框；摺疊詳情列角色、取消與管理視窗收起。四語與自訂鍵同步 | npm test；npm run build:ui | 待實作 | 否決強制新手導覽（打斷）；否決修改快捷鍵核心（原行為使用者已確認） |
+| # | Candidate | Impact | Urgency | Effort | Blast | Score | Reason |
+|---|---|---|---|---|---|---|---|
+| 05 | 草稿自動持久化／復原 | 8 | 5 | 9 | 8 | 0.6 | 僅評意外中斷復原，排除 457bf48 已完成退出確認；超過規模門檻且可能觸設定圍欄，未切片前不可直接實作。 |
+| 07 | 角色自訂建立／刪除 | 7 | 4 | 9 | 9 | 0.3 | 固定角色已滿足核心流程；完整候選跨原生白名單、持久化及 picker 超規模，不能直接實作。 |
+| 08 | 動態模板參數 | 6 | 3 | 8 | 8 | 0.3 | 有官方來源但填值牽動放開即貼流程，相容風險高；不得自行解讀既有大括號，需先切片。 |
+| 01 | AI JSON 匯入嚴格型別與逐筆錯誤 | 8 | 8 | 3 | 2 | 0.0 | DUPLICATE：b490a6f 已完成；去重覆寫公式得分。 |
+| 02 | 四語管理搜尋的 Unicode 與多詞匹配 | 7 | 6 | 2 | 2 | 0.0 | DUPLICATE：751ef9f 已完成；去重覆寫公式得分。 |
+| 03 | 純 JSON 複製匯出目前角色 | 7 | 5 | 3 | 2 | 0.0 | DUPLICATE：20dd3aa 已完成；去重覆寫公式得分。 |
+| 04 | 管理畫面首次操作提示補齊 | 7 | 7 | 2 | 3 | 0.0 | DUPLICATE：21702f7 已完成；去重覆寫公式得分。 |
+| 06 | 外部 AI 改檔後阻止舊內容覆蓋 | 9 | 8 | 5 | 5 | 0.0 | DUPLICATE：8e61708、a80c1f0、e405297 已完成；去重覆寫公式得分。 |
+| 09 | Windows UTF-8 BOM 短句檔相容讀取 | 7 | 7 | 2 | 2 | 0.0 | DUPLICATE：29358e4 已完成；去重覆寫公式得分。 |
+| 10 | AI JSON 套用前預覽將取代的短句 | 7 | 6 | 3 | 3 | 0.0 | DUPLICATE：75b850e 已完成；去重覆寫公式得分。 |
+| 11 | 情境欄固定標示不會貼入 | 6 | 5 | 2 | 2 | 0.0 | DUPLICATE：31d9f8b 已完成；去重覆寫公式得分。 |
 
-- 回合4：加分03（候選04）完成，四語提示與設定快捷鍵同步，原收起／取消邏輯未改；npm test 24/24、build:ui成功。未做視覺／系統按鍵測試。
+TOP: none (all below 2)
 
-| 04（候選03） | 複製目前角色純JSON | scores-04.md：5.8 | Raycast JSON import/export、Alfred sharing | 計畫：settings.js獨立匯出區/按鈕，model.js新序列化函式區，locales.js新列，model.test新測試區；測往返、順序、情境、空白、原物件不變 | npm test；npm run build:ui | 待實作 | 否決第三方備份服務（範圍）；否決複製草稿卻標已儲存（混淆來源），僅匯出native已存資料 |
+### scores-11.md
 
-- 回合5：加分04（候選03）完成；只複製native已儲存資料，情境/排序/原始空白不變，可再匯入。npm test 25/25與build:ui成功；未操作真實剪貼簿。
+| # | Candidate | Impact | Urgency | Effort | Blast | Score | Reason |
+|---|---|---|---|---|---|---|---|
+| 05 | 草稿自動持久化／復原 | 8 | 5 | 9 | 8 | 0.6 | 僅評意外中斷復原，排除 457bf48 已完成退出確認；超過規模門檻且可能觸設定圍欄，未切片前不可直接實作。 |
+| 14 | App 內一鍵回復歷史備份 | 7 | 4 | 9 | 9 | 0.3 | 有官方歷史版本參考，但已有上一版備份與 JSON 匯出；涉及資料復原契約、草稿及至少七檔，成本與影響過大。 |
+| 07 | 角色自訂建立／刪除 | 7 | 4 | 9 | 9 | 0.3 | 固定角色已滿足核心流程；完整候選跨原生白名單、持久化及 picker 超規模，不能直接實作。 |
+| 08 | 動態模板參數 | 6 | 3 | 8 | 8 | 0.3 | 有官方來源但填值牽動放開即貼流程，相容風險高；不得自行解讀既有大括號，需先切片。 |
+| 13 | 在快捷選單直接打字搜尋 | 7 | 4 | 9 | 10 | 0.3 | 有官方搜尋參考，但與不搶焦點及 Alt 放開流程衝突；至少六檔且無可獨立驗證的安全小片，不能直接採用。 |
+| 12 | 跨格式匯入 Espanso YAML／Alfred 封裝 | 5 | 2 | 8 | 6 | 0.0 | NEEDS-DEP：可靠 YAML／封裝解析需新增第三方套件，技能禁止；不得用 regex 規避。 |
+| 01／02／03／04／06／09／10／11 | 已完成候選 | — | — | — | — | 0.0 | DUPLICATE：分別見 b490a6f、751ef9f、20dd3aa、21702f7、8e61708／a80c1f0／e405297、29358e4、75b850e、31d9f8b；去重覆寫公式得分。 |
 
-| 05（候選06） | 外部改檔儲存衝突保護 | scores-05.md：2.9 | VS Code官方tips-and-tricks：Preventing dirty writes | 計畫：storage.rs新snapshot檢查區與tempfile單元測試，Rust main save命令加可選expected參數；JS main舊有保存區記錄各角色深複製snapshot與傳參，locales新增衝突列。測外部修改/刪除/同內容建檔/格式差異/備份保留 | cargo test --offline；npm test；UI build及offline native build | 待實作 | 否決直接覆寫（遺失AI成果）；否決自動merge/新鎖套件（超出規模與依賴） |
+TOP: none (all below 2)
 
-- 回合6：加分05第一片完成：儲存/匯入帶各角色已讀快照，原生寫入前比對存在性與資料；同內容的角色預設建檔允許，外部改動/刪除/損壞拒寫。JS25/25、Rust18通過+1略過、build:ui成功。未宣稱跨程序鎖／UI整合驗證。續片會將快照深複製移至同編號純helper並補單元測試。
-
-- 回合7：加分05續片完成，同編號抽出saved-snapshot.js，兩項純測試驗證draft不共享原文/情境及跨角色baseline不被新讀取偷偷取代；JS27/27、build:ui成功。兩片各≤5檔，無新增套件。
-
-| 06（候選09） | UTF8 BOM短句檔相容 | scores-07.md：12.3 | Unicode BOM FAQ、Microsoft UTF8Encoding、RFC8259 8.1 | 計畫：只改storage.rs既有load小區塊及本項測試，不碰05snapshot區。先測出BOM失敗再修；保留正文FEFF、原檔不寫入、雙BOM/UTF16拒絕 | cargo test --offline；本機offline build | 待實作 | 否決猜測UTF16編碼（不確定轉換）；否決自動重寫原檔（資料風險） |
-
-- 回合8：加分06已先實際重現 UTF8 BOM 載入失敗，再修成只忽略單一檔頭BOM。Rust19通過+1略過（含正文FEFF、雙BOM、UTF16與不覆寫檔案）、offline release compile成功。只改storage.rs原有load區與本項測試，未改05區塊。
-
-| 07（候選11） | 情境說明固定顯示不貼入 | scores-08.md：7.5 | Textfold live preview、Alfred snippet格式說明（設計推論） | 計畫：scenario-hint.js與測試，main原renderScenario小區塊使用helper；保留來源與既有翻譯。測四語內建/自訂/空值，不洩正文到說明、不改原物件 | npm test；npm run build:ui | 待實作 | 否決把情境一起貼入（違反原需求）；否決移除來源（失去範本出處） |
-
-- 回合9：加分07完成，內建/自訂/空情境均固定保留不會貼入說明，來源仍保留；JS28/28與build:ui成功；無貼入邏輯變更。
-
-| 08（候選10） | AI匯入前名稱預覽 | scores-09.md：4.7 | Textfold官方import preview | 計畫：import-preview.js與純test，settings既有import確認小區塊顯示已存數/將取代數/前5名稱/餘數/草稿覆蓋警告，locales新增列；測多行/emoji/多筆/四語/原文不變。確認仍使用textContent純文字 | npm test；npm run build:ui | 待實作 | 否決自動合併（改既有取代語意）；否決列出100筆完整正文（確認窗過長） |
-
-- 回合10：加分08完成，套用確認含已存筆數、將取代筆數、前5個名稱與未列出筆數，保留草稿覆蓋/備份提醒；多行名稱顯示正規化但原文不變，長emoji不拆斷；JS31/31、build:ui成功。
-
-- 加分05自查發現一個既有互動：原生切換角色會自動種子缺少檔案，可能重建外部刻意刪除的已知角色。續做同編號：roles.rs追蹤本次已觀察檔案、main切角色/儲存前檢查，新增僅自有暫存目錄測試，避免將已知刪除當作首次建檔。否決每次一律禁止建檔（破壞新角色）；否決碰使用者檔案重現。
-
-- 回合11：加分05續查修正，已觀察過的角色檔案被外部刪除時不再當成首次使用重新種子；仍允許全新角色首次建檔。Rust20通過+1略過、UI build成功。此片2程式檔+result，與05兩片合計淨增仍小於300行。
+</details>
