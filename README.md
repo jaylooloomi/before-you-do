@@ -23,9 +23,9 @@
   <a href="#常見問題">FAQ</a>
 </p>
 
-<p align="center"><img src="docs/images/picker-dark.png" alt="按住 Alt+H 叫出短句清單，用上下鍵選擇，放開 Alt 貼入；底部可選擇新增提示詞" width="580"></p>
+<p align="center"><img src="docs/images/before-you-do-hero-v2-lowercase.png" alt="before-you-do：從反覆打字與翻找便條，到使用 Alt+H 選句，將工作交代貼入尚未送出的 AI 對話" width="1000"></p>
 
-<p align="center"><sub>Windows 原生程式的預覽畫面，使用內建範本。</sub></p>
+<p align="center"><sub>宣傳插畫：Alt+H 為預設快捷鍵，可在設定中調整。工具只貼入文字，不自動送出。</sub></p>
 
 把常對 AI 重複交代的「先規劃」「只改必要部分」「做完要實際驗證」存成短句，在需求寫完後隨手補上。不需要 API Key、AI 帳號或 AutoHotkey，也不綁定特定模型。
 
@@ -73,6 +73,8 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 幫我規劃並實作，實際測試主要使用流程；發現 bug 就修正並重測。
 完成後告訴我測過什麼、結果如何，以及哪些還沒驗證，不用每一步等我確認。
 ```
+
+<p align="center"><img src="docs/images/picker-settings.png" alt="快捷選單實際介面：上方選擇短句，底部固定有新增快捷提示詞與設定兩列" width="580"></p>
 
 選單不搶走原輸入框的焦點；貼入後由你自行檢查與送出。
 
