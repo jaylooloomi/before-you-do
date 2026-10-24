@@ -22,7 +22,8 @@
         "backgroundColor": "#00000000",
         "decorations": false,
         "shadow": false,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "maximizable": false
       },
       {
         "label": "picker",
