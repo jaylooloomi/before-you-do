@@ -61,3 +61,6 @@ export function findRoleTemplate(item,language){
  }
  return null;
 }
+export function getRoleTranslations(id,language){
+ return getRoleDefaults(id,language).map(item=>({...item,scenario:(['personal','developer'].includes(id)?getTemplates(language).find(t=>t.text===item.text):findRoleTemplate(item,language))?.scenario??''}));
+}

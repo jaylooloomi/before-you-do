@@ -103,6 +103,8 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ## Installation
 
+**Latest feature release: [v0.4.0](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.0).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.0.md) · [Release process](docs/RELEASING.md).
+
 ### Windows
 
 > Role switching and editable usage scenarios are included in v0.3.0 and later. Save your edits and fully quit the old app before upgrading; existing snippet files are preserved.
@@ -223,7 +225,7 @@ Drafts remain in memory until completed and saved. They are not automatically re
 
 In Settings & AI guide, choose **繁體中文, 简体中文, English, 日本語**, or follow the system language. Switching updates the manager and picker immediately and remembers your choice. Unsupported system languages fall back to English.
 
-**Changing the interface language does not translate your snippets.** The template library separately offers four language versions. Preview the text and usage scenario, then choose “Add this template” to append a draft without replacing your existing list.
+**Unmodified built-in snippets follow the interface language**, including their names, bodies and the text pasted by the picker. Switching languages does not rewrite the saved JSON. Added, imported or customized snippets keep their original text, including unsaved drafts. Legacy built-ins are recognized only by an exact match of both name and body with no custom scenario. The template library also offers four language versions; “Add this template” appends a personal draft without replacing your list.
 
 ### Use your own AI to edit snippets
 

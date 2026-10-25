@@ -31,6 +31,7 @@ fn item(name: String) -> storage::Snippet {
         name,
         text: "正文 ' <script>".into(),
         scenario: Some("情境".into()),
+        custom: false,
     }
 }
 #[test]
@@ -96,6 +97,7 @@ fn b06_native_unicode_boundary_fixture() {
         name: "😀".repeat(100),
         text: "😀".repeat(20000),
         scenario: Some("😀".repeat(1000)),
+        custom: false,
     };
     assert!(storage::validate(&[valid.clone()]).is_ok());
     for field in ["name", "text", "scenario"] {

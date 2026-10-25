@@ -128,6 +128,7 @@ mod tests {
             name: "角色短句".into(),
             text: "Keep Unicode 日本語".into(),
             scenario: None,
+            custom: false,
         }];
         let writer = path(&base, "writer").unwrap();
         storage::save(&writer, &load(&base, "writer", &defaults).unwrap()).unwrap();
@@ -161,4 +162,38 @@ pub fn defaults(id: &str, language: &str) -> Result<Vec<Snippet>, String> {
     let items: Vec<Snippet> = serde_json::from_value(value.clone()).map_err(|e| e.to_string())?;
     storage::validate(&items)?;
     Ok(items)
+}
+
+// Display/paste projection only: never rewrite stored data on a language change.
+pub fn localize(item: &Snippet, id: &str, language: &str) -> Snippet {
+    if item.custom {
+        return item.clone();
+    }
+    let Ok(data) =
+        serde_json::from_str::<serde_json::Value>(include_str!("../../src/role-localization.json"))
+    else {
+        return item.clone();
+    };
+    let Some(variants) = data.get(id) else {
+        return item.clone();
+    };
+    for source in ["zh-TW", "zh-CN", "en", "ja"] {
+        if let Ok(originals) = serde_json::from_value::<Vec<Snippet>>(variants[source].clone()) {
+            if let Some(index) = originals.iter().position(|t| {
+                t.name == item.name
+                    && t.text == item.text
+                    && (item.scenario.is_none() || item.scenario == t.scenario)
+            }) {
+                let value = variants.get(language).unwrap_or(&variants["en"]);
+                if let Ok(translated) = serde_json::from_value::<Vec<Snippet>>(value.clone()) {
+                    let mut result = translated[index].clone();
+                    if item.scenario.is_none() {
+                        result.scenario = None;
+                    }
+                    return result;
+                }
+            }
+        }
+    }
+    item.clone()
 }

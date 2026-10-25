@@ -34,6 +34,14 @@ enum Selection {
     Settings,
 }
 impl Picker {
+    fn finish_in_language(&mut self, paste: bool, language: &str) -> Option<Selection> {
+        match self.finish(paste) {
+            Some(Selection::Paste(target, _)) => self.items.get(self.selected).map(|item| {
+                Selection::Paste(target, roles::localize(item, &self.role, language).text)
+            }),
+            selection => selection,
+        }
+    }
     fn begin(&mut self, items: Vec<Snippet>, target: usize) {
         *self = Self {
             items,
@@ -143,7 +151,7 @@ fn preview_picker(
         "role" => change_picker_role(&state, &mut picker, delta.unwrap_or(1))?,
         "move" => picker.step(delta.unwrap_or(1)),
         "commit" => {
-            let chosen = picker.finish(true);
+            let chosen = picker.finish_in_language(true, &state.language.lock().unwrap());
             if chosen.is_some() {
                 activate_picker_role(&app, &picker.role, &picker.items)?;
             }
@@ -607,7 +615,7 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
             let (chosen, role, items) = {
                 let mut picker = state.picker.lock().unwrap();
                 (
-                    picker.finish(paste),
+                    picker.finish_in_language(paste, &state.language.lock().unwrap()),
                     picker.role.clone(),
                     picker.items.clone(),
                 )
@@ -937,6 +945,39 @@ mod tests {
         p.step(1);
         assert_eq!(p.finish(false), None);
         assert_eq!(p.finish(true), None);
+    }
+    #[test]
+    fn localized_commit_pastes_translated_builtin_without_changing_snapshot() {
+        let original = roles::defaults("personal", "zh-TW").unwrap();
+        let mut picker = Picker::default();
+        picker.begin(original.clone(), 123);
+        let english = roles::defaults("personal", "en").unwrap();
+        assert_eq!(
+            picker.finish_in_language(true, "en"),
+            Some(Selection::Paste(123, english[0].text.clone()))
+        );
+        assert_eq!(picker.items, original);
+        picker.begin(storage::defaults(), 123);
+        assert_eq!(
+            picker.finish_in_language(true, "en"),
+            Some(Selection::Paste(123, english[0].text.clone()))
+        );
+        let mut added = storage::defaults();
+        added[0].custom = true;
+        picker.begin(added.clone(), 123);
+        assert_eq!(
+            picker.finish_in_language(true, "en"),
+            Some(Selection::Paste(123, added[0].text.clone()))
+        );
+        let mut custom = original.clone();
+        custom[0].scenario = Some(String::new());
+        picker.begin(custom.clone(), 123);
+        assert_eq!(
+            picker.finish_in_language(true, "en"),
+            Some(Selection::Paste(123, custom[0].text.clone()))
+        );
+        picker.begin(original, 123);
+        assert_eq!(picker.finish_in_language(false, "en"), None);
     }
     #[test]
     fn selection_snapshot_survives_edits() {

@@ -43,20 +43,20 @@ node --test tests/qa-contract.test.js
 
 |層級|每輪正常回歸|限制|
 |---|---|---|
-|Node 邏輯|33 passed，0 skipped|既有31項＋2項Unicode契約測試|
+|Node 邏輯|37 passed，0 skipped|既有31項＋2項Unicode契約與4項語系保護測試|
 |Vitest Component|6 passed|真正 settings/dialog 元件；jsdom 模擬 dialog API，瀏覽器另測原生 dialog|
-|Rust Unit|20 passed，1 ignored|ignored 會註冊真實系統快捷鍵，避免干擾|
+|Rust Unit|21 passed，1 ignored|ignored 會註冊真實系統快捷鍵，避免干擾|
 |Rust Integration target|15 passed|4新增案例＋引用產品模組時重跑11個既有測試，不能當成15個全新測試|
-|Chromium E2E|24 passed，0 skipped／fixme|真實前端＋明示 IPC double，並非原生 Tauri 全鏈路|
+|Chromium E2E|27 passed，0 skipped／fixme|真實前端＋明示 IPC double，並非原生 Tauri 全鏈路|
 
-每輪共98個通過執行、1個系統快捷鍵測試ignored；去掉Rust重複11例後是87個獨立通過案例。原缺陷測試現在正常執行。
+每輪共106個通過執行、1個系統快捷鍵測試ignored；去掉Rust重複11例後是95個獨立通過案例。原缺陷測試現在正常執行。
 
 ## 覆蓋率審計
 
 |量測範圍|結果|證據／解讀|
 |---|---|---|
-|Node 實際載入模組|line 92.14%、branch 86.78%、functions 87.27%|`artifacts/qa/run-*/node.log`；不包含未載入的 DOM orchestration|
-|Vitest 全 src JS（排除locale資料檔）|line 31.93%、statement23.27%、branch20.76%、function25.28%|`run-*/component-coverage/`；不能用 Node 的92%冒充全前端覆蓋率|
+|Node 實際載入模組|line 92.35%、branch 87.63%、functions 88.33%|`artifacts/qa/run-*/node.log`；不包含未載入的 DOM orchestration|
+|Vitest 全 src JS（排除locale資料檔）|line 31.28%、statement22.94%、branch19.89%、function24.45%|`run-*/component-coverage/`；不能用 Node 的92%冒充全前端覆蓋率|
 |settings.js Component|line90.62%、branch66.66%|仍有快捷鍵與範本分支主要靠E2E|
 |dialog.js Component|line100%、branch69.23%|notice等分支尚未全覆蓋|
 |Browser view coverage|3/3＝100%|每個view均有六維度案例；E04/E16包含啟動失敗提示與恢復流程|
@@ -75,8 +75,11 @@ node --test tests/qa-contract.test.js
 
 ## 可追溯產物與執行狀態
 
-最終兩輪8個分層執行退出碼全部0，E2E各24通過／0fixme／0 unexpected／0 flaky／0 console errors；時間以COVERAGE_AUDIT.json的UTC時間為準。兩輪完整回歸與 zero-flake 審計：`artifacts/qa/runs.json`、`artifacts/qa/audit.json`，另持久化精簡版本至 [REGRESSION_RUNS.json](docs/qa/REGRESSION_RUNS.json) 與 [COVERAGE_AUDIT.json](docs/qa/COVERAGE_AUDIT.json)；分輪 Node/Component/Rust/E2E log 與 HTML 報告位於 `artifacts/qa/run-1/`、`run-2/`。失敗重現獨立保留於 `artifacts/qa/bugs/`，避免被正常回歸清掉。
+最終兩輪8個分層執行退出碼全部0，E2E各27通過／0fixme／0 unexpected／0 flaky／0 console errors；時間以COVERAGE_AUDIT.json的UTC時間為準。兩輪完整回歸與 zero-flake 審計：`artifacts/qa/runs.json`、`artifacts/qa/audit.json`，另持久化精簡版本至 [REGRESSION_RUNS.json](docs/qa/REGRESSION_RUNS.json) 與 [COVERAGE_AUDIT.json](docs/qa/COVERAGE_AUDIT.json)；分輪 Node/Component/Rust/E2E log 與 HTML 報告位於 `artifacts/qa/run-1/`、`run-2/`。失敗重現獨立保留於 `artifacts/qa/bugs/`，避免被正常回歸清掉。
 
 基建開發期間有 selector、inert判斷、init script順序、Windows PATH/清理問題；均修正測試基建，沒有改產品或把這些當產品Bug。最終兩輪的具體退出碼以runs.json為準。兩輪通過只代表這兩輪沒有觀測到flaky，不保證永遠零競爭。
 
 測試依賴皆 devDependencies，沒有新增runtime依賴。Windows正式Tauri建置 `npm run build -- --no-bundle` 通過，輸出位於 src-tauri/target/release/before-you-do.exe，未替換正在執行的根目錄App。未修改CI、未發版或重啟App；測試與修正提交並推送至main。本次交付包含兩個產品缺陷修正與原測試取消略過。
+
+
+內建提示詞隨語系切換的追加規格與保護方式見 [SNIPPET_LANGUAGE.md](docs/qa/SNIPPET_LANGUAGE.md)。

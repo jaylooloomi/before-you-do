@@ -1,6 +1,6 @@
 import {test,expect,Manager} from './fixture.js';
 test('E01 create scenario, save and refresh',async({page})=>{
- const m=new Manager(page);await m.open();await page.getByRole('button',{name:'新增短句',exact:true}).click();await m.name.fill('新增測試');await m.text.fill('正文');await m.scenario.fill('使用場景');await m.save.click();await expect.poll(()=>page.evaluate(()=>qa.state.files.personal.at(-1))).toEqual({name:'新增測試',text:'正文',scenario:'使用場景'});await page.reload();await page.getByRole('button',{name:/新增測試/}).click();await expect(m.scenario).toHaveValue('使用場景');
+ const m=new Manager(page);await m.open();await page.getByRole('button',{name:'新增短句',exact:true}).click();await m.name.fill('新增測試');await m.text.fill('正文');await m.scenario.fill('使用場景');await m.save.click();await expect.poll(()=>page.evaluate(()=>qa.state.files.personal.at(-1))).toEqual({name:'新增測試',text:'正文',scenario:'使用場景',custom:true});await page.reload();await page.getByRole('button',{name:/新增測試/}).click();await expect(m.scenario).toHaveValue('使用場景');
 });
 test('E02 drafts, injection, multi-term search and error focus',async({page})=>{
  const m=new Manager(page);await m.open();await page.getByRole('button',{name:'新增短句',exact:true}).click();await m.name.fill('<script>window.hacked=1</script>');await m.scenario.fill("SQL ' OR 1=1");await m.save.click();await expect(page.getByRole('button',{name:/第 4 筆/})).toBeVisible();await expect.poll(()=>page.evaluate(()=>qa.state.files.personal.length)).toBe(3);await page.getByRole('button',{name:/第 4 筆/}).click();await expect(m.text).toBeFocused();await expect.poll(()=>page.evaluate(()=>window.hacked||0)).toBe(0);await page.getByPlaceholder('搜尋短句').fill('理解 需求');await expect(page.getByRole('button',{name:/理解後直接進行 先整理/})).toBeVisible();
@@ -35,7 +35,7 @@ test('E04 manager startup failure blocks editing and reload recovers',async({pag
 test('B06 Unicode input limits preserve full emoji values on save and reload',async({page})=>{
  const m=new Manager(page);await m.open();const name='😀'.repeat(100),text='😀'.repeat(20000),scenario='😀'.repeat(1000);
  await m.name.fill(name);await m.text.fill(text);await m.scenario.fill(scenario);await m.save.click();
- await expect.poll(()=>page.evaluate(()=>qa.state.files.personal[0])).toEqual({name,text,scenario});
+ await expect.poll(()=>page.evaluate(()=>qa.state.files.personal[0])).toEqual({name,text,scenario,custom:true});
  await page.reload();await expect(m.name).toHaveValue(name);await expect(m.text).toHaveValue(text);await expect(m.scenario).toHaveValue(scenario);
  await expect(page.getByText('20000 字',{exact:true})).toBeVisible();
  await m.name.fill(name+'😀');await m.save.click();await expect(page.getByRole('button',{name:/第 1 筆/})).toBeVisible();

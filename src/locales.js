@@ -82,7 +82,7 @@ export const rows = [
 ['設定與 AI 教學','设置与 AI 教学','Settings & AI guide','設定と AI ガイド'],
 ['介面語言','界面语言','Interface language','表示言語'],
 ['跟隨系統','跟随系统','System default','システム設定に従う'],
-['切換語言不會翻譯或修改你的短句。','切换语言不会翻译或修改你的短句。','Changing the interface language leaves your snippets unchanged.','表示言語を変えても、短文の内容は変更されません。'],
+['內建短句隨語言切換；新增或自訂的短句保留原文。','内置短句随语言切换；新增或自定义的短句保留原文。','Built-in snippets follow the interface language. Added or customized snippets keep their original text.','内蔵短文は表示言語に合わせて切り替わります。追加・編集した短文は原文を保ちます。'],
 ['你的對話捷徑','你的对话捷径','Your conversation shortcut','会話のショートカット'],
 ['最小化','最小化','Minimize','最小化'],['最大化或還原','最大化或还原','Maximize or restore','最大化・元に戻す'],['收起到系統匣','收起到系统托盘','Hide to tray','トレイに格納'],
 ['短句資料庫','短句库','Snippet library','短文ライブラリ'],['搜尋短句','搜索短句','Search snippets','短文を検索'],['我的短句','我的短句','My snippets','マイ短文'],

@@ -7,6 +7,7 @@ export function validateSnippets(items) {
     if (!name || !text) throw new Error('每句短句都需要名稱與內容。');
     if (characterCount(name) > 100 || characterCount(text) > 20000) throw new Error('名稱最多 100 字，內容最多 20,000 字。');
     const result={name,text};
+    if(item.custom===true)result.custom=true;
     if(Object.hasOwn(item,'scenario')){
       if(typeof item.scenario!=='string'||characterCount(item.scenario)>1000)throw new Error('情境最多 1,000 字，且必須是文字。');
       result.scenario=item.scenario.trim();

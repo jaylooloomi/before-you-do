@@ -7,6 +7,11 @@ pub struct Snippet {
     pub text: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub custom: bool,
+}
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 pub fn defaults() -> Vec<Snippet> {
@@ -60,6 +65,7 @@ fn legacy(xml: &str) -> Result<Vec<Snippet>, String> {
         .items
         .into_iter()
         .map(|s| Snippet {
+            custom: false,
             name: s.name,
             text: s.text,
             scenario: None,
@@ -175,7 +181,8 @@ mod tests {
         assert!(validate(&[Snippet {
             name: "a".into(),
             text: " ".into(),
-            scenario: None
+            scenario: None,
+            custom: false,
         }])
         .is_err());
     }

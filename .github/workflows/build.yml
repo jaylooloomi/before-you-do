@@ -29,10 +29,48 @@ jobs:
         run: |
           mkdir -p artifacts
           ditto -c -k --sequesterRsrc --keepParent "src-tauri/target/release/bundle/macos/before-you-do.app" artifacts/before-you-do-mac.zip
+      - if: runner.os == 'Windows' && startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: ./scripts/package-windows-release.ps1 -Tag '${{ github.ref_name }}'
+      - if: runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          ARCH=apple-silicon
+          if [ "${{ matrix.os }}" = "macos-15-intel" ]; then ARCH=intel; fi
+          cp artifacts/before-you-do-mac.zip "artifacts/before-you-do-${RELEASE_TAG}-macos-${ARCH}.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: before-you-do-${{ matrix.os }}
           path: |
             src-tauri/target/release/before-you-do.exe
             artifacts/before-you-do-mac.zip
+            artifacts/before-you-do-v*-*.zip
           if-no-files-found: error
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: before-you-do-*
+          path: artifacts/downloaded
+      - name: Collect and verify all platform archives
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p artifacts/release
+          find artifacts/downloaded -type f -name "before-you-do-${RELEASE_TAG}-*.zip" -exec cp '{}' artifacts/release/ \;
+          python3 scripts/verify-release.py "$RELEASE_TAG" artifacts/release
+          test -s "docs/releases/${RELEASE_TAG}.md"
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" artifacts/release/* --verify-tag --draft --title "before-you-do ${RELEASE_TAG}" --notes-file "docs/releases/${RELEASE_TAG}.md"
+          gh release edit "$RELEASE_TAG" --draft=false --latest
