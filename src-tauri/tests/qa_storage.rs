@@ -9,17 +9,54 @@ use std::fs;
 struct Sandbox(std::path::PathBuf);
 impl Sandbox {
     fn new() -> Self {
-        let p = std::env::temp_dir().join(format!(
-            "byd-qa-{}-{:?}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        fs::create_dir_all(&p).unwrap();
-        Self(p)
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        loop {
+            let p = std::env::temp_dir().join(format!(
+                "byd-qa-{}-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
+            // Exclusive creation: never adopt another test's directory on coarse clocks.
+            match fs::create_dir(&p) {
+                Ok(()) => return Self(p),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => panic!("Cannot create isolated test directory: {error}"),
+            }
+        }
     }
+}
+#[test]
+fn b00_parallel_sandboxes_never_share_files_or_cleanup() {
+    let barrier = std::sync::Barrier::new(32);
+    let paths = std::thread::scope(|scope| {
+        let handles: Vec<_> = (0..32)
+            .map(|id| {
+                let barrier = &barrier;
+                scope.spawn(move || {
+                    let sandbox = Sandbox::new();
+                    let marker = sandbox.0.join("owner.txt");
+                    fs::write(&marker, id.to_string()).unwrap();
+                    barrier.wait();
+                    assert_eq!(fs::read_to_string(&marker).unwrap(), id.to_string());
+                    sandbox.0.clone()
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|handle| handle.join().unwrap())
+            .collect::<Vec<_>>()
+    });
+    assert_eq!(
+        paths.iter().collect::<std::collections::HashSet<_>>().len(),
+        32
+    );
+    assert!(paths.iter().all(|path| !path.exists()));
 }
 impl Drop for Sandbox {
     fn drop(&mut self) {

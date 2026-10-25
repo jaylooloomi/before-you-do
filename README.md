@@ -103,7 +103,7 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ## Installation
 
-**Latest feature release: [v0.4.0](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.0).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.0.md) · [Release process](docs/RELEASING.md).
+**Latest feature release: [v0.4.1](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.1).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.1.md) · [Release process](docs/RELEASING.md).
 
 ### Windows
 
