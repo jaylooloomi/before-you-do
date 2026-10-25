@@ -179,7 +179,7 @@ Browse **12 roles** using the horizontal cards, left/right buttons, mouse wheel 
 
 Counts describe the initial presets; upgrading does not reset edited content. Roles organize snippets. They do not call AI or execute tasks inside the app.
 
-<p align="center"><img src="docs/images/manager-roles.png" alt="Snippet manager with the new icon, horizontal role cards, reordering and usage scenarios; Traditional Chinese interface shown" width="940"></p>
+<p align="center"><img src="docs/images/manager-roles-en.png" alt="English snippet manager with horizontal role cards, reordering and editable usage scenarios" width="940"></p>
 
 Alt+H uses the active role’s **saved** snippets. Switching preserves each role’s unsaved edits and selection in the current app session, and remembers the active role across restarts. Save edits before quitting. Imports, reloads and AI editing instructions apply only to the active role.
 
