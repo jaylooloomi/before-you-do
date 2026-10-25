@@ -1,13 +1,14 @@
+import { characterCount } from './unicode.js';
 export function validateSnippets(items) {
   if (!Array.isArray(items) || !items.length) throw new Error('請至少保留一句短句。');
   return items.map(item => {
     const name = String(item.name ?? '').trim();
     const text = String(item.text ?? '').trim();
     if (!name || !text) throw new Error('每句短句都需要名稱與內容。');
-    if (name.length > 100 || text.length > 20000) throw new Error('名稱最多 100 字，內容最多 20,000 字。');
+    if (characterCount(name) > 100 || characterCount(text) > 20000) throw new Error('名稱最多 100 字，內容最多 20,000 字。');
     const result={name,text};
     if(Object.hasOwn(item,'scenario')){
-      if(typeof item.scenario!=='string'||item.scenario.length>1000)throw new Error('情境最多 1,000 字，且必須是文字。');
+      if(typeof item.scenario!=='string'||characterCount(item.scenario)>1000)throw new Error('情境最多 1,000 字，且必須是文字。');
       result.scenario=item.scenario.trim();
     }
     return result;
@@ -35,7 +36,7 @@ function validateImportEntry(item, offset) {
     if (field === 'scenario' && !Object.hasOwn(item, field)) continue;
     if (typeof item[field] !== 'string') fail(field, 'error.import_string');
     if (field !== 'scenario' && !item[field].trim()) fail(field, 'error.import_required');
-    if (item[field].length > limit) fail(field, 'error.import_length', limit);
+    if (characterCount(item[field]) > limit) fail(field, 'error.import_length', limit);
   }
 }
 
@@ -58,9 +59,9 @@ export function snippetIssues(item) {
   const fields=[];
   for(const [field,limit] of [['name',100],['text',20000]]) {
     if(!String(item[field]??'').trim()) fields.push({field,reason:'required'});
-    else if(String(item[field]).length>limit) fields.push({field,reason:'length',limit});
+    else if(characterCount(item[field])>limit) fields.push({field,reason:'length',limit});
   }
-  if(Object.hasOwn(item,'scenario')&&(typeof item.scenario!=='string'||item.scenario.length>1000)) fields.push({field:'scenario',reason:'length',limit:1000});
+  if(Object.hasOwn(item,'scenario')&&(typeof item.scenario!=='string'||characterCount(item.scenario)>1000)) fields.push({field:'scenario',reason:'length',limit:1000});
   return fields;
 }
 export function savedVersions(items) {

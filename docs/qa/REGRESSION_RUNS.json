@@ -1,0 +1,42 @@
+[
+  {
+    "round": 1,
+    "name": "node",
+    "status": 0
+  },
+  {
+    "round": 1,
+    "name": "components",
+    "status": 0
+  },
+  {
+    "round": 1,
+    "name": "rust",
+    "status": 0
+  },
+  {
+    "round": 1,
+    "name": "e2e",
+    "status": 0
+  },
+  {
+    "round": 2,
+    "name": "node",
+    "status": 0
+  },
+  {
+    "round": 2,
+    "name": "components",
+    "status": 0
+  },
+  {
+    "round": 2,
+    "name": "rust",
+    "status": 0
+  },
+  {
+    "round": 2,
+    "name": "e2e",
+    "status": 0
+  }
+]

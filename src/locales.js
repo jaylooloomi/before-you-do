@@ -137,6 +137,7 @@ export const rows = [
 ['error.no_file','尚无短句文件，请先保存短句。','No snippet file yet. Save your snippets first.','短文ファイルがありません。先に短文を保存してください。'],['error.read','无法读取短句文件，请检查文件或还原 .bak。','Cannot read the snippet file. Check it or restore the .bak backup.','短文ファイルを読み込めません。確認するか .bak を復元してください。'],['error.io','文件操作失败，请检查路径和权限。','File operation failed. Check the path and permissions.','ファイル操作に失敗しました。パスと権限を確認してください。'],
 ['你的原有範本','你的原有模板','Original template','元のテンプレート'],
 ['範本庫','模板库','Template library','テンプレート集'],['預覽並新增範本；不會取代現有短句。','预览并新增模板，不会替换现有短句。','Preview and add templates without replacing existing snippets.','プレビューして追加できます。既存の短文は置き換えません。'],['新增此範本','添加此模板','Add this template','このテンプレートを追加'],['範本語言','模板语言','Template language','テンプレートの言語'],['已加入草稿，請返回短句儲存。','已加入草稿，请返回短句保存。','Added as a draft. Return to snippets to save it.','下書きに追加しました。短文画面に戻って保存してください。'],
+['無法載入短句','无法加载短句','Unable to load snippets','短文を読み込めません'],
 ];
 
 export const specialTraditional = {

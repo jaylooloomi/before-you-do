@@ -1,0 +1,2 @@
+import { defineConfig } from 'vitest/config';
+export default defineConfig({test:{environment:'jsdom',include:['tests/components/**/*.test.js'],setupFiles:['./tests/components/setup.js'],coverage:{provider:'v8',include:['src/**/*.js'],exclude:['src/locales.js','src/template-locales.js','src/role-locales.js'],reportsDirectory:`${process.env.QA_OUTPUT_DIR||'artifacts/qa'}/component-coverage`,reporter:['text','json-summary','html']}}});
