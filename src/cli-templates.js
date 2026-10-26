@@ -19,5 +19,12 @@ export function getCliTemplates(language) {
  const resume=resumeLabels[language]??resumeLabels.en;
  const templates=[...commands.map((text,i)=>({name:values[i],text,scenario:values[i+2],source:values[4]})),
   ...['claude --resume','codex resume --all'].map((text,i)=>({name:resume[i],text,scenario:resume[i+2],source:values[4]}))];
- return [templates[0],templates[2],templates[1],templates[3]];
+ const permissionLabels={
+  'zh-TW':['Claude Code：權限模式快捷鍵','在 Claude Code 互動介面按 Shift+Tab。此短句只貼入按鍵提示，不會模擬按鍵。','Codex：權限設定','在 Codex 互動介面輸入 /permissions，開啟權限設定。'],
+  'zh-CN':['Claude Code：权限模式快捷键','在 Claude Code 交互界面按 Shift+Tab。此短句只粘贴按键提示，不会模拟按键。','Codex：权限设置','在 Codex 交互界面输入 /permissions，打开权限设置。'],
+  en:['Claude Code: permission mode shortcut','Press Shift+Tab in the Claude Code interactive interface. This snippet only pastes the key reminder; it does not simulate a keypress.','Codex: permissions','Enter /permissions in the Codex interactive interface to open permission settings.'],
+  ja:['Claude Code：権限モードのショートカット','Claude Code の対話画面で Shift+Tab を押します。この短文はキー操作の説明を貼り付けるだけで、キー入力は実行しません。','Codex：権限設定','Codex の対話画面で /permissions を入力し、権限設定を開きます。'],
+ };
+ const permission=permissionLabels[language]??permissionLabels.en;
+ return [templates[0],templates[2],{name:permission[0],text:'[Shift+Tab]',scenario:permission[1],source:values[4]},templates[1],templates[3],{name:permission[2],text:'/permissions',scenario:permission[3],source:values[4]}];
 }

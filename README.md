@@ -46,7 +46,7 @@ Save the instructions you keep repeating to AI — “plan first,” “change o
 
 ## Use cases
 
-My snippets includes six common working instructions; Agent commands contains four terminal launch and resume commands. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
+My snippets includes six common working instructions; Agent commands contains six terminal commands and shortcut reminders. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
 
 | Your situation | Choose this template | What you want AI to do |
 |---|---|---|
@@ -165,7 +165,7 @@ Browse **13 roles** using the horizontal cards, left/right buttons, mouse wheel 
 | Role | When to use it | Default snippets |
 |---|---|---|
 | My snippets | General instructions: clarify, plan, execute and report | 6 |
-| Agent commands | Launch or resume Claude Code and Codex sessions | 4 |
+| Agent commands | Launch, resume and access permission controls | 6 |
 | Development | Implement features, limit scope and demonstrate working results | 3 |
 | Writing | Polish drafts, adapt tone and get ready-to-use text | 3 |
 | Research | Verify facts, compare options and find blind spots | 3 |
@@ -371,3 +371,5 @@ The eight specialist roles added after Research contain two short prompts each, 
 “Choose and carry out a recommendation” and “Change only what is necessary” draw on the [Get Shit Done execution workflow](https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md). “Show it working” draws on the [Superpowers verification principles](https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md). These are adaptations with translated versions, not verbatim text from the original authors.
 
 Licensed under the [MIT License](LICENSE). Copyright © 2026 Arthur Wang. Third-party materials retain their respective licenses and attribution notices.
+
+Agent commands also includes [Shift+Tab] as a Claude Code key reminder and /permissions for Codex. The shortcut reminder is pasted as text; no keypress is simulated.

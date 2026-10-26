@@ -116,12 +116,20 @@
         "text": "claude --resume"
       },
       {
+        "name": "Claude Code：權限模式快捷鍵",
+        "text": "[Shift+Tab]"
+      },
+      {
         "name": "Codex：略過確認與沙箱",
         "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex：瀏覽所有對話並繼續",
         "text": "codex resume --all"
+      },
+      {
+        "name": "Codex：權限設定",
+        "text": "/permissions"
       }
     ],
     "zh-CN": [
@@ -134,12 +142,20 @@
         "text": "claude --resume"
       },
       {
+        "name": "Claude Code：权限模式快捷键",
+        "text": "[Shift+Tab]"
+      },
+      {
         "name": "Codex：跳过确认与沙箱",
         "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex：浏览所有对话并继续",
         "text": "codex resume --all"
+      },
+      {
+        "name": "Codex：权限设置",
+        "text": "/permissions"
       }
     ],
     "en": [
@@ -152,12 +168,20 @@
         "text": "claude --resume"
       },
       {
+        "name": "Claude Code: permission mode shortcut",
+        "text": "[Shift+Tab]"
+      },
+      {
         "name": "Codex: bypass approvals and sandbox",
         "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex: browse and resume all sessions",
         "text": "codex resume --all"
+      },
+      {
+        "name": "Codex: permissions",
+        "text": "/permissions"
       }
     ],
     "ja": [
@@ -170,12 +194,20 @@
         "text": "claude --resume"
       },
       {
+        "name": "Claude Code：権限モードのショートカット",
+        "text": "[Shift+Tab]"
+      },
+      {
         "name": "Codex：承認とサンドボックスを無効化",
         "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex：すべてのセッションから再開",
         "text": "codex resume --all"
+      },
+      {
+        "name": "Codex：権限設定",
+        "text": "/permissions"
       }
     ]
   },
