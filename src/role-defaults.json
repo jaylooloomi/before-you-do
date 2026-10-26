@@ -144,8 +144,8 @@
         "text": "[Shift+Tab]"
       },
       {
-        "name": "OpenCode：舊對話指令備忘（Codex）",
-        "text": "codex resume --all"
+        "name": "OpenCode：自動模式",
+        "text": "opencode --auto"
       },
       {
         "name": "OpenCode：選擇舊對話",
@@ -194,8 +194,8 @@
         "text": "[Shift+Tab]"
       },
       {
-        "name": "OpenCode：旧对话命令备忘（Codex）",
-        "text": "codex resume --all"
+        "name": "OpenCode：自动模式",
+        "text": "opencode --auto"
       },
       {
         "name": "OpenCode：选择旧对话",
@@ -244,8 +244,8 @@
         "text": "[Shift+Tab]"
       },
       {
-        "name": "OpenCode: previous-session note (Codex)",
-        "text": "codex resume --all"
+        "name": "OpenCode: auto mode",
+        "text": "opencode --auto"
       },
       {
         "name": "OpenCode: choose a previous session",
@@ -294,8 +294,8 @@
         "text": "[Shift+Tab]"
       },
       {
-        "name": "OpenCode：過去の会話メモ（Codex）",
-        "text": "codex resume --all"
+        "name": "OpenCode：自動モード",
+        "text": "opencode --auto"
       },
       {
         "name": "OpenCode：過去の会話を選択",

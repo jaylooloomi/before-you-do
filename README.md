@@ -178,7 +178,7 @@ Browse **13 roles** using the horizontal cards, left/right buttons, mouse wheel 
 | Marketing | Adapt content to an audience and plan concrete topics | 2 |
 | Project planning | Break down work, dependencies, progress and blockers | 2 |
 
-The Agent commands role, between My snippets and Development, contains `claude --dangerously-skip-permissions`, `codex --dangerously-bypass-approvals-and-sandbox`, `claude --resume` and `codex resume --all`. These are pasted as text, never executed by the app. Their usage scenarios explain the disabled protections; use them only in trusted environments. Existing saved lists are not reset or automatically expanded on upgrade; add them from the template library if needed.
+The Agent commands role, between My snippets and Development, includes Claude Code, Codex, Antigravity and OpenCode commands and shortcut reminders. OpenCode examples include `opencode --auto`, `/sessions` and `[Tab]` for Build / Plan mode. These are pasted as text, never executed by the app. Existing saved lists are not reset or automatically expanded on upgrade; add them from the template library if needed.
 
 Counts describe the initial presets; upgrading does not reset edited content. Roles organize snippets. They do not call AI or execute tasks inside the app.
 

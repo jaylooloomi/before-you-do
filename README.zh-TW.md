@@ -175,7 +175,7 @@ Alt+H 選單底部依序是「新增快捷提示詞」與「設定」。選到�
 | 內容行銷 | 依受眾改寫內容、規劃可執行的選題 | 2 |
 | 專案管理 | 拆解工作、整理相依關係、進度與阻礙 | 2 |
 
-「我的短句」與「程式開發」之間的「代理指令」角色包含 `claude --dangerously-skip-permissions`、`codex --dangerously-bypass-approvals-and-sandbox`、`claude --resume` 與 `codex resume --all`。App 只會貼入文字，不會執行指令；使用情境說明了停用的保護，請僅用於信任的環境。升級不會重設或自動擴充既有清單，需要時可從範本庫加入。
+「我的短句」與「程式開發」之間的「代理指令」角色包含 Claude Code、Codex、Antigravity 與 OpenCode 的指令及快捷鍵提示。OpenCode 範例包含 `opencode --auto`、`/sessions` 與切換 Build／Plan 模式的 `[Tab]`。App 只會貼入文字，不會執行指令。升級不會重設或自動擴充既有清單，需要時可從範本庫加入。
 
 表中的數量是新角色的預設值；升級不會重設你已修改的內容。這些角色是短句分類，不會在 App 內呼叫 AI 或自動執行任務。
 

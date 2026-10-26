@@ -20,7 +20,7 @@ test('agent role sits between personal and development and preserves command tex
    'agy --continue --dangerously-skip-permissions',
    '/resume',
    '[Shift+Tab]',
-   'codex resume --all',
+   'opencode --auto',
    '/sessions',
    '[Tab]',
   ]);
