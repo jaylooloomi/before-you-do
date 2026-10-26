@@ -46,7 +46,7 @@ Save the instructions you keep repeating to AI — “plan first,” “change o
 
 ## Use cases
 
-My snippets includes six common working instructions. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
+My snippets includes six common working instructions and two terminal launch commands. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
 
 | Your situation | Choose this template | What you want AI to do |
 |---|---|---|
@@ -164,7 +164,7 @@ Browse **12 roles** using the horizontal cards, left/right buttons, mouse wheel 
 
 | Role | When to use it | Default snippets |
 |---|---|---|
-| My snippets | General instructions: clarify, plan, execute and report | 6 |
+| My snippets | General instructions plus Claude Code / Codex launch commands | 8 |
 | Development | Implement features, limit scope and demonstrate working results | 3 |
 | Writing | Polish drafts, adapt tone and get ready-to-use text | 3 |
 | Research | Verify facts, compare options and find blind spots | 3 |
@@ -176,6 +176,8 @@ Browse **12 roles** using the horizontal cards, left/right buttons, mouse wheel 
 | Product | Turn ideas into requirements and prioritize features | 2 |
 | Marketing | Adapt content to an audience and plan concrete topics | 2 |
 | Project planning | Break down work, dependencies, progress and blockers | 2 |
+
+Slots 07 and 08 contain `claude --dangerously-skip-permissions` and `codex --dangerously-bypass-approvals-and-sandbox`. These are pasted as text, never executed by the app. Their usage scenarios explain the disabled protections; use them only in trusted environments. Existing saved lists are not reset or automatically expanded on upgrade; add them from the template library if needed.
 
 Counts describe the initial presets; upgrading does not reset edited content. Roles organize snippets. They do not call AI or execute tasks inside the app.
 

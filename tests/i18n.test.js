@@ -17,7 +17,7 @@ test('all translation entries have four nonempty variants and unique keys',()=>{
 test('translated template metadata does not mutate saved snippets and edited bodies lose hints',()=>{
  const original={name:'我的自訂名稱',text:getTemplates('zh-TW')[0].text}; const before=JSON.stringify(original);
  for(const language of ['zh-TW','zh-CN','en','ja']){
-  const list=getTemplates(language);assert.equal(list.length,6);assert(list.every(i=>i.name&&i.text&&i.scenario&&i.source));
+  const list=getTemplates(language);assert.equal(list.length,8);assert(list.every(i=>i.name&&i.text&&i.scenario&&i.source));
   assert.equal(findTemplate(original,language).text,list[0].text);
   assert.equal(findTemplate({...original,text:'user edits'},language),undefined);
  }

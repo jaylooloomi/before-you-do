@@ -1,4 +1,5 @@
 import originals from './templates.json' with { type: 'json' };
+import { getCliTemplates } from './cli-templates.js';
 const variants = {
  'zh-CN': [
  ['理解后直接进行','先简短整理你理解的需求、目的与重要限制，再依此规划并直接进行，不用等我确认。','需求已描述好，希望 AI 先说明理解，再自主继续。'],
@@ -32,7 +33,7 @@ const source = {
 };
 export function getTemplates(language) {
  if (!variants[language]) return originals;
- return variants[language].map(([name,text,scenario],i)=>({name,text,scenario,source:source[language][i<3?0:i-2],url:originals[i].url}));
+ return [...variants[language].map(([name,text,scenario],i)=>({name,text,scenario,source:source[language][i<3?0:i-2],url:originals[i].url})), ...getCliTemplates(language)];
 }
 export function findTemplate(item, language) {
  const index=['zh-TW','zh-CN','en','ja'].map(getTemplates).map(list=>list.findIndex(t=>t.text===item?.text)).find(i=>i>=0);

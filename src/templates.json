@@ -1,8 +1,53 @@
 [
- {"name":"理解後直接進行","text":"先簡短整理你理解的需求、目的與重要限制，再依此規劃並直接進行，不用等我確認。","scenario":"需求已描述好，希望 AI 先說明理解，再自主往下做。","source":"你的原有範本"},
- {"name":"先規劃，不實作","text":"你知道我的意思嗎？幫我規劃一下，直接給我你推薦的方案與理由，先不要實作。","scenario":"方向還沒決定，想先聽推薦方案與理由，暫時不要修改程式。","source":"你的原有範本"},
- {"name":"實作、測試並回報","text":"幫我規劃並實作，實際測試主要使用流程；發現 bug 就修正並重測。完成後告訴我測過什麼、結果如何，以及哪些還沒驗證，不用每一步等我確認。","scenario":"需求已確定，要 AI 把實作、測試與修正做完，再回報驗證結果。","source":"你的原有範本"},
- {"name":"照推薦方案直接做","text":"依照我的需求與限制，選擇你最推薦的方案，簡短說明理由後直接實作並驗證，不用再問我要選哪一個。若有會明顯改變需求的取捨，再提出來讓我決定。","scenario":"AI 已列出幾個方案，你希望它自行選擇最合適的方案並直接完成。","source":"參考 Get Shit Done 執行流程，繁中改寫","url":"https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md"},
- {"name":"只改必要的地方","text":"在現有做法上完成這次需求，只修改必要的地方，保留其他正常功能。先不要順便重構或增加額外功能；若發現無關問題，完成後另外告訴我。","scenario":"修小功能或 bug，不希望 AI 順便重構、換框架，或改動其他正常功能。","source":"參考 Get Shit Done 範圍限制，繁中改寫","url":"https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md"},
- {"name":"實際操作給我看","text":"完成後請實際操作主要使用流程，確認結果符合我的要求；涉及畫面的部分，請截圖並查看實際顯示效果。不要只用編譯成功或模擬結果判定完成，無法實測的部分請明說。","scenario":"介面、快捷鍵、貼上或視窗效果，需要實際操作與截圖確認，不能只看編譯結果。","source":"參考 Superpowers 驗證原則，加入實際操作與截圖要求","url":"https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md"}
+  {
+    "name": "理解後直接進行",
+    "text": "先簡短整理你理解的需求、目的與重要限制，再依此規劃並直接進行，不用等我確認。",
+    "scenario": "需求已描述好，希望 AI 先說明理解，再自主往下做。",
+    "source": "你的原有範本"
+  },
+  {
+    "name": "先規劃，不實作",
+    "text": "你知道我的意思嗎？幫我規劃一下，直接給我你推薦的方案與理由，先不要實作。",
+    "scenario": "方向還沒決定，想先聽推薦方案與理由，暫時不要修改程式。",
+    "source": "你的原有範本"
+  },
+  {
+    "name": "實作、測試並回報",
+    "text": "幫我規劃並實作，實際測試主要使用流程；發現 bug 就修正並重測。完成後告訴我測過什麼、結果如何，以及哪些還沒驗證，不用每一步等我確認。",
+    "scenario": "需求已確定，要 AI 把實作、測試與修正做完，再回報驗證結果。",
+    "source": "你的原有範本"
+  },
+  {
+    "name": "照推薦方案直接做",
+    "text": "依照我的需求與限制，選擇你最推薦的方案，簡短說明理由後直接實作並驗證，不用再問我要選哪一個。若有會明顯改變需求的取捨，再提出來讓我決定。",
+    "scenario": "AI 已列出幾個方案，你希望它自行選擇最合適的方案並直接完成。",
+    "source": "參考 Get Shit Done 執行流程，繁中改寫",
+    "url": "https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md"
+  },
+  {
+    "name": "只改必要的地方",
+    "text": "在現有做法上完成這次需求，只修改必要的地方，保留其他正常功能。先不要順便重構或增加額外功能；若發現無關問題，完成後另外告訴我。",
+    "scenario": "修小功能或 bug，不希望 AI 順便重構、換框架，或改動其他正常功能。",
+    "source": "參考 Get Shit Done 範圍限制，繁中改寫",
+    "url": "https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md"
+  },
+  {
+    "name": "實際操作給我看",
+    "text": "完成後請實際操作主要使用流程，確認結果符合我的要求；涉及畫面的部分，請截圖並查看實際顯示效果。不要只用編譯成功或模擬結果判定完成，無法實測的部分請明說。",
+    "scenario": "介面、快捷鍵、貼上或視窗效果，需要實際操作與截圖確認，不能只看編譯結果。",
+    "source": "參考 Superpowers 驗證原則，加入實際操作與截圖要求",
+    "url": "https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md"
+  },
+  {
+    "name": "Claude Code：略過權限確認",
+    "text": "claude --dangerously-skip-permissions",
+    "scenario": "在終端機啟動 Claude Code 並略過權限確認。僅用於你信任的專案與執行環境。",
+    "source": "內建啟動指令"
+  },
+  {
+    "name": "Codex：略過確認與沙箱",
+    "text": "codex --dangerously-bypass-approvals-and-sandbox",
+    "scenario": "在終端機啟動 Codex，停用核准流程與沙箱限制。僅用於你信任的專案與執行環境。",
+    "source": "內建啟動指令"
+  }
 ]
