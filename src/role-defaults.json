@@ -112,12 +112,12 @@
         "text": "claude --dangerously-skip-permissions"
       },
       {
-        "name": "Codex：略過確認與沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
-      },
-      {
         "name": "Claude Code：繼續先前對話",
         "text": "claude --resume"
+      },
+      {
+        "name": "Codex：略過確認與沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex：瀏覽所有對話並繼續",
@@ -130,12 +130,12 @@
         "text": "claude --dangerously-skip-permissions"
       },
       {
-        "name": "Codex：跳过确认与沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
-      },
-      {
         "name": "Claude Code：继续之前的对话",
         "text": "claude --resume"
+      },
+      {
+        "name": "Codex：跳过确认与沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex：浏览所有对话并继续",
@@ -148,12 +148,12 @@
         "text": "claude --dangerously-skip-permissions"
       },
       {
-        "name": "Codex: bypass approvals and sandbox",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
-      },
-      {
         "name": "Claude Code: resume a conversation",
         "text": "claude --resume"
+      },
+      {
+        "name": "Codex: bypass approvals and sandbox",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex: browse and resume all sessions",
@@ -166,12 +166,12 @@
         "text": "claude --dangerously-skip-permissions"
       },
       {
-        "name": "Codex：承認とサンドボックスを無効化",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
-      },
-      {
         "name": "Claude Code：以前の会話を再開",
         "text": "claude --resume"
+      },
+      {
+        "name": "Codex：承認とサンドボックスを無効化",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       },
       {
         "name": "Codex：すべてのセッションから再開",

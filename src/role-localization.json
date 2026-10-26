@@ -137,14 +137,14 @@
         "scenario": "在終端機啟動 Claude Code 並略過權限確認。僅用於你信任的專案與執行環境。"
       },
       {
-        "name": "Codex：略過確認與沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "在終端機啟動 Codex，停用核准流程與沙箱限制。僅用於你信任的專案與執行環境。"
-      },
-      {
         "name": "Claude Code：繼續先前對話",
         "text": "claude --resume",
         "scenario": "在終端機開啟 Claude Code 的對話選擇器，選擇先前工作階段並繼續。"
+      },
+      {
+        "name": "Codex：略過確認與沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "在終端機啟動 Codex，停用核准流程與沙箱限制。僅用於你信任的專案與執行環境。"
       },
       {
         "name": "Codex：瀏覽所有對話並繼續",
@@ -159,14 +159,14 @@
         "scenario": "在终端启动 Claude Code 并跳过权限确认。仅用于你信任的项目与运行环境。"
       },
       {
-        "name": "Codex：跳过确认与沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "在终端启动 Codex，停用审批流程与沙箱限制。仅用于你信任的项目与运行环境。"
-      },
-      {
         "name": "Claude Code：继续之前的对话",
         "text": "claude --resume",
         "scenario": "在终端打开 Claude Code 的会话选择器，选择之前的工作会话并继续。"
+      },
+      {
+        "name": "Codex：跳过确认与沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "在终端启动 Codex，停用审批流程与沙箱限制。仅用于你信任的项目与运行环境。"
       },
       {
         "name": "Codex：浏览所有对话并继续",
@@ -181,14 +181,14 @@
         "scenario": "Launch Claude Code from a terminal without permission prompts. Use only with projects and environments you trust."
       },
       {
-        "name": "Codex: bypass approvals and sandbox",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "Launch Codex from a terminal with approvals and sandbox restrictions disabled. Use only with projects and environments you trust."
-      },
-      {
         "name": "Claude Code: resume a conversation",
         "text": "claude --resume",
         "scenario": "Open the Claude Code conversation picker in a terminal and select a previous session to resume."
+      },
+      {
+        "name": "Codex: bypass approvals and sandbox",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "Launch Codex from a terminal with approvals and sandbox restrictions disabled. Use only with projects and environments you trust."
       },
       {
         "name": "Codex: browse and resume all sessions",
@@ -203,14 +203,14 @@
         "scenario": "ターミナルで権限確認を省略して Claude Code を起動するとき。信頼できるプロジェクトと環境でのみ使用してください。"
       },
       {
-        "name": "Codex：承認とサンドボックスを無効化",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "ターミナルで承認とサンドボックス制限を無効にして Codex を起動するとき。信頼できるプロジェクトと環境でのみ使用してください。"
-      },
-      {
         "name": "Claude Code：以前の会話を再開",
         "text": "claude --resume",
         "scenario": "ターミナルで Claude Code の会話選択画面を開き、以前のセッションを選んで再開します。"
+      },
+      {
+        "name": "Codex：承認とサンドボックスを無効化",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "ターミナルで承認とサンドボックス制限を無効にして Codex を起動するとき。信頼できるプロジェクトと環境でのみ使用してください。"
       },
       {
         "name": "Codex：すべてのセッションから再開",

@@ -17,6 +17,7 @@ const resumeLabels = {
 export function getCliTemplates(language) {
  const values=labels[language]??labels.en;
  const resume=resumeLabels[language]??resumeLabels.en;
- return [...commands.map((text,i)=>({name:values[i],text,scenario:values[i+2],source:values[4]})),
+ const templates=[...commands.map((text,i)=>({name:values[i],text,scenario:values[i+2],source:values[4]})),
   ...['claude --resume','codex resume --all'].map((text,i)=>({name:resume[i],text,scenario:resume[i+2],source:values[4]}))];
+ return [templates[0],templates[2],templates[1],templates[3]];
 }

@@ -11,8 +11,8 @@ test('agent role sits between personal and development and preserves command tex
   assert.equal(defaults.length,4);
   assert.deepEqual(defaults.map(item=>item.text),[
    'claude --dangerously-skip-permissions',
-   'codex --dangerously-bypass-approvals-and-sandbox',
    'claude --resume',
+   'codex --dangerously-bypass-approvals-and-sandbox',
    'codex resume --all',
   ]);
   const translated=getRoleTranslations('agent',language);
