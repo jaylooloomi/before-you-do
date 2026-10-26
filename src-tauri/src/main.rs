@@ -792,7 +792,7 @@ fn main() {
                 32,
             );
             tauri::tray::TrayIconBuilder::new()
-                .icon(icon)
+                .icon(icon.clone())
                 .tooltip("before-you-do")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
@@ -804,6 +804,10 @@ fn main() {
                 })
                 .build(app)?;
             let main = app.get_webview_window("main").unwrap();
+            main.set_icon(icon.clone())?;
+            if let Some(picker_window) = app.get_webview_window("picker") {
+                picker_window.set_icon(icon)?;
+            }
             // Prefer a tall library/editor, but stay inside the monitor's usable
             // work area (taskbar excluded), including scaled laptop displays.
             if let Some(monitor) = main.current_monitor()? {
