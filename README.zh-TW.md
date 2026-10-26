@@ -351,11 +351,11 @@ Windows 執行檔位於 `src-tauri/target/release/before-you-do.exe`；macOS App
 | `src/settings.js`、`src/ai-prompts.js` | 設定、AI 教學與匯入流程 |
 | `src/roles.js`、`src/extra-role-presets.js` | 13 個角色與四語專用短句 |
 | `src/role-defaults.json`、`scripts/generate-role-defaults.mjs` | 建置時產生供原生選單使用的預設短句 |
-| `src-tauri/icons/`、`scripts/icons.py` | 新版對話框＋短句卡片圖示及各平台輸出 |
+| `src-tauri/icons/`、`scripts/icons.py` | 新版白色交織圖示及各平台輸出 |
 | `src-tauri/src/` | 原生快捷鍵、貼入、儲存與視窗處理 |
 | `tests/`、`scripts/` | 測試程式與建置工具 |
 
-圖示以「對話框＋插入的短句卡片」表達送出前補充交代，已套用到桌面程式、系統匣及標題列。[圖示原稿與設計說明](docs/branding/app-icon.md)。
+圖示採用你提供的深灰圓角底與白色交織符號，已套用到桌面程式、系統匣及標題列。[圖示原稿與設計說明](docs/branding/app-icon.md)。
 
 GitHub Actions 包含 Windows 與兩種 Mac 建置工作。建置成功不代表已驗證所有平台的實際快捷鍵、焦點與貼入行為。Windows 桌面整合測試可使用 `scripts/test-windows.ps1`；它會操作系統按鍵與剪貼簿，請在獨立測試時段執行。
 

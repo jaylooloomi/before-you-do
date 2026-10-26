@@ -358,7 +358,7 @@ The Windows executable is at `src-tauri/target/release/before-you-do.exe`; the m
 | `src-tauri/src/` | Native shortcuts, paste, storage and window handling |
 | `tests/`, `scripts/` | Tests and build tools |
 
-The conversation bubble and inserted snippet card represent adding one more instruction before sending. The desktop app, tray and title bar use the same artwork. [Icon master and design notes](docs/branding/app-icon.md).
+The desktop app, tray and title bar use the approved white interwoven symbol on a charcoal tile. [Icon master and design notes](docs/branding/app-icon.md).
 
 GitHub Actions includes Windows and two Mac build jobs. A successful build does not verify real shortcut, focus and paste behavior on every platform. `scripts/test-windows.ps1` provides Windows desktop integration tests; it operates system keys and the clipboard, so run it during a dedicated testing session.
 
