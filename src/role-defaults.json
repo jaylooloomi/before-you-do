@@ -142,6 +142,18 @@
       {
         "name": "Antigravity：快捷鍵提示",
         "text": "[Shift+Tab]"
+      },
+      {
+        "name": "OpenCode：舊對話指令備忘（Codex）",
+        "text": "codex resume --all"
+      },
+      {
+        "name": "OpenCode：選擇舊對話",
+        "text": "/sessions"
+      },
+      {
+        "name": "OpenCode：切換 Build／Plan",
+        "text": "[Tab]"
       }
     ],
     "zh-CN": [
@@ -180,6 +192,18 @@
       {
         "name": "Antigravity：快捷键提示",
         "text": "[Shift+Tab]"
+      },
+      {
+        "name": "OpenCode：旧对话命令备忘（Codex）",
+        "text": "codex resume --all"
+      },
+      {
+        "name": "OpenCode：选择旧对话",
+        "text": "/sessions"
+      },
+      {
+        "name": "OpenCode：切换 Build／Plan",
+        "text": "[Tab]"
       }
     ],
     "en": [
@@ -218,6 +242,18 @@
       {
         "name": "Antigravity: keyboard shortcut",
         "text": "[Shift+Tab]"
+      },
+      {
+        "name": "OpenCode: previous-session note (Codex)",
+        "text": "codex resume --all"
+      },
+      {
+        "name": "OpenCode: choose a previous session",
+        "text": "/sessions"
+      },
+      {
+        "name": "OpenCode: switch Build / Plan",
+        "text": "[Tab]"
       }
     ],
     "ja": [
@@ -256,6 +292,18 @@
       {
         "name": "Antigravity：ショートカット",
         "text": "[Shift+Tab]"
+      },
+      {
+        "name": "OpenCode：過去の会話メモ（Codex）",
+        "text": "codex resume --all"
+      },
+      {
+        "name": "OpenCode：過去の会話を選択",
+        "text": "/sessions"
+      },
+      {
+        "name": "OpenCode：Build／Plan 切り替え",
+        "text": "[Tab]"
       }
     ]
   },

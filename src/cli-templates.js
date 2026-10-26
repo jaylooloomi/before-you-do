@@ -33,6 +33,14 @@ export function getCliTemplates(language) {
   ja:['Antigravity：権限確認を省略して再開','信頼できるプロジェクトと環境でのみ、この起動コマンドをターミナルに貼り付けてください。','Antigravity：会話を再開','Antigravity の対話画面で /resume を貼り付けます。','Antigravity：ショートカット','Antigravity で Shift+Tab を使用します。この短文は説明のみを貼り付け、キー入力は実行しません。'],
  };
  const agy=antigravity[language]??antigravity.en;
+ const openCodeLabels={
+  'zh-TW':['OpenCode：舊對話指令備忘（Codex）','依使用者提供保留 codex resume --all；這是 Codex 指令，並非 OpenCode 指令。','OpenCode：選擇舊對話','進入 OpenCode 後輸入 /sessions，選擇舊對話。','OpenCode：切換 Build／Plan','在 OpenCode 按 Tab 切換 Build／Plan。此短句只貼入按鍵提示，不會模擬按鍵。'],
+  'zh-CN':['OpenCode：旧对话命令备忘（Codex）','按用户提供保留 codex resume --all；这是 Codex 命令，并非 OpenCode 命令。','OpenCode：选择旧对话','进入 OpenCode 后输入 /sessions，选择旧对话。','OpenCode：切换 Build／Plan','在 OpenCode 按 Tab 切换 Build／Plan。此短句只粘贴按键提示，不会模拟按键。'],
+  en:['OpenCode: previous-session note (Codex)','Preserves the supplied codex resume --all command. This is a Codex command, not an OpenCode command.','OpenCode: choose a previous session','Enter /sessions inside OpenCode to choose a previous conversation.','OpenCode: switch Build / Plan','Press Tab in OpenCode to switch Build / Plan. This snippet pastes a key reminder without simulating a keypress.'],
+  ja:['OpenCode：過去の会話メモ（Codex）','指定された codex resume --all を保持しています。これは Codex のコマンドであり、OpenCode のコマンドではありません。','OpenCode：過去の会話を選択','OpenCode 内で /sessions を入力し、過去の会話を選択します。','OpenCode：Build／Plan 切り替え','OpenCode で Tab を押して Build／Plan を切り替えます。この短文はキー操作の説明のみを貼り付けます。'],
+ };
+ const oc=openCodeLabels[language]??openCodeLabels.en;
  return [templates[0],templates[2],{name:permission[0],text:'[Shift+Tab]',scenario:permission[1],source:values[4]},templates[1],templates[3],{name:permission[2],text:'/permissions',scenario:permission[3],source:values[4]},
-  ...['agy --continue --dangerously-skip-permissions','/resume','[Shift+Tab]'].map((text,i)=>({name:agy[i*2],text,scenario:agy[i*2+1],source:values[4]}))];
+  ...['agy --continue --dangerously-skip-permissions','/resume','[Shift+Tab]'].map((text,i)=>({name:agy[i*2],text,scenario:agy[i*2+1],source:values[4]})),
+  ...['codex resume --all','/sessions','[Tab]'].map((text,i)=>({name:oc[i*2],text,scenario:oc[i*2+1],source:values[4]}))];
 }
