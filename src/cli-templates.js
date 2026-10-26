@@ -26,5 +26,13 @@ export function getCliTemplates(language) {
   ja:['Claude Code：権限モードのショートカット','Claude Code の対話画面で Shift+Tab を押します。この短文はキー操作の説明を貼り付けるだけで、キー入力は実行しません。','Codex：権限設定','Codex の対話画面で /permissions を入力し、権限設定を開きます。'],
  };
  const permission=permissionLabels[language]??permissionLabels.en;
- return [templates[0],templates[2],{name:permission[0],text:'[Shift+Tab]',scenario:permission[1],source:values[4]},templates[1],templates[3],{name:permission[2],text:'/permissions',scenario:permission[3],source:values[4]}];
+ const antigravity={
+  'zh-TW':['Antigravity：接續並略過權限確認','在終端機貼入此啟動指令；僅用於信任的專案與執行環境。','Antigravity：接續對話','在 Antigravity 互動介面貼入 /resume。','Antigravity：快捷鍵提示','在 Antigravity 使用 Shift+Tab；此短句只貼入提示文字，不會模擬按鍵。'],
+  'zh-CN':['Antigravity：继续并跳过权限确认','在终端粘贴此启动命令；仅用于信任的项目与运行环境。','Antigravity：继续对话','在 Antigravity 交互界面粘贴 /resume。','Antigravity：快捷键提示','在 Antigravity 使用 Shift+Tab；此短句只粘贴提示文字，不会模拟按键。'],
+  en:['Antigravity: continue without permission prompts','Paste this launch command in a terminal; use only with trusted projects and environments.','Antigravity: resume','Paste /resume in the Antigravity interactive interface.','Antigravity: keyboard shortcut','Use Shift+Tab in Antigravity. This snippet only pastes a reminder, without simulating a keypress.'],
+  ja:['Antigravity：権限確認を省略して再開','信頼できるプロジェクトと環境でのみ、この起動コマンドをターミナルに貼り付けてください。','Antigravity：会話を再開','Antigravity の対話画面で /resume を貼り付けます。','Antigravity：ショートカット','Antigravity で Shift+Tab を使用します。この短文は説明のみを貼り付け、キー入力は実行しません。'],
+ };
+ const agy=antigravity[language]??antigravity.en;
+ return [templates[0],templates[2],{name:permission[0],text:'[Shift+Tab]',scenario:permission[1],source:values[4]},templates[1],templates[3],{name:permission[2],text:'/permissions',scenario:permission[3],source:values[4]},
+  ...['agy --continue --dangerously-skip-permissions','/resume','[Shift+Tab]'].map((text,i)=>({name:agy[i*2],text,scenario:agy[i*2+1],source:values[4]}))];
 }

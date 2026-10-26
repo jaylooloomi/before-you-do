@@ -59,7 +59,8 @@ export function getRoleDefaults(id,language){
 }
 export function findRoleTemplate(item,language){
  if(!item)return null;
- if(getCliTemplates(language).some(template=>template.text===item.text))return getCliTemplates(language).find(template=>template.text===item.text);
+ const cli=getCliTemplates(language).find(template=>template.text===item.text&&template.name===item.name);
+ if(cli)return cli;
  for(const list of Object.values(templates))for(const [names,texts,scenarios] of list){
   if(texts.includes(item.text))return {name:localized(names,language),scenario:localized(scenarios,language),source:localized(Object.values(extraTemplates).includes(list)?['改寫自 agency-agents-zh','改写自 agency-agents-zh','Adapted from agency-agents-zh','agency-agents-zh を基に編集']:['內建角色範本','内置角色模板','Built-in role template','内蔵ロールテンプレート'],language),url:extraRoles.find(role=>extraTemplates[role.id]===list)?.url};
  }

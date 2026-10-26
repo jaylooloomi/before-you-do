@@ -36,6 +36,8 @@ export function getTemplates(language) {
  return [...variants[language].map(([name,text,scenario],i)=>({name,text,scenario,source:source[language][i<3?0:i-2],url:originals[i].url})), ...getCliTemplates(language)];
 }
 export function findTemplate(item, language) {
- const index=['zh-TW','zh-CN','en','ja'].map(getTemplates).map(list=>list.findIndex(t=>t.text===item?.text)).find(i=>i>=0);
+ const lists=['zh-TW','zh-CN','en','ja'].map(getTemplates);
+ const exact=lists.map(list=>list.findIndex(t=>t.text===item?.text&&t.name===item?.name)).find(i=>i>=0);
+ const index=exact??lists.map(list=>{const matches=list.map((t,i)=>t.text===item?.text?i:-1).filter(i=>i>=0);return matches.length===1?matches[0]:-1;}).find(i=>i>=0);
  return index === undefined ? undefined : getTemplates(language)[index];
 }

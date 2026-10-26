@@ -130,6 +130,18 @@
       {
         "name": "Codex：權限設定",
         "text": "/permissions"
+      },
+      {
+        "name": "Antigravity：接續並略過權限確認",
+        "text": "agy --continue --dangerously-skip-permissions"
+      },
+      {
+        "name": "Antigravity：接續對話",
+        "text": "/resume"
+      },
+      {
+        "name": "Antigravity：快捷鍵提示",
+        "text": "[Shift+Tab]"
       }
     ],
     "zh-CN": [
@@ -156,6 +168,18 @@
       {
         "name": "Codex：权限设置",
         "text": "/permissions"
+      },
+      {
+        "name": "Antigravity：继续并跳过权限确认",
+        "text": "agy --continue --dangerously-skip-permissions"
+      },
+      {
+        "name": "Antigravity：继续对话",
+        "text": "/resume"
+      },
+      {
+        "name": "Antigravity：快捷键提示",
+        "text": "[Shift+Tab]"
       }
     ],
     "en": [
@@ -182,6 +206,18 @@
       {
         "name": "Codex: permissions",
         "text": "/permissions"
+      },
+      {
+        "name": "Antigravity: continue without permission prompts",
+        "text": "agy --continue --dangerously-skip-permissions"
+      },
+      {
+        "name": "Antigravity: resume",
+        "text": "/resume"
+      },
+      {
+        "name": "Antigravity: keyboard shortcut",
+        "text": "[Shift+Tab]"
       }
     ],
     "ja": [
@@ -208,6 +244,18 @@
       {
         "name": "Codex：権限設定",
         "text": "/permissions"
+      },
+      {
+        "name": "Antigravity：権限確認を省略して再開",
+        "text": "agy --continue --dangerously-skip-permissions"
+      },
+      {
+        "name": "Antigravity：会話を再開",
+        "text": "/resume"
+      },
+      {
+        "name": "Antigravity：ショートカット",
+        "text": "[Shift+Tab]"
       }
     ]
   },
