@@ -367,4 +367,4 @@ The eight specialist roles added after Research contain two short prompts each, 
 
 “Choose and carry out a recommendation” and “Change only what is necessary” draw on the [Get Shit Done execution workflow](https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md). “Show it working” draws on the [Superpowers verification principles](https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md). These are adaptations with translated versions, not verbatim text from the original authors.
 
-The project currently has no `LICENSE` file. Contact the author about redistribution or other licensing needs.
+Licensed under the [MIT License](LICENSE). Copyright © 2026 Arthur Wang. Third-party materials retain their respective licenses and attribution notices.

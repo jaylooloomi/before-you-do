@@ -364,4 +364,4 @@ GitHub Actions 包含 Windows 與兩種 Mac 建置工作。建置成功不代表
 
 「照推薦方案直接做」「只改必要的地方」參考 [Get Shit Done 執行流程](https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-plan.md)；「實際操作給我看」參考 [Superpowers 驗證原則](https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md)。均經改寫並提供其他語言版本，不是原作者原文。
 
-專案目前未附 `LICENSE`；再散布或其他授權需求請向作者確認。
+本專案採用 [MIT 授權](LICENSE)。Copyright © 2026 Arthur Wang。第三方素材仍適用各自的授權與作者聲明。
