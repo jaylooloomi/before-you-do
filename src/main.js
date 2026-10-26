@@ -88,7 +88,7 @@ if (picker) {
       const item=localizedSnippet(savedItem,activeRole,getLanguage());
       const row = el('div', `picker-row ${i === state.selected ? 'active' : ''}`);
       const badge = el('span', 'item-icon'); badge.innerHTML = icon('text'); row.append(badge);
-      const content = el('div', 'picker-content'); content.append(el('strong', '', item.name), el('p', '', templateInfo(item)?.scenario || item.text)); row.append(content, el('span', 'number', String(i + 1).padStart(2, '0'))); list.append(row);
+      const content = el('div', 'picker-content'); content.append(el('strong', '', item.name), el('p', '', activeRole === 'agent' ? item.text : (templateInfo(item)?.scenario || item.text))); row.append(content, el('span', 'number', String(i + 1).padStart(2, '0'))); list.append(row);
     });
     addRow.classList.toggle('active', state.selected === state.items.length);
     settingsRow.classList.toggle('active',state.selected === state.items.length+1);
