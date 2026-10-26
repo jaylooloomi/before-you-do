@@ -5,7 +5,7 @@ import {roles,getRoleDefaults,findRoleTemplate,roleName} from '../src/roles.js';
 import {validateSnippets} from '../src/model.js';
 
 test('role presets have distinct valid localized instructions and stable identifiers',()=>{
- assert.equal(roles.length,12);assert.equal(new Set(roles.map(r=>r.id)).size,12);
+ assert.equal(roles.length,13);assert.equal(new Set(roles.map(r=>r.id)).size,13);
  const native=fs.readFileSync(new URL('../src-tauri/src/roles.rs',import.meta.url),'utf8');
  const nativeIds=[...native.slice(native.indexOf('pub const IDS'),native.indexOf('pub fn path')).matchAll(/"([a-z]+)"/g)].map(m=>m[1]);assert.deepEqual(nativeIds,roles.map(r=>r.id));
  for(const language of ['zh-TW','zh-CN','en','ja']){

@@ -46,7 +46,7 @@ Save the instructions you keep repeating to AI — “plan first,” “change o
 
 ## Use cases
 
-My snippets includes six common working instructions and two terminal launch commands. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
+My snippets includes six common working instructions; Agent commands contains two terminal launch commands. Additional roles provide snippets for development, writing, research and other tasks, each with a usage scenario. Use them as they are or rewrite them in your own voice.
 
 | Your situation | Choose this template | What you want AI to do |
 |---|---|---|
@@ -160,11 +160,12 @@ While holding the shortcut modifiers, use **← / →** to browse roles and **�
 
 ### Role cards and separate snippet lists
 
-Browse **12 roles** using the horizontal cards, left/right buttons, mouse wheel or horizontal trackpad gestures. Your existing snippets stay in My snippets. Each other role has its own list, which you can edit, add to, delete from and reorder independently.
+Browse **13 roles** using the horizontal cards, left/right buttons, mouse wheel or horizontal trackpad gestures. Your existing snippets stay in My snippets. Each other role has its own list, which you can edit, add to, delete from and reorder independently.
 
 | Role | When to use it | Default snippets |
 |---|---|---|
-| My snippets | General instructions plus Claude Code / Codex launch commands | 8 |
+| My snippets | General instructions: clarify, plan, execute and report | 6 |
+| Agent commands | Launch Claude Code or Codex from a terminal | 2 |
 | Development | Implement features, limit scope and demonstrate working results | 3 |
 | Writing | Polish drafts, adapt tone and get ready-to-use text | 3 |
 | Research | Verify facts, compare options and find blind spots | 3 |
@@ -177,7 +178,7 @@ Browse **12 roles** using the horizontal cards, left/right buttons, mouse wheel 
 | Marketing | Adapt content to an audience and plan concrete topics | 2 |
 | Project planning | Break down work, dependencies, progress and blockers | 2 |
 
-Slots 07 and 08 contain `claude --dangerously-skip-permissions` and `codex --dangerously-bypass-approvals-and-sandbox`. These are pasted as text, never executed by the app. Their usage scenarios explain the disabled protections; use them only in trusted environments. Existing saved lists are not reset or automatically expanded on upgrade; add them from the template library if needed.
+The Agent commands role, between My snippets and Development, contains `claude --dangerously-skip-permissions` and `codex --dangerously-bypass-approvals-and-sandbox`. These are pasted as text, never executed by the app. Their usage scenarios explain the disabled protections; use them only in trusted environments. Existing saved lists are not reset or automatically expanded on upgrade; add them from the template library if needed.
 
 Counts describe the initial presets; upgrading does not reset edited content. Roles organize snippets. They do not call AI or execute tasks inside the app.
 
@@ -351,7 +352,7 @@ The Windows executable is at `src-tauri/target/release/before-you-do.exe`; the m
 | `src/templates.json`, `src/template-locales.js` | Built-in templates, usage scenarios and four language versions |
 | `src/locales.js`, `src/i18n.js` | Interface translations and language switching |
 | `src/settings.js`, `src/ai-prompts.js` | Settings, AI instructions and import workflows |
-| `src/roles.js`, `src/extra-role-presets.js` | 12 roles and their localized snippets |
+| `src/roles.js`, `src/extra-role-presets.js` | 13 roles and their localized snippets |
 | `src/role-defaults.json`, `scripts/generate-role-defaults.mjs` | Build-time defaults consumed by the native picker |
 | `src-tauri/icons/`, `scripts/icons.py` | Conversation-and-snippet icon artwork and platform exports |
 | `src-tauri/src/` | Native shortcuts, paste, storage and window handling |

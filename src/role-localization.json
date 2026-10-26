@@ -30,16 +30,6 @@
         "name": "實際操作給我看",
         "text": "完成後請實際操作主要使用流程，確認結果符合我的要求；涉及畫面的部分，請截圖並查看實際顯示效果。不要只用編譯成功或模擬結果判定完成，無法實測的部分請明說。",
         "scenario": "介面、快捷鍵、貼上或視窗效果，需要實際操作與截圖確認，不能只看編譯結果。"
-      },
-      {
-        "name": "Claude Code：略過權限確認",
-        "text": "claude --dangerously-skip-permissions",
-        "scenario": "在終端機啟動 Claude Code 並略過權限確認。僅用於你信任的專案與執行環境。"
-      },
-      {
-        "name": "Codex：略過確認與沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "在終端機啟動 Codex，停用核准流程與沙箱限制。僅用於你信任的專案與執行環境。"
       }
     ],
     "zh-CN": [
@@ -72,16 +62,6 @@
         "name": "实际操作给我看",
         "text": "完成后请实际操作主要使用流程，确认结果符合我的要求；涉及界面的部分，请截图并检查实际显示效果。不要只用编译成功或模拟结果判定完成，无法实测的部分请明说。",
         "scenario": "界面、快捷键、粘贴与窗口效果需要实际操作和截图验证。"
-      },
-      {
-        "name": "Claude Code：跳过权限确认",
-        "text": "claude --dangerously-skip-permissions",
-        "scenario": "在终端启动 Claude Code 并跳过权限确认。仅用于你信任的项目与运行环境。"
-      },
-      {
-        "name": "Codex：跳过确认与沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "在终端启动 Codex，停用审批流程与沙箱限制。仅用于你信任的项目与运行环境。"
       }
     ],
     "en": [
@@ -114,16 +94,6 @@
         "name": "Show it working",
         "text": "After completing the work, operate the main workflows and verify that the results meet my requirements. For visual changes, capture screenshots and inspect the actual appearance. Do not treat compilation or simulated results alone as completion. Clearly state anything you could not test.",
         "scenario": "Use for UI, shortcuts, pasting and window effects that need real operation and visual verification."
-      },
-      {
-        "name": "Claude Code: skip permission prompts",
-        "text": "claude --dangerously-skip-permissions",
-        "scenario": "Launch Claude Code from a terminal without permission prompts. Use only with projects and environments you trust."
-      },
-      {
-        "name": "Codex: bypass approvals and sandbox",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox",
-        "scenario": "Launch Codex from a terminal with approvals and sandbox restrictions disabled. Use only with projects and environments you trust."
       }
     ],
     "ja": [
@@ -156,7 +126,47 @@
         "name": "実際に動かして確認する",
         "text": "完了後、主な操作手順を実際に実行し、結果が要件を満たすか確認してください。画面に関わる部分はスクリーンショットを撮り、実際の表示を確認してください。コンパイル成功や模擬結果だけで完了と判断せず、実測できない点は明示してください。",
         "scenario": "UI、ショートカット、貼り付け、ウィンドウ表示を実操作と画像で確認したいとき。"
+      }
+    ]
+  },
+  "agent": {
+    "zh-TW": [
+      {
+        "name": "Claude Code：略過權限確認",
+        "text": "claude --dangerously-skip-permissions",
+        "scenario": "在終端機啟動 Claude Code 並略過權限確認。僅用於你信任的專案與執行環境。"
       },
+      {
+        "name": "Codex：略過確認與沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "在終端機啟動 Codex，停用核准流程與沙箱限制。僅用於你信任的專案與執行環境。"
+      }
+    ],
+    "zh-CN": [
+      {
+        "name": "Claude Code：跳过权限确认",
+        "text": "claude --dangerously-skip-permissions",
+        "scenario": "在终端启动 Claude Code 并跳过权限确认。仅用于你信任的项目与运行环境。"
+      },
+      {
+        "name": "Codex：跳过确认与沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "在终端启动 Codex，停用审批流程与沙箱限制。仅用于你信任的项目与运行环境。"
+      }
+    ],
+    "en": [
+      {
+        "name": "Claude Code: skip permission prompts",
+        "text": "claude --dangerously-skip-permissions",
+        "scenario": "Launch Claude Code from a terminal without permission prompts. Use only with projects and environments you trust."
+      },
+      {
+        "name": "Codex: bypass approvals and sandbox",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox",
+        "scenario": "Launch Codex from a terminal with approvals and sandbox restrictions disabled. Use only with projects and environments you trust."
+      }
+    ],
+    "ja": [
       {
         "name": "Claude Code：権限確認をスキップ",
         "text": "claude --dangerously-skip-permissions",

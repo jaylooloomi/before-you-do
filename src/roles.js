@@ -1,9 +1,11 @@
 import { extraRoles, extraTemplates } from './extra-role-presets.js';
 import { getTemplates } from './template-locales.js';
+import { getCliTemplates } from './cli-templates.js';
 const languages=['zh-TW','zh-CN','en','ja'];
 const localized=(values,language)=>values[languages.indexOf(language)]??values[2];
 export const roles=[
  {id:'personal',mark:'✦',name:['我的短句','我的短句','My snippets','マイ短文'],description:['保留原本的常用交代','保留原本的常用交代','Your existing instructions','いつもの指示をそのまま']},
+ {id:'agent',mark:'⌁',name:['代理指令','代理指令','Agent commands','エージェントコマンド'],description:['Claude Code 與 Codex 啟動指令','Claude Code 与 Codex 启动命令','Launch Claude Code and Codex','Claude Code・Codex の起動']},
  {id:'developer',mark:'⌘',name:['程式開發','程序开发','Development','開発'],description:['實作、除錯與驗證','实现、调试与验证','Build, debug and verify','実装・デバッグ・検証']},
  {id:'writer',mark:'✎',name:['文字寫作','文字写作','Writing','文章作成'],description:['改寫、潤飾與調整語氣','改写、润色与调整语气','Rewrite, polish and refine','推敲・表現・トーン調整']},
  {id:'researcher',mark:'⌕',name:['研究分析','研究分析','Research','調査・分析'],description:['查證、比較與整理觀點','查证、比较与整理观点','Verify, compare and synthesize','検証・比較・整理']},
@@ -49,13 +51,15 @@ const templates={
  ],
 };
 export function getRoleDefaults(id,language){
- if(id==='personal')return getTemplates(language).map(({name,text})=>({name,text}));
+ if(id==='personal')return getTemplates(language).slice(0,6).map(({name,text})=>({name,text}));
+ if(id==='agent')return getCliTemplates(language).map(({name,text})=>({name,text}));
  if(id==='developer')return [2,4,5].map(i=>{const {name,text}=getTemplates(language)[i];return {name,text};});
  if(!templates[id])throw Error('Unknown role');
  return templates[id].map(([name,text])=>({name:localized(name,language),text:localized(text,language)}));
 }
 export function findRoleTemplate(item,language){
  if(!item)return null;
+ if(getCliTemplates(language).some(template=>template.text===item.text))return getCliTemplates(language).find(template=>template.text===item.text);
  for(const list of Object.values(templates))for(const [names,texts,scenarios] of list){
   if(texts.includes(item.text))return {name:localized(names,language),scenario:localized(scenarios,language),source:localized(Object.values(extraTemplates).includes(list)?['改寫自 agency-agents-zh','改写自 agency-agents-zh','Adapted from agency-agents-zh','agency-agents-zh を基に編集']:['內建角色範本','内置角色模板','Built-in role template','内蔵ロールテンプレート'],language),url:extraRoles.find(role=>extraTemplates[role.id]===list)?.url};
  }

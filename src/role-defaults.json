@@ -24,14 +24,6 @@
       {
         "name": "實際操作給我看",
         "text": "完成後請實際操作主要使用流程，確認結果符合我的要求；涉及畫面的部分，請截圖並查看實際顯示效果。不要只用編譯成功或模擬結果判定完成，無法實測的部分請明說。"
-      },
-      {
-        "name": "Claude Code：略過權限確認",
-        "text": "claude --dangerously-skip-permissions"
-      },
-      {
-        "name": "Codex：略過確認與沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       }
     ],
     "zh-CN": [
@@ -58,14 +50,6 @@
       {
         "name": "实际操作给我看",
         "text": "完成后请实际操作主要使用流程，确认结果符合我的要求；涉及界面的部分，请截图并检查实际显示效果。不要只用编译成功或模拟结果判定完成，无法实测的部分请明说。"
-      },
-      {
-        "name": "Claude Code：跳过权限确认",
-        "text": "claude --dangerously-skip-permissions"
-      },
-      {
-        "name": "Codex：跳过确认与沙箱",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       }
     ],
     "en": [
@@ -92,14 +76,6 @@
       {
         "name": "Show it working",
         "text": "After completing the work, operate the main workflows and verify that the results meet my requirements. For visual changes, capture screenshots and inspect the actual appearance. Do not treat compilation or simulated results alone as completion. Clearly state anything you could not test."
-      },
-      {
-        "name": "Claude Code: skip permission prompts",
-        "text": "claude --dangerously-skip-permissions"
-      },
-      {
-        "name": "Codex: bypass approvals and sandbox",
-        "text": "codex --dangerously-bypass-approvals-and-sandbox"
       }
     ],
     "ja": [
@@ -126,7 +102,41 @@
       {
         "name": "実際に動かして確認する",
         "text": "完了後、主な操作手順を実際に実行し、結果が要件を満たすか確認してください。画面に関わる部分はスクリーンショットを撮り、実際の表示を確認してください。コンパイル成功や模擬結果だけで完了と判断せず、実測できない点は明示してください。"
+      }
+    ]
+  },
+  "agent": {
+    "zh-TW": [
+      {
+        "name": "Claude Code：略過權限確認",
+        "text": "claude --dangerously-skip-permissions"
       },
+      {
+        "name": "Codex：略過確認與沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
+      }
+    ],
+    "zh-CN": [
+      {
+        "name": "Claude Code：跳过权限确认",
+        "text": "claude --dangerously-skip-permissions"
+      },
+      {
+        "name": "Codex：跳过确认与沙箱",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
+      }
+    ],
+    "en": [
+      {
+        "name": "Claude Code: skip permission prompts",
+        "text": "claude --dangerously-skip-permissions"
+      },
+      {
+        "name": "Codex: bypass approvals and sandbox",
+        "text": "codex --dangerously-bypass-approvals-and-sandbox"
+      }
+    ],
+    "ja": [
       {
         "name": "Claude Code：権限確認をスキップ",
         "text": "claude --dangerously-skip-permissions"

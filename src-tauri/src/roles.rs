@@ -5,8 +5,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub const IDS: [&str; 12] = [
+pub const IDS: [&str; 13] = [
     "personal",
+    "agent",
     "developer",
     "writer",
     "researcher",

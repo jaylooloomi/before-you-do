@@ -32,7 +32,7 @@ const source = {
  ja:['元のテンプレート','Get Shit Done の実行手順を参考に作成','Get Shit Done のスコープ指針を参考に作成','Superpowers の検証指針を参考に作成'],
 };
 export function getTemplates(language) {
- if (!variants[language]) return originals;
+ if (!variants[language]) return [...originals, ...getCliTemplates('zh-TW')];
  return [...variants[language].map(([name,text,scenario],i)=>({name,text,scenario,source:source[language][i<3?0:i-2],url:originals[i].url})), ...getCliTemplates(language)];
 }
 export function findTemplate(item, language) {

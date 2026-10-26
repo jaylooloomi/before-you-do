@@ -37,17 +37,5 @@
     "scenario": "介面、快捷鍵、貼上或視窗效果，需要實際操作與截圖確認，不能只看編譯結果。",
     "source": "參考 Superpowers 驗證原則，加入實際操作與截圖要求",
     "url": "https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md"
-  },
-  {
-    "name": "Claude Code：略過權限確認",
-    "text": "claude --dangerously-skip-permissions",
-    "scenario": "在終端機啟動 Claude Code 並略過權限確認。僅用於你信任的專案與執行環境。",
-    "source": "內建啟動指令"
-  },
-  {
-    "name": "Codex：略過確認與沙箱",
-    "text": "codex --dangerously-bypass-approvals-and-sandbox",
-    "scenario": "在終端機啟動 Codex，停用核准流程與沙箱限制。僅用於你信任的專案與執行環境。",
-    "source": "內建啟動指令"
   }
 ]
