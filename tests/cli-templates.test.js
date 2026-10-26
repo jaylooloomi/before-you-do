@@ -8,10 +8,12 @@ test('agent role sits between personal and development and preserves command tex
  for(const language of ['zh-TW','zh-CN','en','ja']){
   const defaults=getRoleDefaults('agent',language);
   assert.equal(getRoleDefaults('personal',language).length,6);
-  assert.equal(defaults.length,2);
+  assert.equal(defaults.length,4);
   assert.deepEqual(defaults.map(item=>item.text),[
    'claude --dangerously-skip-permissions',
    'codex --dangerously-bypass-approvals-and-sandbox',
+   'claude --resume',
+   'codex resume --all',
   ]);
   const translated=getRoleTranslations('agent',language);
   assert(translated.every(item=>item.scenario.length>0));
