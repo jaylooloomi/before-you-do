@@ -210,6 +210,10 @@ The default is **Alt+H**. In **Settings & AI guide → Keyboard shortcut**, choo
 
 For example, with **Ctrl+Shift+J**, hold Ctrl+Shift and press J, select with ↑ / ↓, then release the modifiers to paste. Press J again while the picker is open to cancel. On Windows, if the new combination is already registered, the app retains your previous shortcut and settings. On macOS, avoid combinations used by other apps. Common Ctrl editing combinations, such as copy, paste and save, cannot be assigned.
 
+### Choose an interface theme
+
+Choose **Follow system**, **Light** or **Dark** from the theme selector at the bottom of the manager. New installations follow the operating system; an existing saved theme choice is kept when upgrading. Follow system updates when your operating system switches between light and dark appearance.
+
 ### Add, edit and reorder
 
 Click “Add snippet” in the manager, enter a name and content, then click “Save snippets.” Or select “Add a prompt” at the bottom of the Alt+H picker and release Alt to create a draft.

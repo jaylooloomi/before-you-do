@@ -94,7 +94,7 @@ export const rows = [
 ['貼入游標位置，不會送出訊息','粘贴到光标位置，不会发送消息','Inserts at the cursor without sending','カーソル位置に挿入（送信はしません）'],
 ['已儲存','已保存','Saved','保存済み'],['尚未儲存','尚未保存','Unsaved changes','未保存'],['刪除','删除','Delete','削除'],['儲存短句','保存短句','Save snippets','短文を保存'],
 ['按住喚出，用 ↑ ↓ 選句，放開即貼上','按住唤出，用 ↑ ↓ 选句，松开即粘贴','Hold to open · ↑ ↓ to select · release to paste','長押しで開く・↑ ↓ で選択・離すと貼り付け'],
-['玻璃透明度','玻璃透明度','Glass transparency','透明度'],['外觀主題','外观主题','Appearance','外観'],['淺色','浅色','Light','ライト'],['深色','深色','Dark','ダーク'],
+['玻璃透明度','玻璃透明度','Glass transparency','透明度'],['介面主題','界面主题','Interface theme','表示テーマ'],['亮色','亮色','Light','ライト'],['暗色','暗色','Dark','ダーク'],
 ['每次貼入會取代剪貼簿內容。','每次粘贴会替换剪贴板内容。','Pasting replaces the clipboard contents.','貼り付けるたびにクリップボードを上書きします。'],
 ['適用情境','适用场景','When to use','使用場面'],['拖曳排序','拖动排序','Drag to reorder','ドラッグで並べ替え'],['上移短句','上移短句','Move snippet up','短文を上へ'],['下移短句','下移短句','Move snippet down','短文を下へ'],
 ['上移選取短句','上移选中短句','Move selected snippet up','選択した短文を上へ'],['下移選取短句','下移选中短句','Move selected snippet down','選択した短文を下へ'],['清除搜尋後可排序','清除搜索后可排序','Clear search to reorder','検索を解除すると並べ替えできます'],

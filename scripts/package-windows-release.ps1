@@ -28,7 +28,8 @@ Existing snippets and settings remain in %APPDATA%\dev.quicksay.desktop.
 Unsaved drafts live in memory; do not force-quit an app with edits you want to keep.
 
 Hold Alt and press H, use Left/Right for roles and Up/Down for snippets, release Alt to paste.
-Change the shortcut and interface language under Settings & AI guide.
+Change the shortcut, interface language and theme under Settings & AI guide.
+Choose Follow system, Light or Dark for the interface theme.
 Pristine built-in prompts follow your language. Added/customized prompts keep their text.
 The tool pastes text without sending the message. Pasting replaces the clipboard.
 Unsigned portable build; no automatic updater.
@@ -37,7 +38,7 @@ Unsigned portable build; no automatic updater.
 請完整解壓縮，保留同資料夾內的 WebView2Loader.dll。
 升級前先儲存所有角色要保留的草稿，再透過系統匣完整退出舊版。
 原有短句與設定會保留；未儲存草稿僅在記憶體中，不要直接強制結束。
-可在「設定與 AI 教學」調整快捷鍵及語言；自訂短句不會被語系切換覆蓋。
+可在「設定與 AI 教學」調整快捷鍵及語言，並在主畫面選擇跟隨系統、亮色或暗色；自訂短句不會被語系切換覆蓋。
 此版本未簽章，沒有自動更新；貼入會取代剪貼簿內容，不會送出訊息。
 "@
 [IO.File]::WriteAllText((Join-Path $staging 'START-HERE.txt'),$instructions,[Text.UTF8Encoding]::new($false))
