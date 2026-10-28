@@ -12,6 +12,7 @@ test('autostart switches persist across reload, translate in four languages, and
  await page.evaluate(async()=>(await import('/src/i18n.js')).setLanguage('zh-TW'));
  const toggle=page.getByRole('checkbox',{name:'登入電腦後自動啟動'});await toggle.check();await expect(toggle).toBeEnabled();
  await page.reload();await m.settings();await expect(toggle).toBeChecked();await toggle.uncheck();await expect(toggle).toBeEnabled();
+ await page.reload();await m.settings();await expect(toggle).not.toBeChecked();
  expect(await page.evaluate(()=>JSON.stringify(qa.state.files))).toBe(files);
 });
 test('startup read and write errors are visible without corrupting state',async({page})=>{

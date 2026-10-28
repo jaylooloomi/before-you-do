@@ -2,7 +2,7 @@ import {t,errorMessage,onLanguageChange} from './i18n.js';
 
 export function createAutostartSetting(invoke) {
  const card=document.createElement('section');card.className='settings-card';
- card.innerHTML='<h3>啟動設定</h3><label class="autostart-toggle"><input type="checkbox" disabled> 登入電腦後自動啟動</label><p>登入後只啟動到系統匣，不彈出主畫面。移動程式位置後，請關閉再重新開啟此設定。</p><p aria-live="polite"></p>';
+ card.innerHTML='<h3>啟動設定</h3><label class="autostart-toggle"><input type="checkbox" disabled> 登入電腦後自動啟動</label><p>首次使用預設開啟，手動關閉後會記住選擇。</p><p>登入後只啟動到系統匣，不彈出主畫面。移動程式位置後，請關閉再重新開啟此設定。</p><p aria-live="polite"></p>';
  const toggle=card.querySelector('input'),status=card.querySelector('[aria-live]');
  let busy=false,enabled=false,message='正在讀取啟動設定…',params={};
  const report=(key,values={})=>{message=key;params=values;status.textContent=t(message,params);};

@@ -1,5 +1,6 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+['首次使用預設開啟，手動關閉後會記住選擇。','首次使用默认开启，手动关闭后会记住选择。','Enabled by default on first use. Turning it off remembers your choice.','初回は有効です。手動でオフにした場合は、その選択を保持します。'],
 ['主畫面：← → 切換角色，↑ ↓ 選擇短句；編輯文字時保留游標操作。','主界面：← → 切换角色，↑ ↓ 选择短句；编辑文字时保留光标操作。','Manager: ← → switch roles, ↑ ↓ select snippets. Arrows keep their normal behavior while editing text.','メイン画面：← → でロール切替、↑ ↓ で短文選択。テキスト編集中は通常のカーソル操作になります。'],
 ['啟動設定','启动设置','Startup','起動設定'],
 ['登入電腦後自動啟動','登录电脑后自动启动','Start automatically when I sign in','ログイン時に自動起動'],

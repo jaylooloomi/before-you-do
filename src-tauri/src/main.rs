@@ -114,7 +114,7 @@ fn get_autostart(state: tauri::State<State>) -> Result<autostart::Status, String
 #[tauri::command]
 fn set_autostart(state: tauri::State<State>, enabled: bool) -> Result<autostart::Status, String> {
     if state.preview { return Err("error.autostart_unsupported".into()); }
-    autostart::set(enabled)
+    autostart::set_and_remember(enabled,&state.path.with_file_name("autostart.json"))
 }
 #[tauri::command]
 fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
@@ -904,6 +904,11 @@ fn main() {
                     "外觀預覽 · 快捷鍵由原視窗提供；此預覽只儲存暫存資料。".into(),
                 );
             } else {
+                if !integration && !cfg!(debug_assertions) {
+                    if let Err(error)=autostart::initialize(&source_path.with_file_name("autostart.json")) {
+                        set_status(app.handle(),error);
+                    }
+                }
                 start_keyboard(app.handle());
                 if let Some(error) = shortcut_error {
                     set_status(app.handle(), error);

@@ -28,6 +28,58 @@ pub fn set(enabled: bool) -> Result<Status, String> {
     Ok(actual)
 }
 
+fn needs_default(preference: &Path) -> Result<bool, String> {
+    match std::fs::read(preference) {
+        Ok(bytes) => {
+            #[derive(serde::Deserialize)]
+            struct Preference {
+                initialized: bool,
+            }
+            let value: Preference = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+            if !value.initialized {
+                return Err("Invalid startup preference".into());
+            }
+            Ok(false)
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(true),
+        Err(e) => Err(e.to_string()),
+    }
+}
+fn remember(preference: &Path) -> Result<(), String> {
+    std::fs::create_dir_all(preference.parent().ok_or("Missing preference folder")?)
+        .map_err(|e| e.to_string())?;
+    let temp = preference.with_extension("json.tmp");
+    std::fs::write(&temp, b"{\"initialized\":true}\n").map_err(|e| e.to_string())?;
+    std::fs::rename(temp, preference).map_err(|e| e.to_string())
+}
+pub fn set_and_remember(enabled: bool, preference: &Path) -> Result<Status, String> {
+    let before = status()?;
+    let actual = set(enabled)?;
+    if let Err(error) = remember(preference) {
+        set(before.enabled)
+            .map_err(|rollback| format!("{error}; startup rollback failed: {rollback}"))?;
+        return Err(error);
+    }
+    Ok(actual)
+}
+fn initialize_with(
+    preference: &Path,
+    enable: impl FnOnce() -> Result<(), String>,
+) -> Result<(), String> {
+    if needs_default(preference)? {
+        enable()?;
+    }
+    Ok(())
+}
+pub fn initialize(preference: &Path) -> Result<(), String> {
+    if !cfg!(any(windows, target_os = "macos")) {
+        return Ok(());
+    }
+    initialize_with(preference, || {
+        set_and_remember(true, preference).map(|_| ())
+    })
+}
+
 #[cfg(windows)]
 mod platform {
     use super::*;
@@ -213,6 +265,42 @@ mod platform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn defaults_enable_once_and_do_not_override_a_recorded_choice() {
+        let dir = std::env::temp_dir().join(format!(
+            "startup-default-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&dir).unwrap();
+        let file = dir.join("autostart.json");
+        let mut calls = 0;
+        initialize_with(&file, || {
+            calls += 1;
+            remember(&file)
+        })
+        .unwrap();
+        initialize_with(&file, || {
+            calls += 1;
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(calls, 1);
+        std::fs::write(&file, b"broken").unwrap();
+        assert!(initialize_with(&file, || {
+            calls += 1;
+            Ok(())
+        })
+        .is_err());
+        assert_eq!(calls, 1);
+        std::fs::remove_file(&file).unwrap();
+        assert!(initialize_with(&file, || Err("OS denied".into())).is_err());
+        assert!(!file.exists());
+        std::fs::remove_dir(dir).unwrap();
+    }
     #[test]
     fn background_argument_is_exact() {
         assert!(is_background(vec!["app".into(), "--autostart".into()]));
