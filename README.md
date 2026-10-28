@@ -103,7 +103,7 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ## Installation
 
-**Latest feature release: [v0.4.4](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.4).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.4.md) · [Release process](docs/RELEASING.md).
+**Latest feature release: [v0.4.5](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.5).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.5.md) · [Release process](docs/RELEASING.md).
 
 ### Windows
 
@@ -133,6 +133,8 @@ Native Option+H and paste handling, plus Apple Silicon and Intel build configura
 Linux, phones, tablets and browser extensions are not currently supported.
 
 ## Keyboard controls
+
+In the **snippet manager**, use **← / →** to switch roles and **↑ / ↓** to select snippets. Navigation wraps and follows the visible search results. Each role retains its drafts and selection. When editing text, using a select control, viewing settings or a dialog, or waiting for a save/role load, arrows keep their normal behavior instead of navigating the manager. Selecting a snippet here does not paste or save it.
 
 When the manager has keyboard focus, the shortcut only hides it: no picker opens and nothing is pasted. Unsaved drafts stay in the app. Focus an external input and press the shortcut again to select a snippet. When invoked from an external app, the manager is hidden before the picker opens.
 

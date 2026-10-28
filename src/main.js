@@ -3,6 +3,7 @@ import { localizedSnippet } from './localized-snippet.js';
 import { scenarioHint } from './scenario-hint.js';
 import { savedSnapshot } from './saved-snapshot.js';
 import { usageHelp } from './usage-help.js';
+import { managerNavigation, nextVisibleSnippet } from './manager-navigation.js';
 import { matchesSnippetQuery } from './snippet-search.js';
 import appIcon from './assets/app-icon.png';
 import { matchesShortcutEvent } from './shortcut-match.js';
@@ -110,7 +111,7 @@ if (picker) {
   // Bonus-05: snapshots never share objects with editable drafts, including cached roles.
   let loadedSnapshot;
   async function snapshotFor(saved){return savedSnapshot(saved,(await invoke('storage_info')).exists);}
-  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" title="可輸入多個關鍵字，搜尋名稱、內容與情境。" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="介面主題"><option value="system">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.4.4</span></footer></section></main></div>`;
+  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span>before-you-do<span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" title="可輸入多個關鍵字，搜尋名稱、內容與情境。" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="介面主題"><option value="system">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · 0.4.5</span></footer></section></main></div>`;
   const roleCards = el('div','role-cards');roleCards.setAttribute('role','group');roleCards.setAttribute('aria-label',t('選擇角色'));
   const roleSwitcher=el('div','role-switcher');
   const previousRoles=el('button','role-scroll','‹'),nextRoles=el('button','role-scroll','›');
@@ -153,7 +154,7 @@ if (picker) {
     }
   },{passive:false});
   roleCards.addEventListener('keydown',event=>{
-    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    if(!['Home','End'].includes(event.key))return;
     const buttons=[...roleCards.querySelectorAll('button')],index=buttons.indexOf(event.target);if(index<0)return;
     event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:Math.max(0,Math.min(buttons.length-1,index+(event.key==='ArrowLeft'?-1:1)));
     buttons[next]?.focus({preventScroll:true});buttons[next]?.scrollIntoView({block:'nearest',inline:'nearest'});
@@ -167,6 +168,7 @@ if (picker) {
       button.append(mark,content);button.title=roleDescription(role,getLanguage());button.onclick=()=>switchRole(role.id);return button;
     }));
     roleCards.setAttribute('aria-label',t('選擇角色'));
+    roleSwitcher.title=t('主畫面：← → 切換角色，↑ ↓ 選擇短句；編輯文字時保留游標操作。');
     document.querySelector('aside .section-label').textContent=roleName(activeRole,getLanguage());
     previousRoles.setAttribute('aria-label',t('向左捲動角色'));nextRoles.setAttribute('aria-label',t('向右捲動角色'));
     previousRoles.title=t('向左捲動角色');nextRoles.title=t('向右捲動角色');
@@ -323,6 +325,24 @@ if (picker) {
     if(!e.repeat)invoke('dismiss_manager_shortcut').catch(setSaveError);
   },true);
   document.addEventListener('keydown', e => { if (document.querySelector('dialog[open]')) return; if (!settings.panel.hidden) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') e.preventDefault(); return; } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); document.querySelector('#editor').requestSubmit(); } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); search.focus(); } });
+  document.addEventListener('keydown', e => {
+    const action=managerNavigation(e,saving||switchingRole||!settings.panel.hidden||!!document.querySelector('dialog[open]'));
+    if(!action)return;
+    e.preventDefault();
+    if(action.kind==='role'){
+      const index=roles.findIndex(role=>role.id===activeRole);
+      switchRole(roles[(index+action.delta+roles.length)%roles.length].id).catch(setSaveError);
+    }else{
+      const visible=items.flatMap((item,index)=>{
+        const displayed=localizedSnippet(item,activeRole,getLanguage());
+        return matchesSnippetQuery(displayed,search.value,templateInfo(displayed)?.scenario??'')?[index]:[];
+      });
+      const next=nextVisibleSnippet(visible,selected,action.delta);
+      if(next===null||next===selected)return;
+      stash();selected=next;render();
+      document.querySelector('.snippet.selected')?.scrollIntoView({block:'nearest'});
+    }
+  });
   await listen('active-role-changed',event=>{roleSync=roleSync.then(async()=>{await switchRole(event.payload);if(!settings.panel.hidden)await settings.refresh();}).catch(setSaveError);});
   onLanguageChange(() => { renderRoles(); render(); if(statusError) setSaveError(statusError); else setSaveStatus(statusKey,statusParams); nativeStatus(); });
   items = await invoke('get_snippets');loadedSnapshot=await snapshotFor(items); versions=savedVersions(items);renderRoles(); render(); setSaveStatus('已儲存'); await nativeStatus(); await consumeNewSnippet(); await consumeOpenSettings();

@@ -1,5 +1,6 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+['主畫面：← → 切換角色，↑ ↓ 選擇短句；編輯文字時保留游標操作。','主界面：← → 切换角色，↑ ↓ 选择短句；编辑文字时保留光标操作。','Manager: ← → switch roles, ↑ ↓ select snippets. Arrows keep their normal behavior while editing text.','メイン画面：← → でロール切替、↑ ↓ で短文選択。テキスト編集中は通常のカーソル操作になります。'],
 ['啟動設定','启动设置','Startup','起動設定'],
 ['登入電腦後自動啟動','登录电脑后自动启动','Start automatically when I sign in','ログイン時に自動起動'],
 ['登入後只啟動到系統匣，不彈出主畫面。移動程式位置後，請關閉再重新開啟此設定。','登录后只启动到系统托盘，不弹出主窗口。移动程序位置后，请关闭再重新开启此设置。','Start in the system tray without opening the manager. If you move the app, turn this setting off and on again.','ログイン時はトレイで起動し、メイン画面は開きません。アプリを移動した場合は、この設定をオフにしてから再度オンにしてください。'],
