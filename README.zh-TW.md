@@ -98,9 +98,11 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 
 選單不搶走原輸入框的焦點；角色列顯示目前角色、序號與前後角色。上圖展示「我的短句、專案管理、程式開發、內容行銷」四種角色，用 ←／→ 即可切換。底部「新增」與「設定」固定顯示；選到「設定」並放開組合鍵會回到短句管理主畫面。貼入後由你自行檢查與送出。
 
+Windows 下，從 Alt+H 選「設定」或「新增」時，管理主視窗會出現在原本輸入視窗所在的螢幕，並配合該螢幕的可用工作區。一般從系統匣開啟的位置行為不變。
+
 ## 安裝與啟動
 
-**最新功能版本：[v0.4.5](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.5)。** 內建提示詞隨語系切換，自訂短句保留原文；另包含啟動恢復、emoji字數一致、JSON工具與外部改檔衝突保護。[版本說明](docs/releases/v0.4.5.md) · [發布流程](docs/RELEASING.md)。
+**最新功能版本：[v0.4.6](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.6)。** 內建提示詞隨語系切換，自訂短句保留原文；另包含啟動恢復、emoji字數一致、JSON工具與外部改檔衝突保護。[版本說明](docs/releases/v0.4.6.md) · [發布流程](docs/RELEASING.md)。
 
 ### Windows
 

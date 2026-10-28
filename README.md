@@ -103,7 +103,7 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ## Installation
 
-**Latest feature release: [v0.4.5](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.5).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.5.md) · [Release process](docs/RELEASING.md).
+**Latest feature release: [v0.4.6](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.6).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.6.md) · [Release process](docs/RELEASING.md).
 
 ### Windows
 
@@ -159,6 +159,8 @@ The table uses the default **Alt+H**. Change it under **Settings & AI guide → 
 ## Make the instructions your own
 
 The bottom of the Alt+H picker contains “Add a prompt” followed by “Settings.” Select Settings and release the shortcut modifiers to open the **snippet manager**, without pasting text or creating a draft. Use the sidebar’s **Settings & AI guide** button for the settings page.
+
+On Windows, selecting Settings or Add opens the manager on the original input window's display, fitted to that display's work area. Normal tray opening retains its usual placement.
 
 While holding the shortcut modifiers, use **← / →** to browse roles and **↑ / ↓** to select a snippet. The role bar shows neighboring roles and the current position. Releasing commits the selected role; Esc or the second trigger key cancels without changing the active role. Unsaved manager drafts are preserved.
 

@@ -32,8 +32,8 @@ struct Picker {
 #[derive(Debug, PartialEq)]
 enum Selection {
     Paste(usize, String),
-    Add,
-    Settings,
+    Add(usize),
+    Settings(usize),
 }
 impl Picker {
     fn finish_in_language(&mut self, paste: bool, language: &str) -> Option<Selection> {
@@ -72,9 +72,9 @@ impl Picker {
         }
         self.active = false;
         if paste && self.selected == self.items.len() {
-            Some(Selection::Add)
+            Some(Selection::Add(self.target))
         } else if paste && self.selected == self.items.len() + 1 {
-            Some(Selection::Settings)
+            Some(Selection::Settings(self.target))
         } else if paste {
             self.items
                 .get(self.selected)
@@ -171,13 +171,13 @@ fn preview_picker(
             }
             result = match chosen {
                 Some(Selection::Paste(_, text)) => serde_json::json!({"kind":"paste","text":text}),
-                Some(Selection::Add) => {
+                Some(Selection::Add(_)) => {
                     state.pending_new.store(true, Ordering::SeqCst);
                     let _ = app.emit_to("main", "new-snippet", ());
                     serde_json::json!({"kind":"add"})
                 }
-                Some(Selection::Settings) => {
-                    request_settings(&app, false);
+                Some(Selection::Settings(_)) => {
+                    request_settings(&app, false, None);
                     serde_json::json!({"kind":"settings"})
                 }
                 None => serde_json::Value::Null,
@@ -487,14 +487,22 @@ fn manage(app: &tauri::AppHandle) {
         let _ = w.set_focus();
     }
 }
-fn request_settings(app: &tauri::AppHandle, activate: bool) {
+fn manage_from_target(app: &tauri::AppHandle, target: usize) {
+    if let Some(window) = app.get_webview_window("main") {
+        let result = picker_position::prepare_manager(app, &window, target);
+        if let Err(error) = result { set_status(app, error.to_string()); return; }
+    }
+    manage(app);
+}
+fn request_settings(app: &tauri::AppHandle, activate: bool, target: Option<usize>) {
     app.state::<State>()
         .pending_settings
         .store(true, Ordering::SeqCst);
     if activate {
         let handle = app.clone();
         let _ = app.run_on_main_thread(move || {
-            manage(&handle);
+            if let Some(target) = target { manage_from_target(&handle, target); }
+            else { manage(&handle); }
             let _ = handle.emit_to("main", "open-settings", ());
         });
     } else {
@@ -650,13 +658,13 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
                         diagnostic("paste input sent");
                     }
                 }
-            } else if chosen == Some(Selection::Settings) {
-                request_settings(app, true);
-            } else if chosen == Some(Selection::Add) {
+            } else if let Some(Selection::Settings(target)) = chosen {
+                request_settings(app, true, Some(target));
+            } else if let Some(Selection::Add(target)) = chosen {
                 state.pending_new.store(true, Ordering::SeqCst);
                 let handle = app.clone();
                 let _ = app.run_on_main_thread(move || {
-                    manage(&handle);
+                    manage_from_target(&handle, target);
                     let _ = handle.emit_to("main", "new-snippet", ());
                 });
             }
@@ -1014,7 +1022,7 @@ mod tests {
         p.begin(storage::defaults(), 123);
         p.step(-2);
         assert_eq!(p.selected, p.items.len());
-        assert_eq!(p.finish(true), Some(Selection::Add));
+        assert_eq!(p.finish(true), Some(Selection::Add(123)));
         assert_eq!(p.finish(true), None);
     }
     #[test]
@@ -1036,7 +1044,7 @@ mod tests {
         p.begin(storage::defaults(), 123);
         p.step(-1);
         assert_eq!(p.selected, p.items.len() + 1);
-        assert_eq!(p.finish(true), Some(Selection::Settings));
+        assert_eq!(p.finish(true), Some(Selection::Settings(123)));
         assert_eq!(p.finish(true), None);
         p.begin(storage::defaults(), 123);
         p.step(-1);

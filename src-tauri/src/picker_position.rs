@@ -7,7 +7,19 @@ pub struct Placement {
 }
 
 // All positions/sizes are physical pixels. Only desired size and margin are logical.
+#[cfg(test)]
 pub fn placement(x: i32, y: i32, width: u32, height: u32, scale: f64) -> Placement {
+    placement_with_size(x, y, width, height, scale, 580.0, 480.0)
+}
+fn placement_with_size(
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+    scale: f64,
+    desired_width: f64,
+    desired_height: f64,
+) -> Placement {
     let scale = if scale.is_finite() && scale > 0.0 {
         scale
     } else {
@@ -22,8 +34,8 @@ pub fn placement(x: i32, y: i32, width: u32, height: u32, scale: f64) -> Placeme
             .max(1)
             .min(available - margin * 2)
     };
-    let w = fit(width, 580.0);
-    let h = fit(height, 480.0);
+    let w = fit(width, desired_width);
+    let h = fit(height, desired_height);
     Placement {
         x: x.saturating_add((width.saturating_sub(w) / 2) as i32),
         y: y.saturating_add((height.saturating_sub(h) / 2) as i32),
@@ -31,11 +43,45 @@ pub fn placement(x: i32, y: i32, width: u32, height: u32, scale: f64) -> Placeme
         height: h,
     }
 }
+fn desired_size(window: &tauri::WebviewWindow) -> tauri::Result<(f64, f64)> {
+    if window.label() == "main" {
+        if window.is_maximized()? || window.is_minimized()? {
+            return Ok((940.0, 820.0));
+        }
+        let size = window
+            .inner_size()?
+            .to_logical::<f64>(window.scale_factor()?);
+        Ok((size.width, size.height))
+    } else {
+        Ok((580.0, 480.0))
+    }
+}
 
 pub fn position(
     app: &tauri::AppHandle,
     window: &tauri::WebviewWindow,
     target: usize,
+) -> tauri::Result<()> {
+    let desired = desired_size(window)?;
+    position_sized(app, window, target, desired)
+}
+pub fn prepare_manager(
+    app: &tauri::AppHandle,
+    window: &tauri::WebviewWindow,
+    target: usize,
+) -> tauri::Result<()> {
+    // Capture logical size once: don't rescale twice while a DPI change is being delivered.
+    let desired = desired_size(window)?;
+    position_sized(app, window, target, desired)?;
+    window.unmaximize()?;
+    window.unminimize()?;
+    position_sized(app, window, target, desired)
+}
+fn position_sized(
+    app: &tauri::AppHandle,
+    window: &tauri::WebviewWindow,
+    target: usize,
+    desired: (f64, f64),
 ) -> tauri::Result<()> {
     // The target HWND determines the monitor, even if the mouse or manager is elsewhere.
     let target_monitor = crate::platform::target_monitor_point(target)
@@ -50,15 +96,25 @@ pub fn position(
         .or_else(|| app.primary_monitor().ok().flatten());
     if let Some(monitor) = monitor {
         let area = monitor.work_area();
-        let p = placement(
+        let p = placement_with_size(
             area.position.x,
             area.position.y,
             area.size.width,
             area.size.height,
             monitor.scale_factor(),
+            desired.0,
+            desired.1,
         );
         // Move first to adopt the target DPI, then explicitly size and center in pixels.
         window.set_position(tauri::PhysicalPosition::new(p.x, p.y))?;
+        if window.label() == "main" {
+            window.set_min_size(Some(tauri::PhysicalSize::new(
+                (780.0 * monitor.scale_factor()).round().min(p.width as f64) as u32,
+                (680.0 * monitor.scale_factor())
+                    .round()
+                    .min(p.height as f64) as u32,
+            )))?;
+        }
         window.set_size(tauri::PhysicalSize::new(p.width, p.height))?;
         window.set_position(tauri::PhysicalPosition::new(p.x, p.y))?;
     }
@@ -86,7 +142,10 @@ pub fn audit_if_requested(app: &tauri::AppHandle) -> Result<(), Box<dyn std::err
             }
         }
     }
-    let window = app.get_webview_window("picker").ok_or("Picker missing")?;
+    let windows = [
+        app.get_webview_window("picker").ok_or("Picker missing")?,
+        app.get_webview_window("main").ok_or("Manager missing")?,
+    ];
     let class: Vec<u16> = "STATIC".encode_utf16().chain(Some(0)).collect();
     let mut checks = Vec::new();
     // Reverse the display list on the second pass to catch sticky previous-monitor placement.
@@ -112,26 +171,31 @@ pub fn audit_if_requested(app: &tauri::AppHandle) -> Result<(), Box<dyn std::err
         if fixture.0.is_null() {
             return Err("Could not create hidden target fixture".into());
         }
-        position(app, &window, fixture.0 as usize)?;
-        let actual = window.outer_position()?;
-        let size = window.inner_size()?;
-        let expected = placement(
-            area.position.x,
-            area.position.y,
-            area.size.width,
-            area.size.height,
-            monitor.scale_factor(),
-        );
-        let selected = window.current_monitor()?.ok_or("Picker monitor missing")?;
-        let passed = actual.x == expected.x
-            && actual.y == expected.y
-            && size.width == expected.width
-            && size.height == expected.height
-            && selected.position() == monitor.position()
-            && !window.is_visible()?;
-        checks.push(serde_json::json!({"monitor":monitor.name(),"scale":monitor.scale_factor(),"passed":passed,
+        for window in &windows {
+            let desired = desired_size(window)?;
+            position(app, window, fixture.0 as usize)?;
+            let actual = window.outer_position()?;
+            let size = window.inner_size()?;
+            let expected = placement_with_size(
+                area.position.x,
+                area.position.y,
+                area.size.width,
+                area.size.height,
+                monitor.scale_factor(),
+                desired.0,
+                desired.1,
+            );
+            let selected = window.current_monitor()?.ok_or("Picker monitor missing")?;
+            let passed = actual.x == expected.x
+                && actual.y == expected.y
+                && size.width == expected.width
+                && size.height == expected.height
+                && selected.position() == monitor.position()
+                && !window.is_visible()?;
+            checks.push(serde_json::json!({"window":window.label(),"monitor":monitor.name(),"scale":monitor.scale_factor(),"passed":passed,
             "x":actual.x,"y":actual.y,"width":size.width,"height":size.height,
             "expected":{"x":expected.x,"y":expected.y,"width":expected.width,"height":expected.height}}));
+        }
     }
     std::fs::write(
         std::env::current_exe()?.with_extension("monitor-audit.json"),
@@ -143,6 +207,28 @@ pub fn audit_if_requested(app: &tauri::AppHandle) -> Result<(), Box<dyn std::err
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn manager_fits_target_work_area_and_uses_its_scale() {
+        assert_eq!(
+            placement_with_size(-1920, 40, 1920, 1040, 1.0, 940.0, 820.0),
+            Placement {
+                x: -1430,
+                y: 150,
+                width: 940,
+                height: 820
+            }
+        );
+        let p = placement_with_size(1920, 0, 1280, 1024, 1.5, 940.0, 820.0);
+        assert_eq!(
+            p,
+            Placement {
+                x: 1944,
+                y: 24,
+                width: 1232,
+                height: 976
+            }
+        );
+    }
     #[test]
     fn centers_on_target_work_area_including_negative_coordinates() {
         assert_eq!(
