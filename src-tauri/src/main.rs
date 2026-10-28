@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
+mod materials;
 mod picker_position;
 mod autostart;
 mod roles;
@@ -481,6 +482,7 @@ fn preview_quit_approved(state: tauri::State<State>) -> Result<bool, String> {
     Ok(state.quit_approved.load(Ordering::SeqCst))
 }
 fn manage(app: &tauri::AppHandle) {
+    if app.try_state::<materials::Materials>().is_some_and(|state|state.busy.load(Ordering::SeqCst)){return;}
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.set_always_on_top(true);
         let _ = w.show();
@@ -582,6 +584,7 @@ fn activate_picker_role(app: &tauri::AppHandle, id: &str, items: &[Snippet]) -> 
     Ok(())
 }
 fn handle_action(app: &tauri::AppHandle, action: Action) {
+    if app.state::<materials::Materials>().busy.load(Ordering::SeqCst) { return; }
     diagnostic(&format!("action: {action:?}"));
     let state = app.state::<State>();
     match action {
@@ -687,6 +690,12 @@ fn diagnostic(message: &str) {
     }
 }
 fn main() {
+    if let Some(index)=std::env::args().position(|arg|arg=="--material-capture-audit"){
+        let directory=std::env::args().nth(index+1).expect("Audit output directory required");
+        if let Err(error)=materials::audit(std::path::Path::new(&directory)){eprintln!("{error}");std::process::exit(1);}
+        return;
+    }
+
     let preview = std::env::args().any(|arg| arg == "--design-preview");
     let background = autostart::is_background(std::env::args());
     let builder = tauri::Builder::default();
@@ -699,6 +708,9 @@ fn main() {
     };
     builder
         .invoke_handler(tauri::generate_handler![
+            materials::materials_load, materials::materials_text, materials::materials_import,
+            materials::materials_order, materials::materials_remove, materials::materials_preview,
+            materials::materials_export, materials::capture_start, materials::capture_frame, materials::capture_finish,
             request_quit,
             confirm_quit,
             preview_quit_approved,
@@ -777,12 +789,18 @@ fn main() {
                 preview,
                 picker: Mutex::new(Picker::default()),
                 status: Mutex::new(String::new()),
-                path,
+                path: path.clone(),
                 tx,
                 quit_approved: AtomicBool::new(false),
                 pending_new: AtomicBool::new(std::env::args().any(|arg| arg == "--new-snippet")),
                 pending_settings: AtomicBool::new(false),
             });
+            app.manage(materials::Materials::new(path.with_file_name("prompt-materials")).map_err(std::io::Error::other)?);
+            materials::track();
+            if let Some(capture)=app.get_webview_window("capture"){
+                let handle=app.handle().clone();
+                capture.on_window_event(move|event|{if let tauri::WindowEvent::CloseRequested{api,..}=event{api.prevent_close();materials::cancel(&handle);}});
+            }
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 while let Ok(action) = rx.recv() {
