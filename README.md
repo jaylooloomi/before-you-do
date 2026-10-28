@@ -103,7 +103,7 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ## Installation
 
-**Latest feature release: [v0.4.7](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.7).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.7.md) · [Release process](docs/RELEASING.md).
+**Latest feature release: [v0.4.8](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.8).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.8.md) · [Release process](docs/RELEASING.md).
 
 ### Windows
 
@@ -125,6 +125,8 @@ The Windows executable is `before-you-do.exe`. Automatic updates are not current
 To start automatically at sign-in, open **Settings & AI guide → Startup → Start automatically when I sign in**. This is enabled by default on first use; turning it off is remembered on later launches. Login startup runs in the system tray without opening the manager; launching the app normally still opens it. Windows uses a per-user Run registry entry; macOS uses a LaunchAgent. No administrator permission is required. If you move the portable app, turn the setting off and on again; turn it off before removing the app. OS Startup settings and device policies can override these entries.
 
 Closing the manager window hides the app; the shortcut remains available. To exit completely, choose “Quit before-you-do” from the system tray menu.
+
+The manager, including its settings page, stays on top of normal windows while open. Close it to hide it in the tray; sign-in startup keeps it hidden.
 
 ### macOS and other platforms
 

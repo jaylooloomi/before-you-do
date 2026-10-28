@@ -482,6 +482,7 @@ fn preview_quit_approved(state: tauri::State<State>) -> Result<bool, String> {
 }
 fn manage(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
+        let _ = w.set_always_on_top(true);
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
