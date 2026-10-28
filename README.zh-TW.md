@@ -100,7 +100,7 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 
 ## 安裝與啟動
 
-**最新功能版本：[v0.4.3](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.3)。** 內建提示詞隨語系切換，自訂短句保留原文；另包含啟動恢復、emoji字數一致、JSON工具與外部改檔衝突保護。[版本說明](docs/releases/v0.4.3.md) · [發布流程](docs/RELEASING.md)。
+**最新功能版本：[v0.4.4](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.4)。** 內建提示詞隨語系切換，自訂短句保留原文；另包含啟動恢復、emoji字數一致、JSON工具與外部改檔衝突保護。[版本說明](docs/releases/v0.4.4.md) · [發布流程](docs/RELEASING.md)。
 
 ### Windows
 

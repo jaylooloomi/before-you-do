@@ -1,0 +1,62 @@
+[
+  {
+    "expected": {
+      "height": 480,
+      "width": 580,
+      "x": -1250,
+      "y": 300
+    },
+    "height": 480,
+    "monitor": "\\\\.\\DISPLAY1",
+    "passed": true,
+    "scale": 1.0,
+    "width": 580,
+    "x": -1250,
+    "y": 300
+  },
+  {
+    "expected": {
+      "height": 480,
+      "width": 580,
+      "x": 670,
+      "y": 280
+    },
+    "height": 480,
+    "monitor": "\\\\.\\DISPLAY2",
+    "passed": true,
+    "scale": 1.0,
+    "width": 580,
+    "x": 670,
+    "y": 280
+  },
+  {
+    "expected": {
+      "height": 480,
+      "width": 580,
+      "x": 670,
+      "y": 280
+    },
+    "height": 480,
+    "monitor": "\\\\.\\DISPLAY2",
+    "passed": true,
+    "scale": 1.0,
+    "width": 580,
+    "x": 670,
+    "y": 280
+  },
+  {
+    "expected": {
+      "height": 480,
+      "width": 580,
+      "x": -1250,
+      "y": 300
+    },
+    "height": 480,
+    "monitor": "\\\\.\\DISPLAY1",
+    "passed": true,
+    "scale": 1.0,
+    "width": 580,
+    "x": -1250,
+    "y": 300
+  }
+]

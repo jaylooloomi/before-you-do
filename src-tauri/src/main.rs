@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
+mod picker_position;
 mod autostart;
 mod roles;
 mod shortcut;
@@ -593,19 +594,13 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
             let handle = app.clone();
             let _ = app.run_on_main_thread(move || {
                 if let Some(w) = handle.get_webview_window("picker") {
-                    // Keep three complete snippet rows above the fixed actions.
-                    // On a smaller work area, retain scrolling instead of clipping the window.
-                    if let Ok(Some(monitor)) = w.current_monitor() {
-                        let scale = monitor.scale_factor();
-                        let area = monitor.work_area();
-                        let width = 580.0_f64.min((area.size.width as f64 / scale - 32.0).max(1.0));
-                        let height =
-                            480.0_f64.min((area.size.height as f64 / scale - 32.0).max(1.0));
-                        let _ = w.set_size(tauri::LogicalSize::new(width, height));
+                    if picker_position::position(&handle, &w, target).is_err() {
+                        platform::cancel_selection();
+                        handle.state::<State>().picker.lock().unwrap().finish(false);
+                        return;
                     }
                     #[cfg(target_os = "macos")]
                     platform::unhide_without_activation();
-                    let _ = w.center();
                     let _ = w.show();
                     #[cfg(windows)]
                     window_regression::record("alt-h-open", &w);
@@ -906,6 +901,8 @@ fn main() {
                     set_status(app.handle(), error);
                 }
             }
+            #[cfg(windows)]
+            picker_position::audit_if_requested(app.handle())?;
             if !background { main.show()?; }
             Ok(())
         })

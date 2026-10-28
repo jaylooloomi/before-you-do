@@ -21,6 +21,19 @@ static THREAD_ID: AtomicU32 = AtomicU32::new(0);
 static CHANGE_LOCK: Mutex<()> = Mutex::new(());
 static PENDING: Mutex<Option<(Shortcut, mpsc::SyncSender<Result<(), String>>)>> = Mutex::new(None);
 const CHANGE_MESSAGE: u32 = WM_APP + 73;
+pub fn target_monitor_point(target: usize) -> Option<(i32,i32)> {
+    use windows_sys::Win32::Graphics::Gdi::*;
+    let hwnd=target as HWND;
+    unsafe {
+        if IsWindow(hwnd)==0 { return None; }
+        let monitor=MonitorFromWindow(hwnd,MONITOR_DEFAULTTONEAREST);
+        let mut info: MONITORINFO=std::mem::zeroed();
+        info.cbSize=std::mem::size_of::<MONITORINFO>() as u32;
+        if GetMonitorInfoW(monitor,&mut info)==0 { return None; }
+        Some((info.rcMonitor.left+(info.rcMonitor.right-info.rcMonitor.left)/2,
+            info.rcMonitor.top+(info.rcMonitor.bottom-info.rcMonitor.top)/2))
+    }
+}
 static H_DOWN: AtomicBool = AtomicBool::new(false);
 fn send(action: Action) {
     if let Some(tx) = TX.get() {
@@ -280,6 +293,36 @@ pub fn paste(target: usize, text: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn monitor_selection_follows_hidden_targets_on_each_attached_display() {
+        use windows_sys::Win32::{Graphics::Gdi::*, UI::HiDpi::*};
+        unsafe extern "system" fn collect(_: HMONITOR, _: HDC, rect: *mut RECT, data: LPARAM) -> i32 {
+            (*(data as *mut Vec<RECT>)).push(*rect);
+            1
+        }
+        struct Dpi(DPI_AWARENESS_CONTEXT);
+        impl Drop for Dpi { fn drop(&mut self) { unsafe { SetThreadDpiAwarenessContext(self.0); } } }
+        struct Window(HWND);
+        impl Drop for Window { fn drop(&mut self) { unsafe { DestroyWindow(self.0); } } }
+        unsafe {
+            let _dpi=Dpi(SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2));
+            let mut monitors=Vec::<RECT>::new();
+            assert_ne!(EnumDisplayMonitors(std::ptr::null_mut(),std::ptr::null(),Some(collect),&mut monitors as *mut _ as LPARAM),0);
+            assert!(!monitors.is_empty());
+            let class: Vec<u16>="STATIC".encode_utf16().chain(Some(0)).collect();
+            let title: Vec<u16>="before-you-do hidden monitor test".encode_utf16().chain(Some(0)).collect();
+            for rect in &monitors {
+                let window=Window(CreateWindowExW(0,class.as_ptr(),title.as_ptr(),WS_POPUP,
+                    rect.left+64,rect.top+64,48,48,std::ptr::null_mut(),std::ptr::null_mut(),GetModuleHandleW(std::ptr::null()),std::ptr::null()));
+                assert!(!window.0.is_null());
+                assert_eq!(IsWindowVisible(window.0),0);
+                let point=target_monitor_point(window.0 as usize).unwrap();
+                assert!(point.0>=rect.left && point.0<rect.right && point.1>=rect.top && point.1<rect.bottom);
+            }
+            assert!(target_monitor_point(0).is_none());
+            println!("Verified hidden target HWND monitor selection on {} attached displays; no focus or keyboard input.",monitors.len());
+        }
+    }
     // Call the production hook with in-memory records only. No SendInput, window
     // activation or system shortcut registration occurs during this test.
     #[test]

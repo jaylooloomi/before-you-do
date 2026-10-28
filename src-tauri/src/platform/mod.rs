@@ -9,6 +9,9 @@ pub enum Action {
     Cancel,
     Error(String),
 }
+// macOS targets are process IDs, not window handles. Prefer the cursor monitor there.
+#[cfg(not(windows))]
+pub fn target_monitor_point(_: usize) -> Option<(i32,i32)> { None }
 #[cfg(target_os = "windows")]
 mod windows;
 #[cfg(target_os = "windows")]
