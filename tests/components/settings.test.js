@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {createSettingsPage} from '../../src/settings.js';
 import {setLanguage} from '../../src/i18n.js';
 async function mount(overrides={}){
- setLanguage('zh-TW');const invoke=vi.fn(async cmd=>({get_role:'personal',storage_info:{path:'QA_ONLY/data.json',backup:'QA_ONLY/bak',exists:true},get_snippets:[{name:'n',text:'body',scenario:'s'}]})[cmd]);
+ setLanguage('zh-TW');const invoke=vi.fn(async cmd=>({get_role:'personal',get_autostart:{supported:true,enabled:false},storage_info:{path:'QA_ONLY/data.json',backup:'QA_ONLY/bak',exists:true},get_snippets:[{name:'n',text:'body',scenario:'s'}]})[cmd]);
  const callbacks={invoke,askConfirmation:vi.fn(async()=>true),onBack:vi.fn(),onReload:vi.fn(async()=>true),onImport:vi.fn(),onAddTemplate:vi.fn(),...overrides};const widget=createSettingsPage(callbacks);document.body.append(widget.panel);widget.panel.hidden=false;await widget.refresh();return callbacks;
 }
 test('C03 pending copy disables button, copies saved-only JSON, and recovers',async()=>{

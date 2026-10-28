@@ -18,6 +18,8 @@ export function installBridge(){
     if(failures[cmd])throw failures[cmd];
     if(cmd==='plugin:event|listen'){const ids=events.get(args.event)||[];ids.push(args.handler);events.set(args.event,ids);return args.handler;}
     if(cmd==='get_role')return state.role;
+    if(cmd==='get_autostart')return {supported:true,enabled:!!state.autostart};
+    if(cmd==='set_autostart'){state.autostart=args.enabled;persist();return {supported:true,enabled:state.autostart};}
     if(cmd==='get_snippets'||cmd==='reload_snippets')return structuredClone(state.files[state.role]||[]);
     if(cmd==='get_shortcut')return state.shortcut;
     if(cmd==='save_shortcut'){if(args.shortcut.modifier==='ctrl'&&['A','C','V','X','Z','Y','S'].includes(args.shortcut.key))throw 'error.shortcut_reserved';state.shortcut=args.shortcut;persist();emit('shortcut-changed',args.shortcut);return args.shortcut;}

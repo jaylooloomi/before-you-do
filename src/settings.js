@@ -1,4 +1,5 @@
 import { importPreview } from './import-preview.js';
+import { createAutostartSetting } from './autostart-setting.js';
 import { roleName } from './roles.js';
 import { getShortcut, onShortcutChange, shortcutLabel } from './shortcut.js';
 import { t, getLanguage, getPreference, setLanguage, onLanguageChange, errorMessage } from './i18n.js';
@@ -20,6 +21,8 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
     <section class="settings-card"><h3>備份與還原</h3><p>每次儲存會在目前角色的 .json.bak 檔保留上一版，不是完整歷史紀錄。還原前請完整結束 App，另存目前檔案，再將備份複製回上方顯示的短句路徑。外部 AI 修改前也應另做備份。</p></section>
     <p id="settings-status" role="status" aria-live="polite"></p>`;
   // Bonus-04: explicit saved-only JSON export, using the existing clipboard command.
+  const autostart=createAutostartSetting(invoke);
+  panel.querySelector('#language').closest('.settings-card').after(autostart.card);
   const exportCard=document.createElement('section');exportCard.className='settings-card';
   exportCard.innerHTML='<h3>匯出目前角色</h3><p>只複製目前角色已儲存的短句 JSON，包含情境與排序，不含未儲存草稿。</p><button type="button" data-settings="export-json">複製短句 JSON</button>';
   panel.querySelector('#import-json').closest('.settings-card').after(exportCard);
@@ -44,6 +47,7 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
   templateLanguage.onchange=renderTemplates; choice.onchange=renderTemplate; renderTemplates();
   onLanguageChange(()=>{ language.value=getPreference(); templateLanguage.value=getLanguage(); renderTemplates(); if(info)panel.querySelector('#file-ai-prompt').value=filePrompt(info.path); panel.querySelector('#file-exists').textContent=info ? t(info.exists ? '短句檔已建立。' : '尚未建立檔案：請先返回短句，按一次儲存。') : ''; status.textContent=reportText(); });
   async function refresh() {
+    await autostart.refresh();
     try {
       currentRole=await invoke('get_role');renderRoleNote();
       info = await invoke('storage_info');

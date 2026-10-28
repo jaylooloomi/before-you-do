@@ -126,6 +126,7 @@ body.windows .appearance-bar{justify-content:flex-end}
 .settings-panel>*{flex-shrink:0}.settings-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.settings-heading h2{margin:0}.settings-heading p{margin:8px 0 0;color:var(--muted);line-height:1.7}
 .settings-card{padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--palette-field)}
 .settings-card h3{font-size:16px;margin:0 0 12px}.settings-card p,.settings-card li{font-size:13px;line-height:1.9;color:var(--muted)}
+.autostart-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;line-height:1.6}.autostart-toggle input{width:17px;height:17px;margin:0;accent-color:var(--accent)}.autostart-toggle:has(input:disabled){opacity:.6;cursor:default}
 .settings-card ol,.settings-card ul{padding-left:22px}.settings-card code{white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--ink)}
 #data-path{display:block;padding:12px;background:var(--hover);border-radius:6px}.settings-backup code{font-size:11px}
 .settings-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.settings-panel button{padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--hover);color:var(--ink);font-size:12px}.settings-panel button:hover{background:var(--selected)}

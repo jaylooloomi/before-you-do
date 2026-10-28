@@ -1,5 +1,17 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+['啟動設定','启动设置','Startup','起動設定'],
+['登入電腦後自動啟動','登录电脑后自动启动','Start automatically when I sign in','ログイン時に自動起動'],
+['登入後只啟動到系統匣，不彈出主畫面。移動程式位置後，請關閉再重新開啟此設定。','登录后只启动到系统托盘，不弹出主窗口。移动程序位置后，请关闭再重新开启此设置。','Start in the system tray without opening the manager. If you move the app, turn this setting off and on again.','ログイン時はトレイで起動し、メイン画面は開きません。アプリを移動した場合は、この設定をオフにしてから再度オンにしてください。'],
+['正在讀取啟動設定…','正在读取启动设置…','Reading startup setting…','起動設定を読み込み中…'],
+['正在儲存啟動設定…','正在保存启动设置…','Saving startup setting…','起動設定を保存中…'],
+['已啟用登入時自動啟動。','已启用登录时自动启动。','Automatic startup is enabled.','ログイン時の自動起動が有効です。'],
+['登入時自動啟動已關閉。','登录时自动启动已关闭。','Automatic startup is off.','ログイン時の自動起動は無効です。'],
+['此環境不支援開機啟動設定。','此环境不支持开机启动设置。','Startup settings are unavailable in this environment.','この環境では自動起動設定を利用できません。'],
+['無法讀取啟動設定：{error}','无法读取启动设置：{error}','Could not read startup setting: {error}','起動設定を読み込めませんでした：{error}'],
+['未能更新啟動設定：{error}','未能更新启动设置：{error}','Could not update startup setting: {error}','起動設定を更新できませんでした：{error}'],
+['error.autostart_verify','启动设置未通过系统验证，请重试。','The startup setting could not be verified. Please try again.','起動設定を確認できませんでした。再試行してください。'],
+['error.autostart_unsupported','此环境不支持开机启动设置。','Startup settings are unavailable in this environment.','この環境では自動起動設定を利用できません。'],
 ["目前角色已儲存 {current} 筆；將用這 {count} 筆取代清單與未儲存草稿，並先備份原檔。","当前角色已保存 {current} 项；将用这 {count} 项替换列表与未保存草稿，并先备份原文件。","This role has {current} saved snippets. Replace its list and unsaved drafts with these {count} snippets, backing up the original file first.","このロールの保存済み短文は {current} 件です。この {count} 件で一覧と未保存の下書きを置き換え、元のファイルを先にバックアップします。"],
 ["名稱預覽（{shown}/{count}）：{names}","名称预览（{shown}/{count}）：{names}","Name preview ({shown}/{count}): {names}","名前のプレビュー（{shown}/{count}）：{names}"],
 ["另有 {count} 筆未列出，請在 JSON 欄確認完整內容。","还有 {count} 项未列出，请在 JSON 栏确认完整内容。","{count} more are not shown. Check the JSON field for the complete content.","他に {count} 件あります。JSON 欄で内容全体を確認してください。"],
@@ -141,6 +153,8 @@ export const rows = [
 ];
 
 export const specialTraditional = {
+ 'error.autostart_verify':'啟動設定未通過系統驗證，請重試。',
+ 'error.autostart_unsupported':'此環境不支援開機啟動設定。',
  'error.external_change':'檔案已在外部更改或角色已切換，尚未儲存。請先另行保留草稿，再到設定重新載入檔案後編輯。',
  'error.import_entry':'第 {index} 筆的 {field}：{reason}',
  'error.import_object':'每筆必須是含 name、text 的物件。',

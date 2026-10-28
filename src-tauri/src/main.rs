@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
+mod autostart;
 mod roles;
 mod shortcut;
 mod storage;
@@ -101,6 +102,18 @@ struct State {
 struct UiMenu {
     manage: tauri::menu::MenuItem<tauri::Wry>,
     quit: tauri::menu::MenuItem<tauri::Wry>,
+}
+#[tauri::command]
+fn get_autostart(state: tauri::State<State>) -> Result<autostart::Status, String> {
+    if state.preview {
+        return Ok(autostart::Status { supported: false, enabled: false });
+    }
+    autostart::status()
+}
+#[tauri::command]
+fn set_autostart(state: tauri::State<State>, enabled: bool) -> Result<autostart::Status, String> {
+    if state.preview { return Err("error.autostart_unsupported".into()); }
+    autostart::set(enabled)
 }
 #[tauri::command]
 fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
@@ -671,11 +684,14 @@ fn diagnostic(message: &str) {
 }
 fn main() {
     let preview = std::env::args().any(|arg| arg == "--design-preview");
+    let background = autostart::is_background(std::env::args());
     let builder = tauri::Builder::default();
     let builder = if preview {
         builder
     } else {
-        builder.plugin(tauri_plugin_single_instance::init(|app, _, _| manage(app)))
+        builder.plugin(tauri_plugin_single_instance::init(|app, args, _| {
+            if !autostart::is_background(args) { manage(app); }
+        }))
     };
     builder
         .invoke_handler(tauri::generate_handler![
@@ -683,6 +699,8 @@ fn main() {
             confirm_quit,
             preview_quit_approved,
             get_snippets,
+            get_autostart,
+            set_autostart,
             get_role,
             switch_role,
             get_shortcut,
@@ -888,6 +906,7 @@ fn main() {
                     set_status(app.handle(), error);
                 }
             }
+            if !background { main.show()?; }
             Ok(())
         })
         .build(tauri::generate_context!())

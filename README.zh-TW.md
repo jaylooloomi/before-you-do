@@ -100,7 +100,7 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 
 ## 安裝與啟動
 
-**最新功能版本：[v0.4.1](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.1)。** 內建提示詞隨語系切換，自訂短句保留原文；另包含啟動恢復、emoji字數一致、JSON工具與外部改檔衝突保護。[版本說明](docs/releases/v0.4.1.md) · [發布流程](docs/RELEASING.md)。
+**最新功能版本：[v0.4.3](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.3)。** 內建提示詞隨語系切換，自訂短句保留原文；另包含啟動恢復、emoji字數一致、JSON工具與外部改檔衝突保護。[版本說明](docs/releases/v0.4.3.md) · [發布流程](docs/RELEASING.md)。
 
 ### Windows
 
@@ -118,6 +118,8 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 4. 儲存短句，在 AI 對話框按 Alt+H 試用。
 
 Windows 執行檔名稱為 `before-you-do.exe`。目前沒有自動更新功能。
+
+到「**設定與 AI 教學 → 啟動設定 → 登入電腦後自動啟動**」可開啟登入啟動，預設關閉。登入時只啟動到系統匣，不會彈出主畫面；平常手動啟動仍會開啟主畫面。Windows 使用目前帳號的 Run 登錄項目，macOS 使用使用者的 LaunchAgent，不需系統管理員權限。移動可攜版位置後，請關閉再重新開啟此設定；刪除程式前請先關閉。作業系統的啟動設定或裝置政策仍可能停用啟動項目。
 
 關閉管理視窗只會收起程式，Alt+H 仍可使用。要完全退出，請從系統匣圖示選單選「結束 before-you-do」。
 
