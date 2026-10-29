@@ -83,3 +83,10 @@ node --test tests/qa-contract.test.js
 
 
 內建提示詞隨語系切換的追加規格與保護方式見 [SNIPPET_LANGUAGE.md](docs/qa/SNIPPET_LANGUAGE.md)。
+
+
+## 2026-10-29 跨平台截圖增補
+
+功能分支 codex/capture-platform-plan 已完成擷取後端拆分、macOS 14+ ScreenCaptureKit、四語能力/權限控制及取消競爭保護。最新實測：46 JS、15 元件、45 Headless E2E、Windows 42 unit + 16 integration 通過；1 個既有實際全域熱鍵註冊測試仍保持 opt-in。Intel/Apple Silicon Mac CI 各 40 unit + 16 integration 與 App 建置、弱連結檢查通過。
+
+Windows 原生雙螢幕 PNG/裁切、真實 IPC、隔離素材保存/匯出與 20 份原檔雜湊保留亦已驗證。Mac TCC/Retina、多螢幕實際框選及舊 Mac 啟動仍待實機，未以 CI 代替。完整指令、CI 連結與限制見 [跨平台結果](docs/qa/CAPTURE_PLATFORM_RESULT.md)；逐項追蹤見 [測試矩陣](docs/plans/CAPTURE_PLATFORM_TODO.md)。未發布 Release，未替換舊版程序。

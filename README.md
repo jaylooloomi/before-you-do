@@ -48,14 +48,14 @@ Save the instructions you keep repeating to AI — “plan first,” “change o
 
 Open **Prompt workspace** in the sidebar to collect a one-off task separately from your reusable snippets:
 
-1. Capture a region, all screens, or the last other application window you used (**Windows**).
+1. Capture a region, all screens, or the last other application window you used (**Windows; macOS 14+**, with Mac hardware validation still pending).
 2. Add editable task text and local files. PNG, JPEG, GIF and WebP images have previews.
 3. Move materials up/down or remove individual items. Text changes are saved locally; a local recovery draft also protects edits before autosave completes.
 4. **Copy combined text** copies text and attachment references. **Export material bundle** writes `prompt.md`, the attachment copies and `manifest.json` to a new folder. Attach those files to your AI conversation yourself.
 
-The existing Alt+H snippet workflow is unchanged. There are no new global screenshot shortcuts, background clipboard monitoring, automatic uploads, or automatic sending. Each file is limited to 25 MB, attachments to 100 MB total, and each session to 100 items. A window capture records the visible desktop pixels within that window's bounds; it does not promise to recover content hidden behind other windows.
+The existing Alt+H snippet workflow is unchanged. There are no new global screenshot shortcuts, background clipboard monitoring, automatic uploads, or automatic sending. Each file is limited to 25 MB, attachments to 100 MB total, and each session to 100 items. Windows window capture records visible desktop pixels; covered content may be absent. macOS uses a desktop-independent ScreenCaptureKit window filter. macOS 11–13 can still use snippets and text/file materials, but screenshot buttons are disabled. On macOS 14+, explicitly allow screen capture using the workspace button, then check access again. Refused or revoked access never disables your text/file materials.
 
-Materials live in `prompt-materials/` beside the snippet data file, with a separate `session.json`, managed `files/` copies, and `exports/`. Removing a source file after importing does not remove its managed copy. Exports remain after individual materials are removed. This feature is on `codex/prompt-material-capture`; the public release links below still point to the currently published build.
+Materials live in `prompt-materials/` beside the snippet data file, with a separate `session.json`, managed `files/` copies, and `exports/`. Removing a source file after importing does not remove its managed copy. Exports remain after individual materials are removed. This feature is on `codex/capture-platform-plan`; the public release links below still point to the currently published build.
 
 ## Use cases
 

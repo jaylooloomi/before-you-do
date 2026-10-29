@@ -56,3 +56,8 @@
 B06 對應已修復的 BUG-002；E04/E16 啟動 IPC 拒絕對應已修復的 BUG-001。原先紅燈證據保留，目前取消略過，驗證錯誤提示、重新載入恢復與Unicode三欄完整保存。其餘項目由 tests/*.test.js、tests/components/、tests/e2e/、src-tauri/tests/qa_storage.rs 與既有 Rust unit tests 覆蓋。
 
 E06/E12/E18 已產出各尺寸截圖；390px 小於原生780最小寬，僅觀察，不列為行動版驗收通過。原生框線、焦點、跨程序貼上與 Mac 仍需原生驗收。
+
+
+## 2026-10-29 截圖平台 CP 測試矩陣
+
+CP-01–CP-17 的模式/錯誤/像素/座標/session/權限/跨平台建置/回歸與保留資料追蹤，記錄於 [CAPTURE_PLATFORM_TODO.md](docs/plans/CAPTURE_PLATFORM_TODO.md)。其中 CP-H01–CP-H03 是未取得硬體證據的驗收項目，保持待驗，不標記通過。Windows 外部視窗的人工最小化/關閉和 HDR 亦未操作測試。執行結果與證據見 [CAPTURE_PLATFORM_RESULT.md](docs/qa/CAPTURE_PLATFORM_RESULT.md)。

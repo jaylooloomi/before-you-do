@@ -1,5 +1,7 @@
 # Prompt workspace and capture verification
 
+Historical baseline for 0ba4c20. For the subsequent platform split and macOS implementation, see [CAPTURE_PLATFORM_RESULT.md](CAPTURE_PLATFORM_RESULT.md).
+
 Date: 2026-10-29 (Asia/Taipei)
 Branch: `codex/prompt-material-capture`
 Build version: `0.5.0` (development; not a published release)

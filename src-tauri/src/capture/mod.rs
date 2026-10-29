@@ -345,6 +345,7 @@ mod tests {
             height: 1280.0,
         };
         assert!(b.validate_raster(7680, 2560).is_ok());
+        assert!(b.validate_raster(5760,1920).is_ok());
         assert!(b.validate_raster(3840, 1280).is_ok());
         assert!(b.validate_raster(7680, 1280).is_err());
         assert!(LogicalBounds { x: f64::NAN, ..b }
