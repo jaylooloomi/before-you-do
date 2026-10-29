@@ -15,10 +15,12 @@ export async function mountCapture(root,{invoke,listen}){
   const labels=()=>{hint.textContent=t('拖曳選取截圖區域，Esc 取消');cancel.textContent=t('取消截圖');};labels();onLanguageChange(labels);
   let loading=0;
   async function load(){const ticket=++loading;frame=null;start=end=null;selection.hidden=true;try{const next=await invoke('capture_frame');if(ticket!==loading)return;frame=next;image.src=frame.image;selection.hidden=true;start=end=null;error.textContent='';finishing=false;}catch(e){error.textContent=errorMessage(e);}}
-  async function finish(rect){if(finishing)return;finishing=true;try{await invoke('capture_finish',{rect,session:frame?.session??null});frame=null;start=end=null;}catch(e){error.textContent=errorMessage(e);finishing=false;}}
+  async function finish(rect){if(finishing)return;finishing=true;try{await invoke('capture_finish',{rect,session:rect?frame?.session??null:null});frame=null;start=end=null;}catch(e){error.textContent=errorMessage(e);finishing=false;
+    if(String(e).startsWith('error.capture_session')){try{const current=await invoke('capture_frame');frame=current;image.src=current.image;start=end=null;selection.hidden=true;}catch{frame=null;}}
+  }}
   cancel.onclick=()=>finish(null);
   window.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();finish(null);}});
-  root.addEventListener('pointerdown',event=>{if(event.button!==0||event.target.closest('button')||!frame||finishing)return;root.setPointerCapture(event.pointerId);start=end={x:event.clientX,y:event.clientY};selection.hidden=false;paint();});
+  root.addEventListener('pointerdown',event=>{if(event.button!==0||event.target.closest('button')||!frame||finishing)return;error.textContent='';root.setPointerCapture(event.pointerId);start=end={x:event.clientX,y:event.clientY};selection.hidden=false;paint();});
   function paint(){const x=Math.min(start.x,end.x),y=Math.min(start.y,end.y);Object.assign(selection.style,{left:x+'px',top:y+'px',width:Math.abs(end.x-start.x)+'px',height:Math.abs(end.y-start.y)+'px'});}
   root.addEventListener('pointermove',event=>{if(!start||finishing)return;end={x:event.clientX,y:event.clientY};paint();});
   root.addEventListener('pointerup',event=>{if(!start||finishing||event.button!==0)return;end={x:event.clientX,y:event.clientY};const rect=selectionRect(start,end,frame.width,frame.height,innerWidth,innerHeight);if(rect)finish(rect);else{start=null;selection.hidden=true;}});

@@ -28,6 +28,7 @@ pub struct Materials {
     bundle: Mutex<Bundle>,
     capture: Mutex<Option<Frame>>,
     generation: std::sync::atomic::AtomicU64,
+    operation: Mutex<()>,
     pub busy: std::sync::atomic::AtomicBool,
 }
 impl Materials {
@@ -51,8 +52,29 @@ impl Materials {
             bundle: Mutex::new(bundle),
             capture: Mutex::new(None),
             generation: std::sync::atomic::AtomicU64::new(0),
+            operation: Mutex::new(()),
             busy: std::sync::atomic::AtomicBool::new(false),
         })
+    }
+    fn invalidate_capture(&self) {
+        let _operation = self.operation.lock().unwrap_or_else(|e| e.into_inner());
+        self.generation
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        if let Ok(mut capture) = self.capture.lock() {
+            capture.take();
+        }
+        self.busy.store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+    fn commit_capture(&self, generation: u64, bytes: Vec<u8>) -> Result<Bundle, String> {
+        let _operation = self.operation.lock().map_err(err)?;
+        if !native::is_current(
+            generation,
+            self.generation.load(std::sync::atomic::Ordering::SeqCst),
+            self.busy.load(std::sync::atomic::Ordering::SeqCst),
+        ) {
+            return Err(native::CaptureError::StaleSession.to_string());
+        }
+        add_png(self, bytes)
     }
     fn ready(&self) -> Result<(), String> {
         if let Some(e) = &self.load_error {
@@ -366,7 +388,9 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
     Ok(final_dir.to_string_lossy().into_owned())
 }
 fn add_frame(state: &Materials, frame: Frame) -> Result<Bundle, String> {
-    let bytes = frame.png()?;
+    add_png(state, frame.png()?)
+}
+fn add_png(state: &Materials, bytes: Vec<u8>) -> Result<Bundle, String> {
     let key = id();
     state.append(
         Item {
@@ -426,13 +450,9 @@ pub fn capture_frame(
     })
 }
 pub fn cancel(app: &tauri::AppHandle) {
-    let state = app.state::<Materials>();
-    if let Ok(mut capture) = state.capture.lock() {
-        capture.take();
-    }
-    state.busy.store(false, std::sync::atomic::Ordering::SeqCst);
-    if let Some(w) = app.get_webview_window("capture") {
-        let _ = w.hide();
+    app.state::<Materials>().invalidate_capture();
+    if let Some(window) = app.get_webview_window("capture") {
+        let _ = window.hide();
     }
     crate::manage(app);
 }
@@ -447,6 +467,7 @@ pub fn capture_finish(
     if w.label() != "capture" {
         return Err("Capture window only".into());
     }
+    let operation = state.operation.lock().map_err(err)?;
     native::check_session(
         state.generation.load(std::sync::atomic::Ordering::SeqCst),
         session,
@@ -466,6 +487,7 @@ pub fn capture_finish(
     }
     state.capture.lock().map_err(err)?.take();
     state.busy.store(false, std::sync::atomic::Ordering::SeqCst);
+    drop(operation);
     let _ = w.hide();
     crate::manage(&app);
     let _ = app.emit_to("main", "materials-updated", ());
@@ -491,9 +513,10 @@ pub async fn capture_start(
     if state.busy.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return Err("Capture already in progress".into());
     }
-    state
+    let generation = state
         .generation
-        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        + 1;
     let region = mode == "region";
     let result = async {
         let target = if mode == "window" {
@@ -505,8 +528,56 @@ pub async fn capture_start(
         let frame = tauri::async_runtime::spawn_blocking(move || native::capture(&mode, target))
             .await
             .map_err(err)??;
+        if !native::is_current(
+            generation,
+            state.generation.load(std::sync::atomic::Ordering::SeqCst),
+            state.busy.load(std::sync::atomic::Ordering::SeqCst),
+        ) {
+            return Err(native::CaptureError::StaleSession.to_string());
+        }
         if region {
-            let overlay = app
+            show_region(app.clone(), frame, generation).await?;
+        } else {
+            state.commit_capture(generation, frame.png()?)?;
+            app.emit_to("main", "materials-updated", ()).map_err(err)?;
+        }
+        Ok::<(), String>(())
+    }
+    .await;
+    let restore = {
+        let operation = state.operation.lock().map_err(err)?;
+        let restore = (!region || result.is_err())
+            && state.generation.load(std::sync::atomic::Ordering::SeqCst) == generation;
+        if restore {
+            state.capture.lock().map_err(err)?.take();
+            state.busy.store(false, std::sync::atomic::Ordering::SeqCst);
+        }
+        drop(operation);
+        restore
+    };
+    if restore {
+        if let Some(overlay) = app.get_webview_window("capture") {
+            let _ = overlay.hide();
+        }
+        crate::manage(&app);
+    }
+    result
+}
+async fn show_region(app: tauri::AppHandle, frame: Frame, generation: u64) -> Result<(), String> {
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let handle = app.clone();
+    app.run_on_main_thread(move || {
+        let result = (|| {
+            let state = handle.state::<Materials>();
+            let _operation = state.operation.lock().map_err(err)?;
+            if !native::is_current(
+                generation,
+                state.generation.load(std::sync::atomic::Ordering::SeqCst),
+                state.busy.load(std::sync::atomic::Ordering::SeqCst),
+            ) {
+                return Err(native::CaptureError::StaleSession.to_string());
+            }
+            let overlay = handle
                 .get_webview_window("capture")
                 .ok_or("Capture window unavailable")?;
             if let Some(bounds) = frame.logical_bounds {
@@ -525,26 +596,21 @@ pub async fn capture_start(
                     .map_err(err)?;
             }
             *state.capture.lock().map_err(err)? = Some(frame);
-            // Freeze before showing the overlay. Never include the overlay in the capture.
-            app.emit_to("capture", "capture-ready", ()).map_err(err)?;
+            handle
+                .emit_to("capture", "capture-ready", ())
+                .map_err(err)?;
             overlay.show().map_err(err)?;
             overlay.set_focus().map_err(err)?;
-        } else {
-            add_frame(&state, frame)?;
-            app.emit_to("main", "materials-updated", ()).map_err(err)?;
-        }
-        Ok::<(), String>(())
-    }
-    .await;
-    if !region || result.is_err() {
-        state.capture.lock().map_err(err)?.take();
-        state.busy.store(false, std::sync::atomic::Ordering::SeqCst);
-        if let Some(overlay) = app.get_webview_window("capture") {
-            let _ = overlay.hide();
-        }
-        crate::manage(&app);
-    }
-    result
+            Ok(())
+        })();
+        let _ = tx.send(result);
+    })
+    .map_err(err)?;
+    // Await the actual UI-thread completion, not a guessed render delay.
+    tauri::async_runtime::spawn_blocking(move || rx.recv().map_err(err))
+        .await
+        .map_err(err)?
+        .and_then(|result| result)
 }
 /// Explicit command-line audit: no app startup, UI input, clipboard or user settings writes.
 pub fn audit(directory: &std::path::Path) -> Result<(), String> {
@@ -582,7 +648,13 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
     if loaded.bundle.lock().map_err(err)?.items.len() != 2 {
         return Err("Persistence verification failed".into());
     }
-    let report = serde_json::json!({"fullscreen":[frame.x,frame.y,frame.width as i32,frame.height as i32],"window":[window.x,window.y,window.width as i32,window.height as i32],"region":[frame.width.min(160),frame.height.min(120)],"pngSignatureValid":png.starts_with(b"\x89PNG\r\n\x1a\n"),"persistedMaterials":2,"exportVerified":true,"systemInput":false});
+    if native::capture("invalid", 0).is_ok() {
+        return Err("Invalid mode was accepted".into());
+    }
+    if cfg!(windows) && native::capture("window", 0).is_ok() {
+        return Err("Missing target was accepted".into());
+    }
+    let report = serde_json::json!({"fullscreen":[frame.x,frame.y,frame.width as i32,frame.height as i32],"window":[window.x,window.y,window.width as i32,window.height as i32],"region":[frame.width.min(160),frame.height.min(120)],"pngSignatureValid":png.starts_with(b"\x89PNG\r\n\x1a\n"),"persistedMaterials":2,"exportVerified":true,"systemInput":false,"invalidModeRejected":true,"missingWindowRejected":cfg!(windows)});
     fs::write(
         directory.join("result.json"),
         serde_json::to_vec_pretty(&report).map_err(err)?,
@@ -594,6 +666,46 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn canceled_worker_cannot_append_or_reset_a_new_capture() {
+        let root = std::env::temp_dir().join(id());
+        let state = std::sync::Arc::new(Materials::new(root).unwrap());
+        state
+            .generation
+            .store(1, std::sync::atomic::Ordering::SeqCst);
+        state.busy.store(true, std::sync::atomic::Ordering::SeqCst);
+        let (ready_tx, ready_rx) = std::sync::mpsc::channel();
+        let (resume_tx, resume_rx) = std::sync::mpsc::channel();
+        let worker = state.clone();
+        let handle = std::thread::spawn(move || {
+            let png = Frame::new(0, 0, 1, 1, vec![1, 2, 3, 255])
+                .unwrap()
+                .png()
+                .unwrap();
+            ready_tx.send(()).unwrap();
+            resume_rx.recv().unwrap();
+            worker.commit_capture(1, png)
+        });
+        ready_rx.recv().unwrap();
+        state.invalidate_capture();
+        let generation = state
+            .generation
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+            + 1;
+        state.busy.store(true, std::sync::atomic::Ordering::SeqCst);
+        resume_tx.send(()).unwrap();
+        assert_eq!(
+            handle.join().unwrap().err().as_deref(),
+            Some("error.capture_session")
+        );
+        assert!(state.bundle.lock().unwrap().items.is_empty());
+        assert!(state.busy.load(std::sync::atomic::Ordering::SeqCst));
+        assert_eq!(
+            state.generation.load(std::sync::atomic::Ordering::SeqCst),
+            generation
+        );
+        assert!(!state.root.exists());
+    }
     #[test]
     fn crop_pixels_and_reject_overflow() {
         let f = Frame {

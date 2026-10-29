@@ -19,3 +19,13 @@ test('permission state and guidance translate into all four languages',async({pa
  await page.getByRole('button',{name:/設定與 AI 教學|Settings & AI guide|设置与 AI 教学|設定と AI/}).click();await page.getByRole('combobox',{name:/介面語言|Interface language|界面语言|表示言語/}).selectOption(language);await page.getByRole('button',{name:/本次 prompt 素材|Prompt workspace|今回のプロンプト素材/,exact:true}).click();await expect(page.getByRole('status',{name:/截圖狀態|截图状态|Capture status|撮影状態/})).toContainText(phrase);
  }
 });
+
+test('expired overlay selection reports error, loads current session and can cancel',async({page})=>{
+ await page.goto('/?capture-region');await expect(page.getByRole('img')).toHaveAttribute('src',/^data:image/);
+ await page.evaluate(()=>window.qa.failures.capture_finish='error.capture_session');
+ await page.mouse.move(100,100);await page.mouse.down();await page.mouse.move(200,200);await page.mouse.up();
+ await expect(page.getByRole('alert')).toContainText('這次框選已過期');
+ await page.evaluate(()=>delete window.qa.failures.capture_finish);await page.keyboard.press('Escape');
+ await expect.poll(()=>page.evaluate(()=>window.qa.calls.filter(c=>c.cmd==='capture_finish').length)).toBe(2);
+ expect(await page.evaluate(()=>window.qa.calls.filter(c=>c.cmd==='capture_finish').at(-1).args)).toEqual({rect:null,session:null});
+});

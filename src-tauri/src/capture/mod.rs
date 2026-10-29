@@ -248,6 +248,9 @@ pub fn clip_rect(rect: [i32; 4], desktop: [i32; 4]) -> Result<[i32; 4], CaptureE
         i32::try_from(bottom - top).map_err(|_| CaptureError::InvalidBounds)?,
     ])
 }
+pub fn is_current(request: u64, current: u64, busy: bool) -> bool {
+    request == current && busy
+}
 pub fn check_session(
     current: u64,
     received: Option<u64>,
@@ -352,6 +355,9 @@ mod tests {
     #[test]
     fn stale_selection_cannot_write_to_a_later_capture() {
         assert!(check_session(2, Some(1), true).is_err());
+        assert!(!is_current(1, 2, true));
+        assert!(!is_current(2, 2, false));
+        assert!(is_current(2, 2, true));
         assert!(check_session(2, None, true).is_err());
         assert!(check_session(2, Some(2), true).is_ok());
         assert!(check_session(2, None, false).is_ok());

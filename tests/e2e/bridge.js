@@ -29,6 +29,7 @@ export function installBridge(){
     if(cmd==='materials_remove'){state.materials.items=state.materials.items.filter(i=>i.id!==args.itemId);persist();return structuredClone(state.materials);}
     if(cmd==='materials_export')return 'QA_ONLY/prompt-materials/exports/test-bundle';
     if(cmd==='capture_start'){if(args.mode!=='region'){state.materials.items.push({id:'m'+(++next),name:args.mode+'.png',kind:'image',text:'',size:100});persist();emit('materials-updated',null);}return;}
+    if(cmd==='capture_frame'&&qa.frame)return structuredClone(qa.frame);
     if(cmd==='capture_frame')return {session:1,width:1920,height:1080,image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII='};
     if(cmd==='capture_finish')return;
     if(cmd==='get_role')return state.role;

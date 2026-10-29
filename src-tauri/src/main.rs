@@ -455,6 +455,7 @@ fn start_keyboard(app: &tauri::AppHandle) {
 }
 #[tauri::command]
 fn request_quit(app: tauri::AppHandle) -> Result<(), String> {
+    if app.try_state::<materials::Materials>().is_some_and(|state|state.busy.load(Ordering::SeqCst)){materials::cancel(&app);}
     if !app.state::<State>().preview {
         manage(&app);
     }
