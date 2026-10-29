@@ -10,12 +10,15 @@
 #include <string.h>
 #include <math.h>
 
+typedef struct {uint32_t id,parent,group,kind;int32_t x,y,width,height;} BYDCandidate;
 typedef struct {
     int32_t x, y;
     uint32_t width, height;
     double logical_x, logical_y, logical_width, logical_height;
     uint8_t *pixels;
     size_t length;
+    BYDCandidate *candidates;
+    size_t candidate_count;
 } BYDImage;
 // 0 ready, 1 unsupported OS, 2 permission, 3 target gone, 4 bounds,
 // 5 size limit, 6 timeout, 7 native failure. No user content appears in diagnostics.
@@ -114,6 +117,28 @@ static int snapshot(SCContentFilter *filter,uint32_t width,uint32_t height,dispa
     *out=imageRGBA(result.image,width,height);
     return *out?0:7;
 }
+static void windowCandidates(SCShareableContent *content,CGRect desktop,double scale,int32_t ownPID,BYDImage *out) API_AVAILABLE(macos(14.0));
+static void windowCandidates(SCShareableContent *content,CGRect desktop,double scale,int32_t ownPID,BYDImage *out){
+    NSArray *ordered=CFBridgingRelease(CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly|kCGWindowListExcludeDesktopElements,kCGNullWindowID));
+    BYDCandidate *items=calloc(512,sizeof(BYDCandidate));if(!items)return;
+    size_t count=0;
+    for(NSDictionary *info in ordered){
+        if(count>=512)break;
+        if([info[(id)kCGWindowOwnerPID] intValue]==ownPID||[info[(id)kCGWindowLayer] intValue]!=0)continue;
+        uint64_t windowID=[info[(id)kCGWindowNumber] unsignedLongLongValue];
+        SCWindow *selected=nil;for(SCWindow *window in content.windows)if(window.windowID==windowID){selected=window;break;}
+        if(!selected)continue;CGRect r=CGRectIntersection(selected.frame,desktop);
+        if(CGRectIsEmpty(r)||CGRectIsNull(r))continue;
+        double left=fmax(0,floor((r.origin.x-desktop.origin.x)*scale));
+        double top=fmax(0,floor((r.origin.y-desktop.origin.y)*scale));
+        double right=fmin(out->width,ceil((CGRectGetMaxX(r)-desktop.origin.x)*scale));
+        double bottom=fmin(out->height,ceil((CGRectGetMaxY(r)-desktop.origin.y)*scale));
+        if(!isfinite(left)||!isfinite(top)||!isfinite(right)||!isfinite(bottom)||right<=left||bottom<=top)continue;
+        uint32_t id=(uint32_t)count+1;
+        items[count++]=(BYDCandidate){id,0,id,0,(int32_t)left,(int32_t)top,(int32_t)(right-left),(int32_t)(bottom-top)};
+    }
+    out->candidates=items;out->candidate_count=count;
+}
 int byd_capture_run(int windowMode,uint64_t target,int32_t ownPID,BYDImage *out) {
     if (!out) return 4;
     memset(out,0,sizeof(*out));
@@ -138,7 +163,7 @@ int byd_capture_run(int windowMode,uint64_t target,int32_t ownPID,BYDImage *out)
                 if (isfinite(ratio)&&ratio>=1) scale=fmax(scale,ratio);
             }
             if (CGRectIsNull(bounds) || scale>4) return 4;
-            if (windowMode) {
+            if (windowMode==1) {
                 SCWindow *selected=nil;
                 for (SCWindow *window in content.windows)
                     if (window.windowID==target && window.owningApplication.processID!=ownPID) { selected=window;break; }
@@ -173,6 +198,7 @@ int byd_capture_run(int windowMode,uint64_t target,int32_t ownPID,BYDImage *out)
                     free(pixels);
                 }
             }
+            if(windowMode==2)windowCandidates(content,bounds,scale,ownPID,out);
             out->length=(size_t)out->width*out->height*4;
             out->logical_x=bounds.origin.x;out->logical_y=bounds.origin.y;
             out->logical_width=bounds.size.width;out->logical_height=bounds.size.height;
@@ -182,7 +208,9 @@ int byd_capture_run(int windowMode,uint64_t target,int32_t ownPID,BYDImage *out)
         return 1;
     }
 }
-void byd_capture_free(BYDImage *image) { if (image) { free(image->pixels); memset(image,0,sizeof(*image)); } }
+void byd_capture_free(BYDImage *image) { if (image) { free(image->pixels); free(image->candidates); memset(image,0,sizeof(*image)); } }
+size_t byd_capture_image_size(void){return sizeof(BYDImage);}
+size_t byd_capture_candidate_size(void){return sizeof(BYDCandidate);}
 // CI-only primitive verification: no display enumeration, TCC, screenshots, or UI.
 int byd_capture_selftest(void) {
     uint8_t fixture[16]={255,0,0,255, 0,255,0,255, 0,0,255,255, 255,255,255,255};
@@ -192,5 +220,8 @@ int byd_capture_selftest(void) {
     uint8_t *same=imageRGBA(image,2,2);uint8_t *scaled=imageRGBA(image,4,4);
     int ok=same&&scaled&&memcmp(fixture,same,sizeof(fixture))==0&&scaled[3]==255&&scaled[63]==255;
     free(same);free(scaled);CGImageRelease(image);CGDataProviderRelease(provider);CGColorSpaceRelease(color);
+    BYDImage owned={0};owned.pixels=calloc(1,4);owned.candidates=calloc(1,sizeof(BYDCandidate));owned.candidate_count=1;
+    if(!owned.pixels||!owned.candidates)ok=0;
+    byd_capture_free(&owned);ok=ok&&!owned.pixels&&!owned.candidates&&!owned.candidate_count;
     return ok;
 }

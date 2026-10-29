@@ -424,6 +424,8 @@ pub fn capture_open_permissions(w: tauri::WebviewWindow) -> Result<(), String> {
 }
 #[derive(Serialize)]
 pub struct CaptureView {
+    origin: [i32; 2],
+    candidates: Vec<native::Candidate>,
     session: u64,
     image: String,
     width: u32,
@@ -440,6 +442,8 @@ pub fn capture_frame(
     let guard = state.capture.lock().map_err(err)?;
     let f = guard.as_ref().ok_or("No capture")?;
     Ok(CaptureView {
+        origin: [f.x, f.y],
+        candidates: f.candidates.clone(),
         session: state.generation.load(std::sync::atomic::Ordering::SeqCst),
         image: format!(
             "data:image/png;base64,{}",
@@ -615,7 +619,28 @@ async fn show_region(app: tauri::AppHandle, frame: Frame, generation: u64) -> Re
 /// Explicit command-line audit: no app startup, UI input, clipboard or user settings writes.
 pub fn audit(directory: &std::path::Path) -> Result<(), String> {
     fs::create_dir_all(directory).map_err(err)?;
-    let frame = native::capture("fullscreen", 0)?;
+    let frame = native::capture("region", 0)?;
+    let roots = frame
+        .candidates
+        .iter()
+        .filter(|candidate| candidate.parent == 0)
+        .count();
+    if frame.candidates.len() > 4096
+        || frame.candidates.iter().any(|candidate| {
+            !candidate.valid_in(frame.width, frame.height)
+                || candidate.parent != 0
+                    && !frame.candidates.iter().any(|parent| {
+                        parent.id == candidate.parent && parent.group == candidate.group
+                    })
+        })
+    {
+        return Err("Invalid candidate metadata".into());
+    }
+    fs::write(
+        directory.join("candidates.json"),
+        serde_json::to_vec_pretty(&frame.candidates).map_err(err)?,
+    )
+    .map_err(err)?;
     let png = frame.png()?;
     fs::write(directory.join("fullscreen.png"), &png).map_err(err)?;
     let crop = frame.crop(0, 0, frame.width.min(160), frame.height.min(120))?;
@@ -654,7 +679,7 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
     if cfg!(windows) && native::capture("window", 0).is_ok() {
         return Err("Missing target was accepted".into());
     }
-    let report = serde_json::json!({"fullscreen":[frame.x,frame.y,frame.width as i32,frame.height as i32],"window":[window.x,window.y,window.width as i32,window.height as i32],"region":[frame.width.min(160),frame.height.min(120)],"pngSignatureValid":png.starts_with(b"\x89PNG\r\n\x1a\n"),"persistedMaterials":2,"exportVerified":true,"systemInput":false,"invalidModeRejected":true,"missingWindowRejected":cfg!(windows)});
+    let report = serde_json::json!({"fullscreen":[frame.x,frame.y,frame.width as i32,frame.height as i32],"window":[window.x,window.y,window.width as i32,window.height as i32],"region":[frame.width.min(160),frame.height.min(120)],"pngSignatureValid":png.starts_with(b"\x89PNG\r\n\x1a\n"),"persistedMaterials":2,"exportVerified":true,"systemInput":false,"invalidModeRejected":true,"missingWindowRejected":cfg!(windows),"candidates":frame.candidates.len(),"rootWindows":roots,"candidateBoundsValid":true});
     fs::write(
         directory.join("result.json"),
         serde_json::to_vec_pretty(&report).map_err(err)?,
@@ -715,6 +740,7 @@ mod tests {
             height: 2,
             rgba: (0..16).collect(),
             logical_bounds: None,
+            candidates: Vec::new(),
         };
         let c = f.crop(1, 0, 1, 2).unwrap();
         assert_eq!(c.rgba, vec![4, 5, 6, 7, 12, 13, 14, 15]);
@@ -755,6 +781,7 @@ mod tests {
             height: 1,
             rgba: vec![12, 34, 56, 255],
             logical_bounds: None,
+            candidates: Vec::new(),
         };
         let data = f.png().unwrap();
         let mut reader = png::Decoder::new(std::io::Cursor::new(data))

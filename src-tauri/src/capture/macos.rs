@@ -1,6 +1,17 @@
 use super::*;
 use std::ffi::c_int;
 #[repr(C)]
+struct RawCandidate {
+    id: u32,
+    parent: u32,
+    group: u32,
+    kind: u32,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+}
+#[repr(C)]
 struct RawImage {
     x: i32,
     y: i32,
@@ -12,6 +23,8 @@ struct RawImage {
     logical_height: f64,
     pixels: *mut u8,
     length: usize,
+    candidates: *mut RawCandidate,
+    candidate_count: usize,
 }
 extern "C" {
     fn byd_capture_status() -> c_int;
@@ -22,6 +35,10 @@ extern "C" {
     fn byd_capture_free(image: *mut RawImage);
     #[cfg(test)]
     fn byd_capture_selftest() -> c_int;
+    #[cfg(test)]
+    fn byd_capture_image_size() -> usize;
+    #[cfg(test)]
+    fn byd_capture_candidate_size() -> usize;
 }
 impl Drop for RawImage {
     fn drop(&mut self) {
@@ -93,7 +110,11 @@ pub fn capture(request: CaptureRequest) -> Result<Frame, CaptureError> {
     let mut raw: RawImage = unsafe { std::mem::zeroed() };
     code(unsafe {
         byd_capture_run(
-            i32::from(request.mode == CaptureMode::Window),
+            match request.mode {
+                CaptureMode::Window => 1,
+                CaptureMode::Region => 2,
+                CaptureMode::Fullscreen => 0,
+            },
             request.target as u64,
             std::process::id() as i32,
             &mut raw,
@@ -117,6 +138,35 @@ pub fn capture(request: CaptureRequest) -> Result<Frame, CaptureError> {
     }
     let bytes = unsafe { std::slice::from_raw_parts(raw.pixels, raw.length) }.to_vec();
     let mut frame = Frame::new(raw.x, raw.y, raw.width, raw.height, bytes)?;
+    if !raw.candidates.is_null() && raw.candidate_count <= 4096 {
+        for candidate in unsafe { std::slice::from_raw_parts(raw.candidates, raw.candidate_count) }
+        {
+            if candidate.kind != 0
+                || candidate.x < 0
+                || candidate.y < 0
+                || candidate.width <= 0
+                || candidate.height <= 0
+            {
+                continue;
+            }
+            let item = Candidate {
+                id: candidate.id,
+                parent: candidate.parent,
+                group: candidate.group,
+                kind: CandidateKind::Window,
+                rect: [
+                    candidate.x as u32,
+                    candidate.y as u32,
+                    candidate.width as u32,
+                    candidate.height as u32,
+                ],
+            };
+            if item.valid_in(frame.width, frame.height) {
+                frame.candidates.push(item);
+            }
+        }
+    }
+
     frame.logical_bounds = Some(LogicalBounds {
         x: raw.logical_x,
         y: raw.logical_y,
@@ -136,6 +186,15 @@ mod tests {
     #[test]
     fn bridge_raster_conversion_and_scaling_do_not_require_capture_permission() {
         assert_eq!(unsafe { byd_capture_selftest() }, 1);
+    }
+    #[test]
+    fn candidate_bridge_abi_matches_native_layout() {
+        assert_eq!(std::mem::size_of::<RawImage>(), unsafe {
+            byd_capture_image_size()
+        });
+        assert_eq!(std::mem::size_of::<RawCandidate>(), unsafe {
+            byd_capture_candidate_size()
+        });
     }
     #[test]
     fn status_codes_have_explicit_meaning() {

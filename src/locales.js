@@ -1,5 +1,13 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["移動預覽，單擊擷取；拖曳自選範圍，Esc 取消。", "移动预览，单击截取；拖动自选范围，Esc 取消。", "Move to preview, click to capture; drag a custom region. Esc cancels.", "移動でプレビュー、クリックで撮影。ドラッグで範囲指定、Esc で取消。"],
+["自動偵測", "自动检测", "Auto detect", "自動検出"],
+["像素放大鏡", "像素放大镜", "Pixel magnifier", "ピクセル拡大鏡"],
+["切換範圍 (Tab)", "切换范围 (Tab)", "Cycle area (Tab)", "範囲切替 (Tab)"],
+["截圖選取範圍", "截图选择范围", "Capture selection", "撮影の選択範囲"],
+["截圖座標與尺寸", "截图坐标和尺寸", "Capture position and size", "撮影位置とサイズ"],
+["游標像素放大預覽", "光标像素放大预览", "Cursor pixel magnifier", "カーソルのピクセル拡大"],
+["游標座標與色彩", "光标坐标和颜色", "Cursor position and color", "カーソル位置と色"],
 ["截圖操作", "截图操作", "Screenshot actions", "画面撮影操作"],
 ["截圖狀態", "截图状态", "Capture status", "撮影状態"],
 ["授權螢幕擷取", "授权屏幕截取", "Allow screen capture", "画面撮影を許可"],

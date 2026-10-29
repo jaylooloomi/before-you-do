@@ -144,6 +144,51 @@ impl LogicalBounds {
         Ok(())
     }
 }
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CandidateKind {
+    Window,
+    Client,
+    Control,
+}
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct Candidate {
+    pub id: u32,
+    pub parent: u32,
+    pub group: u32,
+    pub kind: CandidateKind,
+    pub rect: [u32; 4],
+}
+impl Candidate {
+    pub fn from_desktop(
+        id: u32,
+        parent: u32,
+        group: u32,
+        kind: CandidateKind,
+        rect: [i32; 4],
+        desktop: [i32; 4],
+    ) -> Option<Self> {
+        let clipped = clip_rect(rect, desktop).ok()?;
+        let x = u32::try_from(i64::from(clipped[0]) - i64::from(desktop[0])).ok()?;
+        let y = u32::try_from(i64::from(clipped[1]) - i64::from(desktop[1])).ok()?;
+        Some(Self {
+            id,
+            parent,
+            group,
+            kind,
+            rect: [x, y, clipped[2] as u32, clipped[3] as u32],
+        })
+    }
+    pub fn valid_in(&self, width: u32, height: u32) -> bool {
+        let [x, y, w, h] = self.rect;
+        self.id > 0
+            && self.group > 0
+            && w > 0
+            && h > 0
+            && x.checked_add(w).is_some_and(|right| right <= width)
+            && y.checked_add(h).is_some_and(|bottom| bottom <= height)
+    }
+}
 #[derive(Clone)]
 pub struct Frame {
     pub x: i32,
@@ -153,6 +198,7 @@ pub struct Frame {
     pub rgba: Vec<u8>,
     /// Some only when the native desktop uses logical points (macOS). Bitmap pixels stay independent.
     pub logical_bounds: Option<LogicalBounds>,
+    pub candidates: Vec<Candidate>,
 }
 impl Frame {
     pub fn new(
@@ -173,6 +219,7 @@ impl Frame {
             height,
             rgba,
             logical_bounds: None,
+            candidates: Vec::new(),
         })
     }
     pub fn png(&self) -> Result<Vec<u8>, String> {
@@ -293,6 +340,41 @@ pub fn open_permissions() -> Result<(), String> {
 mod tests {
     use super::*;
     #[test]
+    fn candidate_rectangles_clip_negative_desktops_without_exposing_text() {
+        let c = Candidate::from_desktop(
+            1,
+            0,
+            1,
+            CandidateKind::Window,
+            [-2000, -10, 200, 100],
+            [-1920, 0, 3840, 1080],
+        )
+        .unwrap();
+        assert_eq!(c.rect, [0, 0, 120, 90]);
+        assert!(c.valid_in(3840, 1080));
+        assert!(Candidate::from_desktop(
+            2,
+            1,
+            1,
+            CandidateKind::Control,
+            [2000, 0, 100, 100],
+            [-1920, 0, 3840, 1080]
+        )
+        .is_none());
+        assert!(!Candidate {
+            id: 2,
+            parent: 1,
+            group: 1,
+            kind: CandidateKind::Control,
+            rect: [u32::MAX, 0, 5, 5]
+        }
+        .valid_in(100, 100));
+        let json = serde_json::to_value(c).unwrap();
+        assert_eq!(json.as_object().unwrap().len(), 5);
+        assert!(json.get("title").is_none());
+        assert!(json.get("handle").is_none());
+    }
+    #[test]
     fn modes_and_errors_are_stable() {
         for mode in ["region", "fullscreen", "window"] {
             assert!(mode.parse::<CaptureMode>().is_ok())
@@ -345,7 +427,7 @@ mod tests {
             height: 1280.0,
         };
         assert!(b.validate_raster(7680, 2560).is_ok());
-        assert!(b.validate_raster(5760,1920).is_ok());
+        assert!(b.validate_raster(5760, 1920).is_ok());
         assert!(b.validate_raster(3840, 1280).is_ok());
         assert!(b.validate_raster(7680, 1280).is_err());
         assert!(LogicalBounds { x: f64::NAN, ..b }
