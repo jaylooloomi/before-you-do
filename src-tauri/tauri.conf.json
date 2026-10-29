@@ -56,9 +56,11 @@
         "resizable": false,
         "shadow": false,
         "dragDropEnabled": false,
-        "backgroundColor": "#000000",
+        "backgroundColor": "#00000000",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "transparent": true,
+        "focus": false
       },
       {
         "label": "recording-controls",

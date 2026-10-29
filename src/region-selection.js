@@ -7,7 +7,7 @@ export function selectionRect(start,end,width,height,viewWidth,viewHeight){
  const bottom=Math.max(top,Math.min(height,Math.ceil(Math.max(start.y,end.y)*height/viewHeight)));
  return right>left&&bottom>top?[left,top,right-left,bottom-top]:null;
 }
-export function imagePoint(point,width,height,viewWidth,viewHeight){return {x:Math.max(0,Math.min(width,point.x*width/viewWidth)),y:Math.max(0,Math.min(height,point.y*height/viewHeight))};}
+export function imagePoint(point,width,height,viewWidth,viewHeight){const snap=value=>Math.abs(value-Math.round(value))<=Number.EPSILON*Math.max(1,Math.abs(value))*4?Math.round(value):value;return {x:Math.max(0,Math.min(width,snap(point.x*width/viewWidth))),y:Math.max(0,Math.min(height,snap(point.y*height/viewHeight)))};}
 export function contains(rect,point){return point.x>=rect[0]&&point.y>=rect[1]&&point.x<rect[0]+rect[2]&&point.y<rect[1]+rect[3];}
 export function normalizeCandidates(candidates,width,height){
  const seen=new Set();return (Array.isArray(candidates)?candidates:[]).slice(0,4096).filter(item=>{

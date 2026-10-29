@@ -7,19 +7,24 @@ export async function mountCapture(root,{invoke,listen}){
  const image=root.querySelector('img'),selection=root.querySelector('.capture-selection'),shade=[...root.querySelector('.capture-shade').children],bounds=root.querySelector('.capture-bounds');
  const hint=root.querySelector('.capture-hud>span'),auto=root.querySelector('[data-capture=auto]'),magnifier=root.querySelector('[data-capture=magnifier]'),cycle=root.querySelector('[data-capture=cycle]'),cancel=root.querySelector('[data-capture=cancel]'),error=root.querySelector('[role=alert]'),loupe=root.querySelector('.capture-loupe'),canvas=root.querySelector('canvas'),pixelInfo=loupe.querySelector('output');
  const context=canvas.getContext('2d',{willReadFrequently:true});
- let frame=null,model=null,pointer=null,finishing=false,loading=0,scheduled=false,pointerId=null;
+ let frame=null,model=null,pointer=null,finishing=false,loading=0,scheduled=false,pointerId=null,movement=0;
  try{auto.checked=localStorage.getItem('before-you-do.capture.auto')!=='false';magnifier.checked=localStorage.getItem('before-you-do.capture.magnifier')!=='false';}catch{}
  const labels=()=>{hint.textContent=t('移動預覽，單擊擷取；拖曳自選範圍，Esc 取消。');auto.nextElementSibling.textContent=t('自動偵測');magnifier.nextElementSibling.textContent=t('像素放大鏡');cycle.textContent=t('切換範圍 (Tab)');cancel.textContent=t('取消截圖');selection.setAttribute('aria-label',t('截圖選取範圍'));bounds.setAttribute('aria-label',t('截圖座標與尺寸'));loupe.setAttribute('aria-label',t('像素放大鏡'));canvas.setAttribute('aria-label',t('游標像素放大預覽'));pixelInfo.setAttribute('aria-label',t('游標座標與色彩'));};labels();onLanguageChange(()=>{labels();schedule();});
  function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;paint();});}
- async function accept(next,ticket,{keepError=false}={}){
+ async function accept(next,ticket,{keepError=false,pointerVersion=movement}={}){
   image.src=next.image;await image.decode();if(ticket!==loading)return;
   try{auto.checked=localStorage.getItem('before-you-do.capture.auto')!=='false';magnifier.checked=localStorage.getItem('before-you-do.capture.magnifier')!=='false';}catch{}
-  frame=next;model=new RegionSelection(frame);model.enabled=auto.checked;if(pointer)model.move(pointer,innerWidth,innerHeight);
-  if(!keepError)error.textContent='';finishing=false;schedule();
+  frame=next;model=new RegionSelection(frame);model.enabled=auto.checked;
+  const seed=()=>{if(movement===pointerVersion||!pointer){const p=frame.pointer??[frame.width/2,frame.height/2];pointer={x:p[0]/frame.width*innerWidth,y:p[1]/frame.height*innerHeight};}model.move(pointer,innerWidth,innerHeight);};
+  seed();if(!keepError)error.textContent='';finishing=false;root.dataset.captureReady='painted';paint();
+  await invoke('capture_prime',{session:frame.session});if(ticket!==loading)return;
+  // Hidden WebViews may throttle RAF. Prime at alpha zero, then submit two real compositor frames.
+  await new Promise(resolve=>requestAnimationFrame(()=>{if(ticket===loading){seed();paint();}requestAnimationFrame(resolve);}));
+  if(ticket!==loading)return;await invoke('capture_present',{session:frame.session});if(ticket===loading)root.dataset.captureReady='presented';
  }
  async function load(options={}){
-  const ticket=++loading;frame=model=null;selection.hidden=bounds.hidden=loupe.hidden=true;
-  try{const next=await invoke('capture_frame');if(ticket!==loading)return;await accept(next,ticket,options);}catch(e){if(ticket===loading){error.textContent=errorMessage(e);finishing=false;}}
+  const ticket=++loading,pointerVersion=movement;let session=options.session??null;frame=model=null;delete root.dataset.captureReady;selection.hidden=bounds.hidden=loupe.hidden=true;
+  try{const next=await invoke('capture_frame');session=next.session;if(ticket!==loading)return;await accept(next,ticket,{...options,pointerVersion});}catch(e){if(ticket===loading){error.textContent=errorMessage(e);finishing=false;if(session!==null)await invoke('capture_prepare_failed',{session}).catch(()=>{});}}
  }
  async function finish(rect){
   if(finishing)return;finishing=true;const ticket=loading,session=rect?frame?.session??null:null;
@@ -63,7 +68,7 @@ export async function mountCapture(root,{invoke,listen}){
   if(event.target.closest('.capture-ui'))return;if(event.button===2){event.preventDefault();return;}if(event.button!==0||!model||finishing)return;
   error.textContent='';pointer={x:event.clientX,y:event.clientY};pointerId=event.pointerId;root.setPointerCapture(pointerId);model.press(pointer,innerWidth,innerHeight);schedule();
  });
- root.addEventListener('pointermove',event=>{if(!model||finishing)return;pointer={x:event.clientX,y:event.clientY};model.move(pointer,innerWidth,innerHeight);schedule();});
+ root.addEventListener('pointermove',event=>{pointer={x:event.clientX,y:event.clientY};movement++;if(!model||finishing)return;model.move(pointer,innerWidth,innerHeight);schedule();});
  root.addEventListener('pointerup',event=>{
   if(event.button!==0||!model?.pressState||finishing||event.pointerId!==pointerId)return;
   pointer={x:event.clientX,y:event.clientY};const rect=model.release(pointer,innerWidth,innerHeight);
@@ -71,7 +76,8 @@ export async function mountCapture(root,{invoke,listen}){
  });
  root.addEventListener('pointercancel',()=>{model?.reset();pointerId=null;schedule();});
  window.addEventListener('resize',()=>{if(model&&pointer&&!model.pressState)model.move(pointer,innerWidth,innerHeight);schedule();});
- await listen('capture-ready',()=>load());
- const ticket=loading;try{const initial=await invoke('capture_frame');if(!loading)await accept(initial,ticket);}catch{/* Hidden preload normally has no pending capture. */}
+ await listen('capture-ready',event=>load({session:Number.isSafeInteger(event.payload)?event.payload:null}));
+ // Recovery also covers capture-ready arriving before the preload listener was attached.
+ await load();
  schedule();
 }

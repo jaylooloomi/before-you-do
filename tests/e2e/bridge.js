@@ -40,7 +40,7 @@ export function installBridge(){
     if(cmd==='capture_start'){if(args.mode.startsWith('record-'))return;if(args.mode!=='region'){state.materials.items.push({id:'m'+(++next),name:args.mode+'.png',kind:'image',text:'',size:100});persist();emit('materials-updated',null);}return;}
     if(cmd==='capture_frame'&&qa.frame)return structuredClone(qa.frame);
     if(cmd==='capture_frame')return {session:1,width:1920,height:1080,image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg=='};
-    if(cmd==='capture_finish')return;
+    if(['capture_finish','capture_prime','capture_present','capture_prepare_failed'].includes(cmd))return;
     if(cmd==='get_role')return state.role;
     if(cmd==='get_autostart')return {supported:true,enabled:!!state.autostart};
     if(cmd==='set_autostart'){state.autostart=args.enabled;persist();return {supported:true,enabled:state.autostart};}

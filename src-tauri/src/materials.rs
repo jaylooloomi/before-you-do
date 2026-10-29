@@ -27,6 +27,9 @@ pub struct Materials {
     root: PathBuf,
     bundle: Mutex<Bundle>,
     capture: Mutex<Option<Frame>>,
+    presentation: Mutex<(u64,u8)>,
+    audit_gate: Mutex<(bool,Option<std::sync::mpsc::SyncSender<()>>)>,
+    presentation_waiter: Mutex<Option<(u64,std::sync::mpsc::SyncSender<Result<(),String>>)>>,
     intent: Mutex<String>,
     restore_main: std::sync::atomic::AtomicBool,
     generation: std::sync::atomic::AtomicU64,
@@ -53,6 +56,9 @@ impl Materials {
             root,
             bundle: Mutex::new(bundle),
             capture: Mutex::new(None),
+            presentation: Mutex::new((0,0)),
+            audit_gate: Mutex::new((false,None)),
+            presentation_waiter: Mutex::new(None),
             intent: Mutex::new(String::from("region")),
             restore_main: std::sync::atomic::AtomicBool::new(true),
             generation: std::sync::atomic::AtomicU64::new(0),
@@ -70,6 +76,7 @@ impl Materials {
             capture.take();
         }
         self.busy.store(false, std::sync::atomic::Ordering::SeqCst);
+        if let Some((_,tx))=self.presentation_waiter.lock().unwrap_or_else(|e|e.into_inner()).take(){let _=tx.send(Ok(()));}
     }
     fn commit_capture(&self, generation: u64, bytes: Vec<u8>) -> Result<Bundle, String> {
         let _operation = self.operation.lock().map_err(err)?;
@@ -431,6 +438,7 @@ pub fn capture_open_permissions(w: tauri::WebviewWindow) -> Result<(), String> {
 #[derive(Serialize)]
 pub struct CaptureView {
     origin: [i32; 2],
+    pointer: [f64; 2],
     candidates: Vec<native::Candidate>,
     session: u64,
     image: String,
@@ -449,6 +457,7 @@ pub fn capture_frame(
     let f = guard.as_ref().ok_or("No capture")?;
     Ok(CaptureView {
         origin: [f.x, f.y],
+        pointer: crate::capture_presentation::pointer(f),
         candidates: f.candidates.clone(),
         session: state.generation.load(std::sync::atomic::Ordering::SeqCst),
         image: format!(
@@ -459,10 +468,59 @@ pub fn capture_frame(
         height: f.height,
     })
 }
+async fn presentation_step(app:tauri::AppHandle,session:u64,present:bool)->Result<(),String>{
+ let(tx,rx)=std::sync::mpsc::sync_channel(1);let handle=app.clone();app.run_on_main_thread(move||{let result=(||{
+  let state=handle.state::<Materials>();let _operation=state.operation.lock().map_err(err)?;
+  native::check_session(state.generation.load(std::sync::atomic::Ordering::SeqCst),Some(session),true).map_err(|e|e.to_string())?;
+  if !state.busy.load(std::sync::atomic::Ordering::SeqCst)||state.capture.lock().map_err(err)?.is_none(){return Err(native::CaptureError::StaleSession.to_string());}
+  let overlay=handle.get_webview_window("capture").ok_or("Capture window unavailable")?;let mut stage=state.presentation.lock().map_err(err)?;
+  if stage.0!=session{return Err(native::CaptureError::StaleSession.to_string());}
+  if stage.1==2{return Ok(());}
+  if present {
+   if stage.1!=1{return Err("Capture has not been primed".into());}
+   crate::capture_presentation::present(&overlay)?;stage.1=2;
+   if let Some((_,reply))=state.presentation_waiter.lock().map_err(err)?.take(){let _=reply.send(Ok(()));}
+  }else{crate::capture_presentation::prime(&overlay)?;stage.1=1;}
+  Ok(())
+ })();let _=tx.send(result);}).map_err(err)?;
+ tauri::async_runtime::spawn_blocking(move||rx.recv().map_err(err)).await.map_err(err)?.and_then(|r|r)
+}
+#[tauri::command]
+pub async fn capture_prime(app:tauri::AppHandle,w:tauri::WebviewWindow,session:u64)->Result<(),String>{if w.label()!="capture"{return Err("Capture window only".into());}presentation_step(app,session,false).await}
+#[tauri::command]
+pub async fn capture_present(app:tauri::AppHandle,w:tauri::WebviewWindow,session:u64)->Result<(),String>{
+ if w.label()!="capture"{return Err("Capture window only".into());}
+ let rx={let state=app.state::<Materials>();let mut gate=state.audit_gate.lock().map_err(err)?;if gate.0{let(tx,rx)=std::sync::mpsc::sync_channel(1);gate.1=Some(tx);Some(rx)}else{None}};
+ if let Some(rx)=rx{tauri::async_runtime::spawn_blocking(move||rx.recv_timeout(std::time::Duration::from_secs(15)).map_err(err)).await.map_err(err)??;}
+ presentation_step(app,session,true).await
+}
+#[tauri::command]
+pub fn capture_prepare_failed(w:tauri::WebviewWindow,state:tauri::State<Materials>,session:u64)->Result<(),String>{
+ if w.label()!="capture"{return Err("Capture window only".into());}let _operation=state.operation.lock().map_err(err)?;
+ native::check_session(state.generation.load(std::sync::atomic::Ordering::SeqCst),Some(session),true).map_err(|e|e.to_string())?;
+ if let Some((_,reply))=state.presentation_waiter.lock().map_err(err)?.take(){let _=reply.send(Err("Capture image could not be prepared".into()));}Ok(())
+}
+#[tauri::command]
+pub fn preview_capture_gate(w:tauri::WebviewWindow,app:tauri::AppHandle,hold:bool)->Result<(),String>{
+ if w.label()!="main"||!app.state::<crate::State>().preview||!std::env::args().any(|a|a=="--capture-presentation-test"){return Err("Capture presentation audit mode required".into());}
+ let state=app.state::<Materials>();let mut gate=state.audit_gate.lock().map_err(err)?;gate.0=hold;if !hold{if let Some(tx)=gate.1.take(){let _=tx.send(());}}Ok(())
+}
+#[tauri::command]
+pub async fn preview_capture_start(w:tauri::WebviewWindow,app:tauri::AppHandle)->Result<(),String>{
+ if w.label()!="main"||!app.state::<crate::State>().preview||!std::env::args().any(|a|a=="--capture-presentation-test"){return Err("Capture presentation audit mode required".into());}
+ start_internal(app,"region".into(),false).await
+}
+#[tauri::command]
+pub fn preview_capture_presentation(w:tauri::WebviewWindow,app:tauri::AppHandle)->Result<serde_json::Value,String>{
+ if w.label()!="main"||!app.state::<crate::State>().preview||!std::env::args().any(|a|a=="--capture-presentation-test"){return Err("Capture presentation audit mode required".into());}
+ let state=app.state::<Materials>();let stage=*state.presentation.lock().map_err(err)?;let overlay=app.get_webview_window("capture").ok_or("Missing capture window")?;
+ #[cfg(windows)]unsafe{use windows_sys::Win32::UI::WindowsAndMessaging::*;let hwnd=overlay.hwnd().map_err(err)?.0 as _;let(mut key,mut alpha,mut flags)=(0,0u8,0);let has_alpha=GetLayeredWindowAttributes(hwnd,&mut key,&mut alpha,&mut flags)!=0;return Ok(serde_json::json!({"session":stage.0,"stage":stage.1,"visible":overlay.is_visible().map_err(err)?,"alpha":if has_alpha{Some(alpha)}else{None},"busy":state.busy.load(std::sync::atomic::Ordering::SeqCst),"exStyle":GetWindowLongPtrW(hwnd,GWL_EXSTYLE),"foreground":GetForegroundWindow()as usize}));}
+ #[cfg(not(windows))]Ok(serde_json::json!({"session":stage.0,"stage":stage.1,"visible":overlay.is_visible().map_err(err)?}))
+}
 pub fn cancel(app: &tauri::AppHandle) {
     app.state::<Materials>().invalidate_capture();
     if let Some(window) = app.get_webview_window("capture") {
-        let _ = window.hide();
+        let _ = crate::capture_presentation::hide(&window);
     }
     if app.state::<Materials>().restore_main.load(std::sync::atomic::Ordering::SeqCst){crate::manage(app);}
 }
@@ -497,9 +555,10 @@ pub fn capture_finish(
         }else{add_frame(&state,source.crop(x,y,width,height)?)?;}
     }
     state.capture.lock().map_err(err)?.take();
+    if let Some((_,tx))=state.presentation_waiter.lock().map_err(err)?.take(){let _=tx.send(Ok(()));}
     state.busy.store(false, std::sync::atomic::Ordering::SeqCst);
     drop(operation);
-    let _ = w.hide();
+    let _ = crate::capture_presentation::hide(&w);
     if let Some((format,bounds))=recording {crate::recording::start(app.clone(),format,bounds)?;}
     else if state.restore_main.load(std::sync::atomic::Ordering::SeqCst){crate::manage(&app);}
     let _ = app.emit_to("main", "materials-updated", ());
@@ -579,7 +638,7 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
     };
     if restore {
         if let Some(overlay) = app.get_webview_window("capture") {
-            let _ = overlay.hide();
+            let _ = crate::capture_presentation::hide(&overlay);
         }
         if from_manager{crate::manage(&app);}
     }
@@ -587,6 +646,7 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
 }
 async fn show_region(app: tauri::AppHandle, frame: Frame, generation: u64) -> Result<(), String> {
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let (present_tx,present_rx)=std::sync::mpsc::sync_channel(1);
     let handle = app.clone();
     app.run_on_main_thread(move || {
         let result = (|| {
@@ -617,22 +677,22 @@ async fn show_region(app: tauri::AppHandle, frame: Frame, generation: u64) -> Re
                     .set_size(tauri::PhysicalSize::new(frame.width, frame.height))
                     .map_err(err)?;
             }
+            crate::capture_presentation::hide(&overlay)?;
             *state.capture.lock().map_err(err)? = Some(frame);
+            *state.presentation.lock().map_err(err)?=(generation,0);
+            *state.presentation_waiter.lock().map_err(err)?=Some((generation,present_tx));
             handle
-                .emit_to("capture", "capture-ready", ())
+                .emit_to("capture", "capture-ready", generation)
                 .map_err(err)?;
-            overlay.show().map_err(err)?;
-            overlay.set_focus().map_err(err)?;
+            // Only capture_prime may show at alpha zero; capture_present reveals a painted frame.
             Ok(())
         })();
         let _ = tx.send(result);
     })
     .map_err(err)?;
-    // Await the actual UI-thread completion, not a guessed render delay.
-    tauri::async_runtime::spawn_blocking(move || rx.recv().map_err(err))
-        .await
-        .map_err(err)?
-        .and_then(|result| result)
+    tauri::async_runtime::spawn_blocking(move || rx.recv().map_err(err)).await.map_err(err)?.and_then(|result|result)?;
+    tauri::async_runtime::spawn_blocking(move || present_rx.recv_timeout(std::time::Duration::from_secs(20)).map_err(|_|"Capture presentation timed out".to_string())).await.map_err(err)?.and_then(|result|result)
+
 }
 /// Explicit command-line audit: no app startup, UI input, clipboard or user settings writes.
 pub fn audit(directory: &std::path::Path) -> Result<(), String> {

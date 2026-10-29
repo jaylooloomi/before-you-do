@@ -225,3 +225,6 @@ int byd_capture_selftest(void) {
     byd_capture_free(&owned);ok=ok&&!owned.pixels&&!owned.candidates&&!owned.candidate_count;
     return ok;
 }
+
+void byd_capture_window_alpha(void *window, double alpha) { [(__bridge NSWindow *)window setAlphaValue:alpha]; }
+bool byd_capture_cursor(double *x, double *y) { CGEventRef event=CGEventCreate(NULL); if (!event) return false; CGPoint point=CGEventGetLocation(event); CFRelease(event); *x=point.x; *y=point.y; return true; }
