@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
 mod materials;
+mod recording;
+mod capture_hotkeys;
 mod capture;
 mod picker_position;
 mod autostart;
@@ -455,6 +457,10 @@ fn start_keyboard(app: &tauri::AppHandle) {
 }
 #[tauri::command]
 fn request_quit(app: tauri::AppHandle) -> Result<(), String> {
+    if app.try_state::<recording::Recorder>().is_some_and(|state|state.active()){
+        app.state::<recording::Recorder>().stop();manage(&app);
+        let _=app.emit_to("main","capture-error","請等待錄影完成保存後再退出。");return Ok(());
+    }
     if app.try_state::<materials::Materials>().is_some_and(|state|state.busy.load(Ordering::SeqCst)){materials::cancel(&app);}
     if !app.state::<State>().preview {
         manage(&app);
@@ -468,6 +474,7 @@ fn confirm_quit(window: tauri::WebviewWindow) -> Result<(), String> {
         return Err("Only the manager may confirm exit".into());
     }
     let app = window.app_handle();
+    if app.state::<recording::Recorder>().active(){app.state::<recording::Recorder>().stop();return Err("Recording is being finalized; retry exit after it is saved".into());}
     app.state::<State>()
         .quit_approved
         .store(true, Ordering::SeqCst);
@@ -586,10 +593,23 @@ fn activate_picker_role(app: &tauri::AppHandle, id: &str, items: &[Snippet]) -> 
     Ok(())
 }
 fn handle_action(app: &tauri::AppHandle, action: Action) {
+    if let Action::Capture(ref mode)=action {
+        let handle=app.clone();let mode=mode.clone();
+        tauri::async_runtime::spawn(async move{
+            if handle.state::<recording::Recorder>().active(){if mode.starts_with("record-"){handle.state::<recording::Recorder>().stop();}return;}
+            if handle.state::<materials::Materials>().busy.load(Ordering::SeqCst){return;}
+            platform::cancel_selection();handle.state::<State>().picker.lock().unwrap().finish(false);
+            if let Some(picker)=handle.get_webview_window("picker"){let _=picker.hide();}
+            if let Err(error)=materials::start_internal(handle.clone(),mode,false).await {let _=handle.emit_to("main","capture-error",error.clone());set_status(&handle,error);manage(&handle);}
+        });return;
+    }
+    if app.state::<recording::Recorder>().active(){return;}
+
     if app.state::<materials::Materials>().busy.load(Ordering::SeqCst) { return; }
     diagnostic(&format!("action: {action:?}"));
     let state = app.state::<State>();
     match action {
+        Action::Capture(_) => {},
         Action::Dismiss => {
             let _ = dismiss_manager_shortcut(app.clone());
         }
@@ -713,6 +733,8 @@ fn main() {
             materials::materials_load, materials::materials_text, materials::materials_import,
             materials::materials_order, materials::materials_remove, materials::materials_preview,
             materials::materials_export, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish,
+            recording::recording_state, recording::recording_stop, recording::recording_install, recording::preview_recording,
+            capture_hotkeys::capture_hotkeys_get, capture_hotkeys::capture_hotkeys_save,
             request_quit,
             confirm_quit,
             preview_quit_approved,
@@ -798,6 +820,9 @@ fn main() {
                 pending_settings: AtomicBool::new(false),
             });
             app.manage(materials::Materials::new(path.with_file_name("prompt-materials")).map_err(std::io::Error::other)?);
+            app.manage(recording::Recorder::default());
+            app.manage(capture_hotkeys::Hotkeys::new(path.with_file_name("capture-hotkeys.json")));
+            if (!preview && !integration) || (preview && std::env::args().any(|a|a=="--capture-hotkeys-test")){capture_hotkeys::start(app.handle().clone());}
             capture::track();
             if let Some(capture)=app.get_webview_window("capture"){
                 let handle=app.handle().clone();
@@ -823,7 +848,8 @@ fn main() {
                 true,
                 None::<&str>,
             )?;
-            let menu = tauri::menu::Menu::with_items(app, &[&manage_item, &quit_item])?;
+            let stop_recording=tauri::menu::MenuItem::with_id(app,"stop-recording","Stop recording",true,None::<&str>)?;
+            let menu = tauri::menu::Menu::with_items(app, &[&manage_item, &stop_recording, &quit_item])?;
             app.manage(UiMenu {
                 manage: manage_item,
                 quit: quit_item,
@@ -833,12 +859,13 @@ fn main() {
                 32,
                 32,
             );
-            tauri::tray::TrayIconBuilder::new()
+            tauri::tray::TrayIconBuilder::with_id("main-tray")
                 .icon(icon.clone())
                 .tooltip("before-you-do")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "manage" => manage(app),
+                    "stop-recording" => app.state::<recording::Recorder>().stop(),
                     "quit" => {
                         let _ = request_quit(app.clone());
                     }

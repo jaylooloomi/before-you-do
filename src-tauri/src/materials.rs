@@ -27,6 +27,8 @@ pub struct Materials {
     root: PathBuf,
     bundle: Mutex<Bundle>,
     capture: Mutex<Option<Frame>>,
+    intent: Mutex<String>,
+    restore_main: std::sync::atomic::AtomicBool,
     generation: std::sync::atomic::AtomicU64,
     operation: Mutex<()>,
     pub busy: std::sync::atomic::AtomicBool,
@@ -51,11 +53,15 @@ impl Materials {
             root,
             bundle: Mutex::new(bundle),
             capture: Mutex::new(None),
+            intent: Mutex::new(String::from("region")),
+            restore_main: std::sync::atomic::AtomicBool::new(true),
             generation: std::sync::atomic::AtomicU64::new(0),
             operation: Mutex::new(()),
             busy: std::sync::atomic::AtomicBool::new(false),
         })
     }
+    pub fn recording_directory(&self)->Result<PathBuf,String>{let dir=self.root.join("recordings-pending");fs::create_dir_all(&dir).map_err(err)?;Ok(dir)}
+    pub fn add_recording(&self,name:String,bytes:Vec<u8>,gif:bool)->Result<(),String>{self.ready()?;if bytes.len()>MAX_FILE{return Err("Recording exceeds 25 MB".into());}self.append(Item{id:id(),name,kind:if gif{"image"}else{"file"}.into(),text:String::new(),size:bytes.len() as u64},Some(&bytes))?;Ok(())}
     fn invalidate_capture(&self) {
         let _operation = self.operation.lock().unwrap_or_else(|e| e.into_inner());
         self.generation
@@ -458,7 +464,7 @@ pub fn cancel(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("capture") {
         let _ = window.hide();
     }
-    crate::manage(app);
+    if app.state::<Materials>().restore_main.load(std::sync::atomic::Ordering::SeqCst){crate::manage(app);}
 }
 #[tauri::command]
 pub fn capture_finish(
@@ -478,22 +484,24 @@ pub fn capture_finish(
         rect.is_some(),
     )
     .map_err(|e| e.to_string())?;
-    if let Some([x, y, width, height]) = rect {
-        let frame = state
-            .capture
-            .lock()
-            .map_err(err)?
-            .as_ref()
-            .ok_or("No capture")?
-            .crop(x, y, width, height)?;
-        // Retain the frozen source and overlay on validation or disk errors so the user can retry.
-        add_frame(&state, frame)?;
+    let intent=state.intent.lock().map_err(err)?.clone();
+    let mut recording=None;
+    if let Some([x,y,width,height])=rect {
+        let source=state.capture.lock().map_err(err)?;
+        let source=source.as_ref().ok_or("No capture")?;
+        if intent.starts_with("record-") {
+            source.crop(x,y,width,height)?;
+            let bounds=[source.x.checked_add(x as i32).ok_or("Coordinate overflow")?,source.y.checked_add(y as i32).ok_or("Coordinate overflow")?,width as i32,height as i32];
+            crate::recording::validate_rect(bounds)?;
+            recording=Some((if intent=="record-gif"{crate::recording::Format::Gif}else{crate::recording::Format::Video},bounds));
+        }else{add_frame(&state,source.crop(x,y,width,height)?)?;}
     }
     state.capture.lock().map_err(err)?.take();
     state.busy.store(false, std::sync::atomic::Ordering::SeqCst);
     drop(operation);
     let _ = w.hide();
-    crate::manage(&app);
+    if let Some((format,bounds))=recording {crate::recording::start(app.clone(),format,bounds)?;}
+    else if state.restore_main.load(std::sync::atomic::Ordering::SeqCst){crate::manage(&app);}
     let _ = app.emit_to("main", "materials-updated", ());
     Ok(())
 }
@@ -504,6 +512,13 @@ pub async fn capture_start(
     mode: String,
 ) -> Result<(), String> {
     manager(&w)?;
+    start_internal(app,mode,true).await
+}
+pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bool)->Result<(),String>{
+    let recording=intent=="record-video"||intent=="record-gif";
+    if app.state::<crate::recording::Recorder>().active(){return Err("Recording already in progress".into());}
+    if recording && (!cfg!(windows)||!crate::recording::runtime_path().is_some_and(|p|p.is_file())){return Err("Install the recording component from Prompt workspace first (Windows only)".into());}
+    let mode=if recording {"region".to_string()}else{intent.clone()};
     mode.parse::<native::CaptureMode>()
         .map_err(|e| e.to_string())?;
     let caps = native::capabilities();
@@ -521,6 +536,9 @@ pub async fn capture_start(
         .generation
         .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
         + 1;
+    *state.intent.lock().map_err(err)?=intent;
+    let w=app.get_webview_window("main").ok_or("Manager unavailable")?;
+    state.restore_main.store(from_manager,std::sync::atomic::Ordering::SeqCst);
     let region = mode == "region";
     let result = async {
         let target = if mode == "window" {
@@ -563,7 +581,7 @@ pub async fn capture_start(
         if let Some(overlay) = app.get_webview_window("capture") {
             let _ = overlay.hide();
         }
-        crate::manage(&app);
+        if from_manager{crate::manage(&app);}
     }
     result
 }

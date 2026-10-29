@@ -1,5 +1,6 @@
 import {t,onLanguageChange,errorMessage} from './i18n.js';
 import {createCaptureAccess} from './capture-access.js';
+import {createCaptureTools} from './capture-tools.js';
 export function materialPrompt(items){return items.map(item=>item.kind==='text'?item.text:`[Attachment: ${item.name}]`).filter(Boolean).join('\n\n');}
 export function moveMaterial(items,id,delta){const index=items.findIndex(i=>i.id===id),next=index+delta;if(index<0||next<0||next>=items.length)return items.map(i=>i.id);const ids=items.map(i=>i.id);[ids[index],ids[next]]=[ids[next],ids[index]];return ids;}
 export function createMaterialsPage({invoke,listen,onBack}){
@@ -10,13 +11,14 @@ export function createMaterialsPage({invoke,listen,onBack}){
  function persistDrafts(){localStorage.setItem(draftKey,JSON.stringify([...pending]));}
  const control=(text,fn)=>{const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=t(text);button.onclick=()=>run(fn);toolbar.append(button);return button;};
  function message(text){status.textContent=text;}
- function lock(value){busy=value;for(const node of panel.querySelectorAll('button,textarea,input')){if(value){node.dataset.wasDisabled=String(node.disabled);node.disabled=true;}else if(node.dataset.wasDisabled!==undefined){node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;}}if(!value)access.render();}
+ function lock(value){busy=value;for(const node of panel.querySelectorAll('button,textarea,input')){if(value){node.dataset.wasDisabled=String(node.disabled);node.disabled=true;}else if(node.dataset.wasDisabled!==undefined){node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;}}if(!value){access.render();tools.render();}}
  async function flushInternal(){clearTimeout(timer);if(!initialized&&pending.size){await reload();initialized=true;}for(const [id,text]of [...pending]){await invoke('materials_text',{itemId:id,text});if(pending.get(id)===text){pending.delete(id);persistDrafts();}}message(t('素材已儲存'));}
  function run(fn){if(busy)return Promise.resolve();lock(true);queue=queue.catch(()=>{}).then(async()=>{try{await flushInternal();await fn();}catch(e){message(t('素材操作失敗')+'：'+errorMessage(e));}finally{lock(false);}});return queue;}
  async function reload(){const result=await invoke('materials_load');items=result.items;initialized=true;loadFailed=false;render();}
  function updateText(id,text){pending.set(id,text);try{persistDrafts();}catch(e){message(t('素材操作失敗')+'：'+errorMessage(e));}const item=items.find(i=>i.id===id);if(item)item.text=text;message(t('文字草稿尚未儲存'));clearTimeout(timer);timer=setTimeout(()=>{queue=queue.catch(()=>{}).then(flushInternal).catch(e=>message(t('素材操作失敗')+'：'+errorMessage(e)));},500);}
  async function capture(mode){await invoke('capture_start',{mode});}
  const access=createCaptureAccess({invoke,run,onCapture:capture,isBusy:()=>busy});toolbar.append(access.element);
+ const tools=createCaptureTools({invoke,listen,run});toolbar.after(tools.element);
  control('加入文字',async()=>{items=(await invoke('materials_text',{itemId:null,text:''})).items;render();list.querySelector('article:last-child textarea')?.focus();});
  const file=document.createElement('input');file.type='file';file.multiple=true;file.hidden=true;file.setAttribute('aria-label',t('選擇素材檔案'));panel.append(file);
  const fileButton=control('加入檔案',()=>{});fileButton.onclick=()=>{if(!busy)file.click();};
@@ -36,7 +38,8 @@ export function createMaterialsPage({invoke,listen,onBack}){
    else{const details=document.createElement('p');details.textContent=t('附件')+` · ${(item.size/1024).toFixed(1)} KB`;card.append(details);}list.append(card);
   });
  }
+ listen('capture-error',event=>message(errorMessage(event.payload))).catch(e=>message(errorMessage(e)));
  listen('materials-updated',()=>{queue.then(()=>run(reload));}).catch(e=>message(String(e)));
  onLanguageChange(()=>{if(!panel.hidden)render();});
- return {panel,get busy(){return busy;},async open(){panel.hidden=false;return run(async()=>{try{await reload();await access.refresh();message(t('素材已儲存'));}catch(e){loadFailed=true;list.replaceChildren();throw e;}});},async flush(){try{await queue;await flushInternal();}catch(e){message(t('素材操作失敗')+'：'+errorMessage(e));throw e;}},hasPending:()=>pending.size>0||loadFailed};
+ return {panel,get busy(){return busy;},async open(){panel.hidden=false;return run(async()=>{try{await reload();await access.refresh();await tools.refresh();message(t('素材已儲存'));}catch(e){loadFailed=true;list.replaceChildren();throw e;}});},async flush(){try{await queue;await flushInternal();}catch(e){message(t('素材操作失敗')+'：'+errorMessage(e));throw e;}},hasPending:()=>pending.size>0||loadFailed};
 }

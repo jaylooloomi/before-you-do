@@ -3,7 +3,7 @@ import {RegionSelection,imagePoint,cssRect,floatingPosition,magnifierSample} fro
 export {selectionRect} from './region-selection.js';
 export async function mountCapture(root,{invoke,listen}){
  document.body.className='capture-surface';
- root.innerHTML='<img class="capture-background" alt="Frozen desktop"><div class="capture-shade"><i></i><i></i><i></i><i></i></div><div class="capture-selection" role="region" hidden></div><output class="capture-bounds" aria-live="off" hidden></output><div class="capture-hud capture-ui"><span></span><label><input type="checkbox" data-capture="auto" checked><b></b></label><label><input type="checkbox" data-capture="magnifier" checked><b></b></label><button type="button" data-capture="cycle"></button><button type="button" data-capture="cancel"></button></div><div class="capture-loupe" role="figure" hidden><canvas width="136" height="136"></canvas><output aria-live="off"></output></div><p role="alert" class="capture-error"></p>';
+ root.innerHTML='<img class="capture-background" alt="Frozen desktop"><div class="capture-shade"><i></i><i></i><i></i><i></i></div><div class="capture-selection" role="region" hidden></div><output class="capture-bounds" aria-live="off" hidden></output><div class="capture-hud capture-ui" hidden><span></span><label><input type="checkbox" data-capture="auto" checked><b></b></label><label><input type="checkbox" data-capture="magnifier" checked><b></b></label><button type="button" data-capture="cycle"></button><button type="button" data-capture="cancel"></button></div><div class="capture-loupe" role="figure" hidden><canvas width="136" height="136"></canvas><output aria-live="off"></output></div><p role="alert" class="capture-error"></p>';
  const image=root.querySelector('img'),selection=root.querySelector('.capture-selection'),shade=[...root.querySelector('.capture-shade').children],bounds=root.querySelector('.capture-bounds');
  const hint=root.querySelector('.capture-hud>span'),auto=root.querySelector('[data-capture=auto]'),magnifier=root.querySelector('[data-capture=magnifier]'),cycle=root.querySelector('[data-capture=cycle]'),cancel=root.querySelector('[data-capture=cancel]'),error=root.querySelector('[role=alert]'),loupe=root.querySelector('.capture-loupe'),canvas=root.querySelector('canvas'),pixelInfo=loupe.querySelector('output');
  const context=canvas.getContext('2d',{willReadFrequently:true});
@@ -13,6 +13,7 @@ export async function mountCapture(root,{invoke,listen}){
  function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;paint();});}
  async function accept(next,ticket,{keepError=false}={}){
   image.src=next.image;await image.decode();if(ticket!==loading)return;
+  try{auto.checked=localStorage.getItem('before-you-do.capture.auto')!=='false';magnifier.checked=localStorage.getItem('before-you-do.capture.magnifier')!=='false';}catch{}
   frame=next;model=new RegionSelection(frame);model.enabled=auto.checked;if(pointer)model.move(pointer,innerWidth,innerHeight);
   if(!keepError)error.textContent='';finishing=false;schedule();
  }

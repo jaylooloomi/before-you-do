@@ -1,5 +1,22 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["錄製影片", "录制视频", "Record video", "動画を録画"],
+["錄製 GIF", "录制 GIF", "Record GIF", "GIF を録画"],
+["停止錄影", "停止录制", "Stop recording", "録画停止"],
+["安裝錄影元件", "安装录制组件", "Install recording component", "録画コンポーネントをインストール"],
+["錄影狀態", "录制状态", "Recording status", "録画状態"],
+["截圖快捷鍵與選項", "截图快捷键与选项", "Capture shortcuts and options", "撮影ショートカットと設定"],
+["儲存截圖快捷鍵", "保存截图快捷键", "Save capture shortcuts", "撮影ショートカットを保存"],
+["截圖快捷鍵已儲存", "截图快捷键已保存", "Capture shortcuts saved", "撮影ショートカットを保存しました"],
+["單擊擷取、拖曳框選、Tab 切換父層、Esc 或右鍵取消。快捷鍵可填 Ctrl/Alt/Shift + PrintScreen 或 F6–F12；留空停用。", "单击截取、拖动框选、Tab 切换父级、Esc 或右键取消。快捷键可填 Ctrl/Alt/Shift + PrintScreen 或 F6–F12；留空停用。", "Click to capture; drag for a custom region; Tab cycles parents; Esc or right-click cancels. Shortcuts accept Ctrl/Alt/Shift + PrintScreen or F6–F12. Leave blank to disable.", "クリックで撮影、ドラッグで範囲指定、Tab で親領域、Esc／右クリックで取消。Ctrl/Alt/Shift + PrintScreen または F6–F12 を指定。空欄で無効化。"],
+["錄影目前支援 Windows；Mac 仍可使用截圖。", "录制目前支持 Windows；Mac 仍可使用截图。", "Recording currently supports Windows; screenshots remain available on Mac.", "録画は現在 Windows 対応です。Mac では画面撮影が使えます。"],
+["錄影需要一次安裝約 82 MB 的 FFmpeg 元件。僅在按下安裝後下載，影片不含聲音。", "录制需要一次安装约 82 MB 的 FFmpeg 组件。仅在点击安装后下载，视频不含声音。", "Recording requires a one-time ~82 MB FFmpeg download, only after you click Install. Video is silent.", "録画には初回約 82 MB の FFmpeg が必要です。インストールを押すまでダウンロードしません。音声は含みません。"],
+["錄影中；再次按相同錄影快捷鍵或系統匣「Stop recording」停止。", "录制中；再次按相同录制快捷键或托盘「Stop recording」停止。", "Recording; press the same recording shortcut again or choose Stop recording in the tray.", "録画中。同じショートカット、またはトレイの Stop recording で停止。"],
+["正在完成錄影，請稍候…", "正在完成录制，请稍候…", "Finalizing recording…", "録画を保存中…"],
+["錄影失敗", "录制失败", "Recording failed", "録画失敗"],
+["錄影已加入素材區", "录制已加入素材区", "Recording added to workspace", "録画を素材に追加しました"],
+["無聲影片 WebM / GIF；最長 120 秒，25 MB。", "无声视频 WebM / GIF；最长 120 秒，25 MB。", "Silent WebM / GIF; up to 120 seconds and 25 MB.", "音声なし WebM／GIF。最大 120 秒、25 MB。"],
+
 ["移動預覽，單擊擷取；拖曳自選範圍，Esc 取消。", "移动预览，单击截取；拖动自选范围，Esc 取消。", "Move to preview, click to capture; drag a custom region. Esc cancels.", "移動でプレビュー、クリックで撮影。ドラッグで範囲指定、Esc で取消。"],
 ["自動偵測", "自动检测", "Auto detect", "自動検出"],
 ["像素放大鏡", "像素放大镜", "Pixel magnifier", "ピクセル拡大鏡"],

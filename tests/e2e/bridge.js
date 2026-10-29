@@ -18,6 +18,14 @@ export function installBridge(){
     if(failures[cmd])throw failures[cmd];
     if(cmd==='plugin:event|listen'){const ids=events.get(args.event)||[];ids.push(args.handler);events.set(args.event,ids);return args.handler;}
     state.materials??={items:[]};
+    state.recording??={supported:true,runtime_ready:true,installing:false,status:{phase:'idle'}};
+    state.captureHotkeys??={supported:true,registered:true,error:null,config:{region:'Shift+PrintScreen',fullscreen:'PrintScreen',window:'Alt+PrintScreen',video:'Ctrl+Shift+PrintScreen',gif:'Ctrl+Alt+Shift+PrintScreen'}};
+    if(cmd==='recording_state')return structuredClone(state.recording);
+    if(cmd==='recording_install'){state.recording.runtime_ready=true;return;}
+    if(cmd==='recording_stop'){state.recording.status={phase:'finalizing'};emit('recording-state',state.recording.status);return;}
+    if(cmd==='capture_hotkeys_get')return structuredClone(state.captureHotkeys);
+    if(cmd==='capture_hotkeys_save'){state.captureHotkeys.config=args.config;persist();return structuredClone(state.captureHotkeys);}
+
     if(cmd==='capture_capabilities')return structuredClone(state.captureCapabilities||{platform:'windows',supported:true,permission:'not_required',reason:null,windowSemantics:'visible_pixels'});
     if(cmd==='capture_request_permission'){state.captureCapabilities.permission=qa.permissionDecision||'required';state.captureCapabilities.reason=state.captureCapabilities.permission==='granted'?null:'error.capture_permission';return structuredClone(state.captureCapabilities);}
     if(cmd==='capture_open_permissions')return;
@@ -28,7 +36,7 @@ export function installBridge(){
     if(cmd==='materials_order'){state.materials.items=args.ids.map(id=>state.materials.items.find(i=>i.id===id));persist();return structuredClone(state.materials);}
     if(cmd==='materials_remove'){state.materials.items=state.materials.items.filter(i=>i.id!==args.itemId);persist();return structuredClone(state.materials);}
     if(cmd==='materials_export')return 'QA_ONLY/prompt-materials/exports/test-bundle';
-    if(cmd==='capture_start'){if(args.mode!=='region'){state.materials.items.push({id:'m'+(++next),name:args.mode+'.png',kind:'image',text:'',size:100});persist();emit('materials-updated',null);}return;}
+    if(cmd==='capture_start'){if(args.mode.startsWith('record-'))return;if(args.mode!=='region'){state.materials.items.push({id:'m'+(++next),name:args.mode+'.png',kind:'image',text:'',size:100});persist();emit('materials-updated',null);}return;}
     if(cmd==='capture_frame'&&qa.frame)return structuredClone(qa.frame);
     if(cmd==='capture_frame')return {session:1,width:1920,height:1080,image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg=='};
     if(cmd==='capture_finish')return;

@@ -2,6 +2,7 @@ use std::sync::mpsc::Sender;
 #[derive(Debug)]
 pub enum Action {
     Begin(usize),
+    Capture(String),
     Dismiss,
     Move(i32),
     Role(i32),
