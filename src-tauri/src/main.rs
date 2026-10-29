@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
 mod materials;
+mod capture;
 mod picker_position;
 mod autostart;
 mod roles;
@@ -710,7 +711,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             materials::materials_load, materials::materials_text, materials::materials_import,
             materials::materials_order, materials::materials_remove, materials::materials_preview,
-            materials::materials_export, materials::capture_start, materials::capture_frame, materials::capture_finish,
+            materials::materials_export, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish,
             request_quit,
             confirm_quit,
             preview_quit_approved,
@@ -796,7 +797,7 @@ fn main() {
                 pending_settings: AtomicBool::new(false),
             });
             app.manage(materials::Materials::new(path.with_file_name("prompt-materials")).map_err(std::io::Error::other)?);
-            materials::track();
+            capture::track();
             if let Some(capture)=app.get_webview_window("capture"){
                 let handle=app.handle().clone();
                 capture.on_window_event(move|event|{if let tauri::WindowEvent::CloseRequested{api,..}=event{api.prevent_close();materials::cancel(&handle);}});

@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>NSInputMonitoringUsageDescription</key><string>before-you-do uses Option+H and arrow keys to choose a saved phrase, and pastes it when Option is released.</string></dict></plist>
+<plist version="1.0"><dict><key>NSInputMonitoringUsageDescription</key><string>before-you-do uses Option+H and arrow keys to choose a saved phrase, and pastes it when Option is released.</string><key>NSScreenCaptureUsageDescription</key><string>before-you-do captures screenshots only when you request them, to collect images for your local prompt workspace. Screenshots are not uploaded or sent automatically.</string></dict></plist>

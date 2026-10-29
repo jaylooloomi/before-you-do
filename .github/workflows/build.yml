@@ -26,6 +26,9 @@ jobs:
       - if: runner.os == 'macOS'
         run: npm run build -- --bundles app
       - if: runner.os == 'macOS'
+        name: Verify capture framework backward compatibility
+        run: node scripts/verify-macos-capture.mjs src-tauri/target/release/bundle/macos/before-you-do.app/Contents/MacOS/before-you-do artifacts/macos-capture-linkage.txt
+      - if: runner.os == 'macOS'
         run: |
           mkdir -p artifacts
           ditto -c -k --sequesterRsrc --keepParent "src-tauri/target/release/bundle/macos/before-you-do.app" artifacts/before-you-do-mac.zip
@@ -45,6 +48,7 @@ jobs:
           path: |
             src-tauri/target/release/before-you-do.exe
             artifacts/before-you-do-mac.zip
+            artifacts/macos-capture-linkage.txt
             artifacts/before-you-do-v*-*.zip
           if-no-files-found: error
   release:

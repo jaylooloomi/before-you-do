@@ -18,6 +18,9 @@ export function installBridge(){
     if(failures[cmd])throw failures[cmd];
     if(cmd==='plugin:event|listen'){const ids=events.get(args.event)||[];ids.push(args.handler);events.set(args.event,ids);return args.handler;}
     state.materials??={items:[]};
+    if(cmd==='capture_capabilities')return structuredClone(state.captureCapabilities||{platform:'windows',supported:true,permission:'not_required',reason:null,windowSemantics:'visible_pixels'});
+    if(cmd==='capture_request_permission'){state.captureCapabilities.permission=qa.permissionDecision||'required';state.captureCapabilities.reason=state.captureCapabilities.permission==='granted'?null:'error.capture_permission';return structuredClone(state.captureCapabilities);}
+    if(cmd==='capture_open_permissions')return;
     if(cmd==='materials_load')return structuredClone(state.materials);
     if(cmd==='materials_text'){if(args.itemId){state.materials.items.find(i=>i.id===args.itemId).text=args.text;}else state.materials.items.push({id:'m'+(++next),name:'Text',kind:'text',text:args.text,size:0});persist();return structuredClone(state.materials);}
     if(cmd==='materials_import'){state.materials.items.push({id:'m'+(++next),name:args.name,kind:args.name.endsWith('.png')?'image':'file',text:'',size:args.bytes.length});persist();return structuredClone(state.materials);}
@@ -26,7 +29,7 @@ export function installBridge(){
     if(cmd==='materials_remove'){state.materials.items=state.materials.items.filter(i=>i.id!==args.itemId);persist();return structuredClone(state.materials);}
     if(cmd==='materials_export')return 'QA_ONLY/prompt-materials/exports/test-bundle';
     if(cmd==='capture_start'){if(args.mode!=='region'){state.materials.items.push({id:'m'+(++next),name:args.mode+'.png',kind:'image',text:'',size:100});persist();emit('materials-updated',null);}return;}
-    if(cmd==='capture_frame')return {width:1920,height:1080,image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII='};
+    if(cmd==='capture_frame')return {session:1,width:1920,height:1080,image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII='};
     if(cmd==='capture_finish')return;
     if(cmd==='get_role')return state.role;
     if(cmd==='get_autostart')return {supported:true,enabled:!!state.autostart};

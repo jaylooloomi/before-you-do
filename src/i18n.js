@@ -34,7 +34,7 @@ if (globalThis.window) window.addEventListener('languagechange', () => {
 // A binding retains its source key across language switches and detects regenerated labels.
 export function bindTranslations(root) {
   const bindings = new WeakMap();
-  const protectedSelector = '.material-list,.material-path,.material-status,.capture-error,.role-save-overview,.save-issues,.picker-rolebar,input,textarea,code,.snippet-info,.picker-list .picker-content,#template-preview,#settings-status,#save-status,#native-error';
+  const protectedSelector = '.capture-access,.material-list,.material-path,.material-status,.capture-error,.role-save-overview,.save-issues,.picker-rolebar,input,textarea,code,.snippet-info,.picker-list .picker-content,#template-preview,#settings-status,#save-status,#native-error';
   let queued = false;
   function render() {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

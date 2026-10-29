@@ -1,3 +1,4 @@
+use crate::capture::{self as native, Frame};
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -26,6 +27,7 @@ pub struct Materials {
     root: PathBuf,
     bundle: Mutex<Bundle>,
     capture: Mutex<Option<Frame>>,
+    generation: std::sync::atomic::AtomicU64,
     pub busy: std::sync::atomic::AtomicBool,
 }
 impl Materials {
@@ -48,6 +50,7 @@ impl Materials {
             root,
             bundle: Mutex::new(bundle),
             capture: Mutex::new(None),
+            generation: std::sync::atomic::AtomicU64::new(0),
             busy: std::sync::atomic::AtomicBool::new(false),
         })
     }
@@ -362,48 +365,6 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
     fs::rename(&dir, &final_dir).map_err(err)?;
     Ok(final_dir.to_string_lossy().into_owned())
 }
-#[derive(Clone)]
-pub struct Frame {
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
-    pub rgba: Vec<u8>,
-}
-impl Frame {
-    fn png(&self) -> Result<Vec<u8>, String> {
-        let mut bytes = Vec::new();
-        {
-            let mut encoder = png::Encoder::new(&mut bytes, self.width, self.height);
-            encoder.set_color(png::ColorType::Rgba);
-            encoder.set_depth(png::BitDepth::Eight);
-            let mut writer = encoder.write_header().map_err(err)?;
-            writer.write_image_data(&self.rgba).map_err(err)?;
-        }
-        Ok(bytes)
-    }
-    fn crop(&self, x: u32, y: u32, width: u32, height: u32) -> Result<Self, String> {
-        if width == 0
-            || height == 0
-            || x.checked_add(width).is_none_or(|v| v > self.width)
-            || y.checked_add(height).is_none_or(|v| v > self.height)
-        {
-            return Err("Invalid selection".into());
-        }
-        let mut rgba = Vec::with_capacity(width as usize * height as usize * 4);
-        for row in y..y + height {
-            let start = ((row as usize * self.width as usize) + x as usize) * 4;
-            rgba.extend_from_slice(&self.rgba[start..start + width as usize * 4]);
-        }
-        Ok(Self {
-            x: self.x + x as i32,
-            y: self.y + y as i32,
-            width,
-            height,
-            rgba,
-        })
-    }
-}
 fn add_frame(state: &Materials, frame: Frame) -> Result<Bundle, String> {
     let bytes = frame.png()?;
     let key = id();
@@ -418,8 +379,28 @@ fn add_frame(state: &Materials, frame: Frame) -> Result<Bundle, String> {
         Some(&bytes),
     )
 }
+#[tauri::command]
+pub fn capture_capabilities(w: tauri::WebviewWindow) -> Result<native::Capabilities, String> {
+    manager(&w)?;
+    Ok(native::capabilities())
+}
+#[tauri::command]
+pub async fn capture_request_permission(
+    w: tauri::WebviewWindow,
+) -> Result<native::Capabilities, String> {
+    manager(&w)?;
+    tauri::async_runtime::spawn_blocking(native::request_permission)
+        .await
+        .map_err(err)?
+}
+#[tauri::command]
+pub fn capture_open_permissions(w: tauri::WebviewWindow) -> Result<(), String> {
+    manager(&w)?;
+    native::open_permissions()
+}
 #[derive(Serialize)]
 pub struct CaptureView {
+    session: u64,
     image: String,
     width: u32,
     height: u32,
@@ -435,6 +416,7 @@ pub fn capture_frame(
     let guard = state.capture.lock().map_err(err)?;
     let f = guard.as_ref().ok_or("No capture")?;
     Ok(CaptureView {
+        session: state.generation.load(std::sync::atomic::Ordering::SeqCst),
         image: format!(
             "data:image/png;base64,{}",
             base64::engine::general_purpose::STANDARD.encode(f.png()?)
@@ -460,10 +442,17 @@ pub fn capture_finish(
     w: tauri::WebviewWindow,
     state: tauri::State<Materials>,
     rect: Option<[u32; 4]>,
+    session: Option<u64>,
 ) -> Result<(), String> {
     if w.label() != "capture" {
         return Err("Capture window only".into());
     }
+    native::check_session(
+        state.generation.load(std::sync::atomic::Ordering::SeqCst),
+        session,
+        rect.is_some(),
+    )
+    .map_err(|e| e.to_string())?;
     if let Some([x, y, width, height]) = rect {
         let frame = state
             .capture
@@ -489,34 +478,52 @@ pub async fn capture_start(
     mode: String,
 ) -> Result<(), String> {
     manager(&w)?;
-    if !["region", "fullscreen", "window"].contains(&mode.as_str()) {
-        return Err("Invalid capture mode".into());
+    mode.parse::<native::CaptureMode>()
+        .map_err(|e| e.to_string())?;
+    let caps = native::capabilities();
+    if !caps.can_capture() {
+        return Err(caps
+            .reason
+            .unwrap_or(native::CaptureError::PermissionRequired.to_string()));
     }
     let state = app.state::<Materials>();
     state.ready()?;
     if state.busy.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return Err("Capture already in progress".into());
     }
+    state
+        .generation
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let region = mode == "region";
     let result = async {
-        let target = native::target()?;
+        let target = if mode == "window" {
+            native::target()?
+        } else {
+            0
+        };
         w.hide().map_err(err)?;
-        let frame = tauri::async_runtime::spawn_blocking(move || {
-            std::thread::sleep(std::time::Duration::from_millis(250));
-            native::capture(&mode, target)
-        })
-        .await
-        .map_err(err)??;
+        let frame = tauri::async_runtime::spawn_blocking(move || native::capture(&mode, target))
+            .await
+            .map_err(err)??;
         if region {
             let overlay = app
                 .get_webview_window("capture")
                 .ok_or("Capture window unavailable")?;
-            overlay
-                .set_position(tauri::PhysicalPosition::new(frame.x, frame.y))
-                .map_err(err)?;
-            overlay
-                .set_size(tauri::PhysicalSize::new(frame.width, frame.height))
-                .map_err(err)?;
+            if let Some(bounds) = frame.logical_bounds {
+                overlay
+                    .set_position(tauri::LogicalPosition::new(bounds.x, bounds.y))
+                    .map_err(err)?;
+                overlay
+                    .set_size(tauri::LogicalSize::new(bounds.width, bounds.height))
+                    .map_err(err)?;
+            } else {
+                overlay
+                    .set_position(tauri::PhysicalPosition::new(frame.x, frame.y))
+                    .map_err(err)?;
+                overlay
+                    .set_size(tauri::PhysicalSize::new(frame.width, frame.height))
+                    .map_err(err)?;
+            }
             *state.capture.lock().map_err(err)? = Some(frame);
             // Freeze before showing the overlay. Never include the overlay in the capture.
             app.emit_to("capture", "capture-ready", ()).map_err(err)?;
@@ -538,191 +545,6 @@ pub async fn capture_start(
         crate::manage(&app);
     }
     result
-}
-#[cfg(windows)]
-mod native {
-    use super::*;
-    use windows_sys::Win32::{
-        Foundation::*,
-        Graphics::{Dwm::*, Gdi::*},
-        System::Threading::GetCurrentProcessId,
-        UI::{Accessibility::*, WindowsAndMessaging::*},
-    };
-    static LAST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-    fn external(hwnd: HWND) -> bool {
-        unsafe {
-            let mut pid = 0;
-            GetWindowThreadProcessId(hwnd, &mut pid);
-            !hwnd.is_null()
-                && pid != GetCurrentProcessId()
-                && IsWindowVisible(hwnd) != 0
-                && IsIconic(hwnd) == 0
-        }
-    }
-    unsafe extern "system" fn foreground_changed(
-        _: HWINEVENTHOOK,
-        _: u32,
-        hwnd: HWND,
-        _: i32,
-        _: i32,
-        _: u32,
-        _: u32,
-    ) {
-        if external(hwnd) {
-            LAST.store(hwnd as usize, std::sync::atomic::Ordering::Relaxed);
-        }
-    }
-    pub fn track() {
-        std::thread::spawn(|| unsafe {
-            let hwnd = GetForegroundWindow();
-            if external(hwnd) {
-                LAST.store(hwnd as usize, std::sync::atomic::Ordering::Relaxed);
-            }
-            // Observe foreground transitions; never poll, inject input, or activate another application.
-            let hook = SetWinEventHook(
-                EVENT_SYSTEM_FOREGROUND,
-                EVENT_SYSTEM_FOREGROUND,
-                std::ptr::null_mut(),
-                Some(foreground_changed),
-                0,
-                0,
-                WINEVENT_SKIPOWNPROCESS,
-            );
-            if hook.is_null() {
-                return;
-            }
-            let mut message: MSG = std::mem::zeroed();
-            while GetMessageW(&mut message, std::ptr::null_mut(), 0, 0) > 0 {
-                TranslateMessage(&message);
-                DispatchMessageW(&message);
-            }
-            UnhookWinEvent(hook);
-        });
-    }
-    pub fn target() -> Result<usize, String> {
-        unsafe {
-            let hwnd = GetForegroundWindow();
-            if external(hwnd) {
-                Ok(hwnd as usize)
-            } else {
-                Ok(LAST.load(std::sync::atomic::Ordering::Relaxed))
-            }
-        }
-    }
-    pub fn capture(mode: &str, target: usize) -> Result<Frame, String> {
-        unsafe {
-            let (mut x, mut y, mut width, mut height) = if mode == "window" {
-                let hwnd = target as HWND;
-                if !external(hwnd) {
-                    return Err(
-                        "Select another application window before opening the material area".into(),
-                    );
-                }
-                let mut r: RECT = std::mem::zeroed();
-                if DwmGetWindowAttribute(
-                    hwnd,
-                    DWMWA_EXTENDED_FRAME_BOUNDS as u32,
-                    &mut r as *mut _ as _,
-                    std::mem::size_of::<RECT>() as u32,
-                ) != 0
-                    && GetWindowRect(hwnd, &mut r) == 0
-                {
-                    return Err("Cannot read window bounds".into());
-                }
-                (r.left, r.top, r.right - r.left, r.bottom - r.top)
-            } else {
-                (
-                    GetSystemMetrics(SM_XVIRTUALSCREEN),
-                    GetSystemMetrics(SM_YVIRTUALSCREEN),
-                    GetSystemMetrics(SM_CXVIRTUALSCREEN),
-                    GetSystemMetrics(SM_CYVIRTUALSCREEN),
-                )
-            };
-            if mode == "window" {
-                let desktop_x = GetSystemMetrics(SM_XVIRTUALSCREEN);
-                let desktop_y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-                let right = (x + width).min(desktop_x + GetSystemMetrics(SM_CXVIRTUALSCREEN));
-                let bottom = (y + height).min(desktop_y + GetSystemMetrics(SM_CYVIRTUALSCREEN));
-                x = x.max(desktop_x);
-                y = y.max(desktop_y);
-                width = right - x;
-                height = bottom - y;
-            }
-            if width <= 0 || height <= 0 || width as u64 * height as u64 > 64_000_000 {
-                return Err("Invalid or oversized capture bounds".into());
-            }
-            let source = GetDC(std::ptr::null_mut());
-            if source.is_null() {
-                return Err("Cannot access desktop".into());
-            }
-            let dc = CreateCompatibleDC(source);
-            if dc.is_null() {
-                ReleaseDC(std::ptr::null_mut(), source);
-                return Err("Cannot allocate capture context".into());
-            }
-            let bitmap = CreateCompatibleBitmap(source, width, height);
-            if bitmap.is_null() {
-                DeleteDC(dc);
-                ReleaseDC(std::ptr::null_mut(), source);
-                return Err("Cannot allocate capture bitmap".into());
-            }
-            let old = SelectObject(dc, bitmap);
-            let copied = BitBlt(dc, 0, 0, width, height, source, x, y, SRCCOPY | CAPTUREBLT);
-            SelectObject(dc, old);
-            let mut info: BITMAPINFO = std::mem::zeroed();
-            info.bmiHeader.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
-            info.bmiHeader.biWidth = width;
-            info.bmiHeader.biHeight = -height;
-            info.bmiHeader.biPlanes = 1;
-            info.bmiHeader.biBitCount = 32;
-            info.bmiHeader.biCompression = BI_RGB;
-            let mut rgba = vec![0; width as usize * height as usize * 4];
-            let lines = if copied != 0 {
-                GetDIBits(
-                    dc,
-                    bitmap,
-                    0,
-                    height as u32,
-                    rgba.as_mut_ptr() as _,
-                    &mut info,
-                    DIB_RGB_COLORS,
-                )
-            } else {
-                0
-            };
-            DeleteObject(bitmap);
-            DeleteDC(dc);
-            ReleaseDC(std::ptr::null_mut(), source);
-            if lines != height {
-                return Err("Desktop capture failed".into());
-            }
-            for pixel in rgba.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
-                pixel[3] = 255;
-            }
-            Ok(Frame {
-                x,
-                y,
-                width: width as u32,
-                height: height as u32,
-                rgba,
-            })
-        }
-    }
-}
-#[cfg(not(windows))]
-mod native {
-    use super::*;
-    pub fn track() {}
-    pub fn target() -> Result<usize, String> {
-        Err("Screen capture is currently available on Windows".into())
-    }
-    pub fn capture(_: &str, _: usize) -> Result<Frame, String> {
-        Err("Screen capture is currently available on Windows".into())
-    }
-}
-pub fn track() {
-    native::track()
 }
 /// Explicit command-line audit: no app startup, UI input, clipboard or user settings writes.
 pub fn audit(directory: &std::path::Path) -> Result<(), String> {
@@ -780,6 +602,7 @@ mod tests {
             width: 2,
             height: 2,
             rgba: (0..16).collect(),
+            logical_bounds: None,
         };
         let c = f.crop(1, 0, 1, 2).unwrap();
         assert_eq!(c.rgba, vec![4, 5, 6, 7, 12, 13, 14, 15]);
@@ -819,6 +642,7 @@ mod tests {
             width: 1,
             height: 1,
             rgba: vec![12, 34, 56, 255],
+            logical_bounds: None,
         };
         let data = f.png().unwrap();
         let mut reader = png::Decoder::new(std::io::Cursor::new(data))
