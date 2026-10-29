@@ -53,9 +53,11 @@ Open **Prompt workspace** in the sidebar to collect a one-off task separately fr
 3. Move materials up/down or remove individual items. Text changes are saved locally; a local recovery draft also protects edits before autosave completes.
 4. **Copy combined text** copies text and attachment references. **Export material bundle** writes `prompt.md`, the attachment copies and `manifest.json` to a new folder. Attach those files to your AI conversation yourself.
 
+**Smart region selection:** hover to highlight a window or native control with a dashed outline, then click to capture it. Drag to select any rectangle instead. Tab / Shift+Tab cycles between the detected control and its parent window; Escape or right-click cancels. A pixel magnifier and X/Y/W/H readout help with precision. Automatic detection and the magnifier can be toggled in the capture toolbar. Windows detects native controls; macOS detects windows. Custom-drawn web content may require manual selection.
+
 The existing Alt+H snippet workflow is unchanged. There are no new global screenshot shortcuts, background clipboard monitoring, automatic uploads, or automatic sending. Each file is limited to 25 MB, attachments to 100 MB total, and each session to 100 items. Windows window capture records visible desktop pixels; covered content may be absent. macOS uses a desktop-independent ScreenCaptureKit window filter. macOS 11–13 can still use snippets and text/file materials, but screenshot buttons are disabled. On macOS 14+, explicitly allow screen capture using the workspace button, then check access again. Refused or revoked access never disables your text/file materials.
 
-Materials live in `prompt-materials/` beside the snippet data file, with a separate `session.json`, managed `files/` copies, and `exports/`. Removing a source file after importing does not remove its managed copy. Exports remain after individual materials are removed. This feature is on `codex/capture-platform-plan`; the public release links below still point to the currently published build.
+Materials live in `prompt-materials/` beside the snippet data file, with a separate `session.json`, managed `files/` copies, and `exports/`. Removing a source file after importing does not remove its managed copy. Exports remain after individual materials are removed. This feature is on `codex/smart-region-capture`; the public release links below still point to the currently published build.
 
 ## Use cases
 

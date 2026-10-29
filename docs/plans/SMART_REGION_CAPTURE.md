@@ -21,15 +21,17 @@ Reference checkout: temp/ShareX, commit 24b51dad5a71a39bcb72db6b57d174ccfc9bad2e
 
 ## Verification checklist
 
-- [ ] Rust: candidate clipping, invalid/empty rectangles, parent IDs, limits, negative origins, data-only metadata.
-- [ ] Windows: native window enumeration snapshot and bounded child traversal; invalid/minimized/self windows filtered.
-- [ ] macOS: both architectures compile bridge/FFI, candidate memory is freed and native fixture tests pass.
-- [ ] JS: occlusion precedence, native child ancestry, Tab cycling, click jitter vs drag, reversed drag, bounds, DPI 1/1.5/2, missing metadata.
-- [ ] Headless E2E: hover dashed bounds and spotlight, click capture, drag override, manual-only mode, Escape/right cancel, HUD interactions, stale sessions, four languages, magnifier at edges.
-- [ ] Native IPC smoke: new metadata serializes correctly and invalid sessions still reject without revealing windows.
-- [ ] Full existing JS/component/E2E/Rust regression; formal Windows build and Mac CI.
-- [ ] Original running app/data untouched during development. No Computer Use or OS mouse/keyboard injection.
+- [x] Rust: candidate clipping, invalid/empty rectangles, parent IDs, limits, negative origins, data-only metadata.
+- [x] Windows: native window enumeration snapshot and bounded child traversal; invalid/minimized/self windows filtered.
+- [x] macOS: both architectures compile bridge/FFI, candidate memory is freed and native fixture tests pass.
+- [x] JS: occlusion precedence, native child ancestry, Tab cycling, click jitter vs drag, reversed drag, bounds, DPI 1/1.5/2, missing metadata.
+- [x] Headless E2E: hover dashed bounds and spotlight, click capture, drag override, manual-only mode, Escape/right cancel, HUD interactions, stale sessions, four languages, magnifier at edges.
+- [x] Native IPC smoke: new metadata serializes correctly and invalid sessions still reject without revealing windows.
+- [x] Full existing JS/component/E2E/Rust regression; formal Windows build and Mac CI.
+- [x] Original running app/data untouched during development. No Computer Use or OS mouse/keyboard injection.
 
 ## Limits to state accurately
 
 These are window/native-control rectangles, not AI vision segmentation or browser DOM inspection. Web-page cards and custom-drawn UI may expose only a larger native surface; use Tab or manual drag for precision. Mac child-control discovery would require a separate Accessibility design and is not silently requested here. Mixed-DPI physical pointer operation and Mac capture permission/Retina behavior remain hardware verification items.
+
+Verification completed: see ../qa/SMART_REGION_CAPTURE_RESULT.md. Checked items refer to automated/native fixture validation; physical hardware limitations above remain pending.
