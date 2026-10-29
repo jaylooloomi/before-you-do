@@ -35,6 +35,12 @@ export function createMaterialsPage({invoke,listen,onBack}){
    for(const [label,delta]of [['上移素材',-1],['下移素材',1],['移除素材',0]]){const button=document.createElement('button');button.type='button';button.textContent=t(label);button.setAttribute('aria-label',t(label)+` ${index+1}`);button.disabled=delta<0&&index===0||delta>0&&index===items.length-1;button.onclick=()=>run(async()=>{items=(await invoke(delta?'materials_order':'materials_remove',delta?{ids:moveMaterial(items,item.id,delta)}:{itemId:item.id})).items;render();});head.append(button);}card.append(head);
    if(item.kind==='text'){const text=document.createElement('textarea');text.setAttribute('aria-label',t('任務文字')+` ${index+1}`);text.placeholder=t('描述這次希望 AI 完成的任務…');text.maxLength=100000;text.value=pending.get(item.id)??item.text;text.oninput=()=>updateText(item.id,text.value);card.append(text);}
    else if(item.kind==='image'){const img=document.createElement('img');img.alt=item.name;img.loading='lazy';img.decoding='async';card.append(img);invoke('materials_preview',{itemId:item.id}).then(src=>{if(img.isConnected)img.src=src;}).catch(e=>message(t('素材操作失敗')+'：'+errorMessage(e)));}
+   else if(/\.(webm|mp4)$/i.test(item.name)){
+    const video=document.createElement('video');video.controls=true;video.preload='metadata';video.playsInline=true;video.setAttribute('aria-label',t('影片預覽')+' '+item.name);
+    const failure=document.createElement('p');failure.className='material-media-error';failure.setAttribute('role','status');failure.hidden=true;
+    const fail=e=>{if(!video.isConnected)return;failure.hidden=false;failure.textContent=t('無法播放影片，請匯出素材包後以外部播放器開啟。')+(e?' '+errorMessage(e):'');};
+    video.addEventListener('error',()=>fail());card.append(video,failure);invoke('materials_preview',{itemId:item.id}).then(src=>{if(video.isConnected)video.src=src;}).catch(fail);
+   }
    else{const details=document.createElement('p');details.textContent=t('附件')+` · ${(item.size/1024).toFixed(1)} KB`;card.append(details);}list.append(card);
   });
  }

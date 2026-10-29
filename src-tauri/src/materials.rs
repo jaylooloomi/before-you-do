@@ -185,6 +185,11 @@ fn image_mime(bytes: &[u8]) -> Option<&'static str> {
         None
     }
 }
+fn video_mime(bytes:&[u8])->Option<&'static str>{
+ if bytes.starts_with(&[0x1a,0x45,0xdf,0xa3])&&bytes[..bytes.len().min(4096)].windows(4).any(|s|s==b"webm"){return Some("video/webm");}
+ if bytes.len()>=16&&bytes.get(4..8)==Some(b"ftyp") {let size=u32::from_be_bytes(bytes[..4].try_into().ok()?)as usize;if size>=16&&size<=bytes.len()&&[b"isom",b"iso2",b"mp41",b"mp42",b"avc1",b"M4V ",b"dash"].iter().any(|brand|bytes.get(8..12)==Some(brand.as_slice())){return Some("video/mp4");}}
+ None
+}
 fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
 }
@@ -354,12 +359,12 @@ pub fn materials_preview(
     let item = current
         .items
         .iter()
-        .find(|i| i.id == item_id && i.kind == "image")
-        .ok_or("Image not found")?;
+        .find(|i| i.id == item_id && i.kind != "text")
+        .ok_or("Media not found")?;
     let bytes = fs::read(state.asset(&item.id)).map_err(err)?;
     Ok(format!(
         "data:{};base64,{}",
-        image_mime(&bytes).ok_or("Unsupported image")?,
+        image_mime(&bytes).or_else(||video_mime(&bytes)).ok_or("Unsupported media")?,
         base64::engine::general_purpose::STANDARD.encode(bytes)
     ))
 }
@@ -768,6 +773,15 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn video_preview_requires_a_recognized_container(){
+        assert_eq!(super::video_mime(b"\x1a\x45\xdf\xa3webm"),Some("video/webm"));
+        assert_eq!(super::video_mime(b"\x00\x00\x00\x10ftypisom0000"),Some("video/mp4"));
+        assert_eq!(super::video_mime(b"<script>webm</script>"),None);
+        assert_eq!(super::video_mime(b"\x1a\x45\xdf\xa3matroska"),None);
+        assert_eq!(super::video_mime(b"\xff\xff\xff\xffftypisom0000"),None);
+    }
+
     use super::*;
     #[test]
     fn canceled_worker_cannot_append_or_reset_a_new_capture() {

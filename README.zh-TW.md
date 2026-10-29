@@ -57,6 +57,8 @@
 
 原有 Alt+H 選句貼入方式維持不變；沒有背景剪貼簿監控、自動上傳或自動送出。單檔上限 25 MB，附件合計上限 100 MB，每次最多 100 個素材。Windows 的目前視窗截圖取可見桌面像素，被遮住的內容可能無法取得；macOS 使用 ScreenCaptureKit 的獨立視窗擷取。macOS 11–13 仍可使用短句、文字與檔案素材，但截圖按鈕會停用。macOS 14+ 請先按素材區的授權按鈕，允許螢幕擷取後重新檢查；拒絕或撤銷授權不影響文字與檔案。
 
+**影片直接播放：**既有 WebM 錄影與支援的 MP4 附件可直接播放／暫停、拖曳進度與調整音量，不會自動播放。系統無法解碼時會顯示提示，仍可匯出素材包交給外部播放器。
+
 **Windows 截圖快捷鍵：**`Shift+PrintScreen` 框選區域、`PrintScreen` 全螢幕、`Alt+PrintScreen` 擷取最後使用的外部視窗。`Ctrl+Shift+PrintScreen` 框選錄製無聲 WebM；`Ctrl+Alt+Shift+PrintScreen` 框選錄製 GIF。再次按錄影快捷鍵，或選系統匣的 **Stop recording** 停止。快捷鍵擷取後直接保存到素材，不彈出管理視窗；Alt+H 維持獨立。
 
 在素材頁展開「截圖快捷鍵與選項」，可改用 PrintScreen 或 F6–F12 搭配 Ctrl／Alt／Shift，留空停用。與 ShareX 等工具衝突時會明確提示，請關閉競爭程式或換鍵，不會默默搶走快捷鍵。

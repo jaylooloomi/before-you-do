@@ -1,5 +1,7 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["影片預覽","视频预览","Video preview","動画プレビュー"],
+["無法播放影片，請匯出素材包後以外部播放器開啟。","无法播放视频，请导出素材包后使用外部播放器打开。","Unable to play this video. Export the bundle and open it in an external player.","動画を再生できません。素材をエクスポートし、外部プレーヤーで開いてください。"],
 ["已取消錄影，未加入素材", "已取消录制，未加入素材", "Recording cancelled; no material added", "録画を取消しました。素材は追加されません。"],
 ["正在暫停錄影…", "正在暂停录制…", "Pausing recording…", "録画を一時停止しています…"],
 ["錄影已暫停", "录制已暂停", "Recording paused", "録画を一時停止中"],

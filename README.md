@@ -59,6 +59,8 @@ The region selector prepares the desktop image and cursor magnifier before revea
 
 The existing Alt+H snippet workflow is unchanged. There is no background clipboard monitoring, automatic upload, or automatic sending. Each file is limited to 25 MB, attachments to 100 MB total, and each session to 100 items. Windows window capture records visible desktop pixels; covered content may be absent. macOS uses a desktop-independent ScreenCaptureKit window filter. macOS 11–13 can still use snippets and text/file materials, but screenshot buttons are disabled. On macOS 14+, explicitly allow screen capture using the workspace button, then check access again. Refused or revoked access never disables your text/file materials.
 
+**Inline video playback:** existing WebM recordings and supported MP4 attachments show a player with play/pause, seeking and volume controls. Videos do not autoplay. If the system cannot decode a clip, export the bundle and open it in an external player.
+
 **Windows capture shortcuts:** Shift+PrintScreen selects a region, PrintScreen captures all screens, and Alt+PrintScreen captures the last external window. Ctrl+Shift+PrintScreen selects a region for silent WebM recording; Ctrl+Alt+Shift+PrintScreen selects a region for GIF. Press a recording shortcut again to stop, or use **Stop recording** in the system tray. Shortcut captures save to the workspace without opening the manager. Alt+H remains independent.
 
 Open **Capture shortcuts and options** in the workspace to change these keys (PrintScreen or F6–F12, with Ctrl/Alt/Shift), or leave a binding blank to disable it. Close competing capture tools or change the bindings if Windows reports a registration conflict. No conflicting key is silently taken over.
