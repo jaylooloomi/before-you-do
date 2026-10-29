@@ -30,6 +30,6 @@ export function createCaptureTools({invoke,listen,run}){
  }
  async function refresh(){try{[state,hotkeys]=await Promise.all([invoke('recording_state'),invoke('capture_hotkeys_get')]);if(!dirty){for(const f of fields)f.input.value=hotkeys.config[f.key];}loaded=true;render();}catch(e){status.textContent=errorMessage(e);}}
  listen('recording-state',event=>{if(state){state.status=event.payload;render();}}).catch(e=>{status.textContent=errorMessage(e);});
- listen('capture-hotkeys-changed',event=>{hotkeys=event.payload;if(!dirty)for(const f of fields)f.input.value=hotkeys.config[f.key];render();}).catch(e=>{status.textContent=errorMessage(e);});
+ listen('capture-hotkeys-changed',event=>{hotkeys=event.payload;shortcutStatus.textContent=hotkeys.error||t('截圖快捷鍵已儲存');if(!dirty)for(const f of fields)f.input.value=hotkeys.config[f.key];render();}).catch(e=>{status.textContent=errorMessage(e);});
  element.append(actions,status,details);onLanguageChange(render);render();return {element,refresh,render,get loaded(){return loaded;}};
 }
