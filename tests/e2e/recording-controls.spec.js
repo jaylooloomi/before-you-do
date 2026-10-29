@@ -1,0 +1,15 @@
+import {test,expect} from './fixture.js';
+async function open(page){await page.goto('/?recording-controls');await expect.poll(()=>page.evaluate(()=>window.qa.calls.some(c=>c.cmd==='plugin:event|listen'&&c.args.event==='recording-state'))).toBe(true);await state(page,'recording',3000);}
+async function state(page,phase,elapsed_ms){await page.evaluate(({phase,elapsed_ms})=>{window.qa.state.recording.status={phase,elapsed_ms};window.qa.emit('recording-state',{phase,elapsed_ms});},{phase,elapsed_ms});}
+test('compact toolbar supports pause, resume and stop',async({page})=>{
+ await page.setViewportSize({width:380,height:42});await open(page);await expect(page.getByRole('timer')).toHaveText('00:00:03');await page.getByRole('button',{name:'暫停',exact:true}).click();await expect(page.getByRole('button',{name:'繼續',exact:true})).toBeEnabled();await expect(page.getByRole('toolbar')).toHaveAttribute('data-phase','paused');await page.getByRole('button',{name:'繼續',exact:true}).click();await expect(page.getByRole('button',{name:'暫停',exact:true})).toBeEnabled();await page.screenshot({path:'artifacts/recording-controls-fixture.png'});await page.getByRole('button',{name:'停止',exact:true}).click();await expect(page.getByRole('button',{name:'停止',exact:true})).toBeDisabled();expect(await page.evaluate(()=>window.qa.calls.filter(c=>c.cmd==='recording_control').map(c=>c.args.action))).toEqual(['pause','resume','stop']);
+});
+test('cancel and Escape discard and pending operations block double submit',async({page})=>{
+ await open(page);await page.evaluate(()=>window.qa.hold('recording_control'));await page.getByRole('button',{name:'取消',exact:true}).click();await expect(page.getByRole('button',{name:'取消',exact:true})).toBeDisabled();expect(await page.evaluate(()=>window.qa.count('recording_control'))).toBe(1);await page.evaluate(()=>window.qa.release('recording_control'));await expect(page.getByRole('toolbar')).toHaveAttribute('data-phase','cancelled');await state(page,'recording',0);await page.keyboard.press('Escape');await expect.poll(()=>page.evaluate(()=>window.qa.count('recording_control'))).toBe(2);
+});
+test('paused timer and errors preserve controls',async({page})=>{
+ await open(page);await state(page,'paused',65000);await expect(page.getByRole('timer')).toHaveText('00:01:05');await page.evaluate(()=>window.qa.failures.recording_control='Recorder fixture failure');await page.getByRole('button',{name:'繼續',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Recorder fixture failure');await expect(page.getByRole('button',{name:'繼續',exact:true})).toBeEnabled();
+});
+test('four languages label the same recording actions',async({page})=>{
+ for(const [language,label]of [['zh-TW','暫停'],['zh-CN','暂停'],['en','Pause'],['ja','一時停止']]){await page.goto('/?recording-controls');await page.evaluate(value=>localStorage.setItem('quicksay.language',value),language);await page.reload();await state(page,'recording',0);await expect(page.getByRole('button',{name:label,exact:true})).toBeEnabled();}
+});

@@ -25,7 +25,7 @@ try{
  await expect.poll(()=>browser.contexts().flatMap(context=>context.pages()).some(page=>page.url().includes('capture-region')),{timeout:15000}).toBe(true);
  const pages=browser.contexts().flatMap(context=>context.pages());
  const errors=[];for(const page of pages){page.on('pageerror',error=>errors.push(String(error)));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});}
- const main=pages.find(p=>!p.url().includes('picker')&&!p.url().includes('capture-region'));
+ const main=pages.find(p=>!p.url().includes('picker')&&!p.url().includes('capture-region')&&!p.url().includes('recording-controls'));
  const overlay=pages.find(p=>p.url().includes('capture-region'));assert(main&&overlay);
  await expect.poll(()=>main.evaluate(()=>typeof window.__TAURI_INTERNALS__?.invoke)).toBe('function');
  const call=(page,command,args={})=>page.evaluate(({command,args})=>window.__TAURI_INTERNALS__.invoke(command,args),{command,args});

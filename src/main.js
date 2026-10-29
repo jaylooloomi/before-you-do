@@ -1,5 +1,6 @@
 import {createMaterialsPage} from './materials.js';
 import {mountCapture} from './capture.js';
+import {mountRecordingControls} from './recording-controls.js';
 import { characterCount } from './unicode.js';
 import { localizedSnippet } from './localized-snippet.js';
 import { scenarioHint } from './scenario-hint.js';
@@ -21,6 +22,7 @@ import { createSettingsPage } from './settings.js';
 import { roles, roleName, roleDescription, getRoleDefaults, findRoleTemplate } from './roles.js';
 import { normalizeAppearanceTheme, resolveAppearanceTheme } from './appearance.js';
 async function startApp() {
+if(new URLSearchParams(location.search).has("recording-controls")){await mountRecordingControls(document.querySelector("#app"),{invoke,listen});return;}
 if(new URLSearchParams(location.search).has("capture-region")){await mountCapture(document.querySelector("#app"),{invoke,listen});return;}
 const templateInfo = item => {
   if(item&&Object.hasOwn(item,'scenario'))return {scenario:item.scenario,source:t('自訂情境')};

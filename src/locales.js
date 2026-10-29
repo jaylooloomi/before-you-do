@@ -1,5 +1,13 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["已取消錄影，未加入素材", "已取消录制，未加入素材", "Recording cancelled; no material added", "録画を取消しました。素材は追加されません。"],
+["正在暫停錄影…", "正在暂停录制…", "Pausing recording…", "録画を一時停止しています…"],
+["錄影已暫停", "录制已暂停", "Recording paused", "録画を一時停止中"],
+["繼續", "继续", "Resume", "再開"],
+["暫停", "暂停", "Pause", "一時停止"],
+["停止", "停止", "Stop", "停止"],
+["錄影時間", "录制时间", "Recording time", "録画時間"],
+["錄影控制", "录制控制", "Recording controls", "録画操作"],
 ["錄製影片", "录制视频", "Record video", "動画を録画"],
 ["錄製 GIF", "录制 GIF", "Record GIF", "GIF を録画"],
 ["停止錄影", "停止录制", "Stop recording", "録画停止"],

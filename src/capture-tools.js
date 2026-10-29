@@ -22,9 +22,9 @@ export function createCaptureTools({invoke,listen,run}){
   summary.textContent=t('截圖快捷鍵與選項');help.textContent=t('單擊擷取、拖曳框選、Tab 切換父層、Esc 或右鍵取消。快捷鍵可填 Ctrl/Alt/Shift + PrintScreen 或 F6–F12；留空停用。');
   for(const p of preferences)p.text.textContent=t(p.key);for(const field of fields)field.text.textContent=t(field.label);save.textContent=t('儲存截圖快捷鍵');
   if(!state){video.disabled=gif.disabled=install.disabled=stop.disabled=true;return;}
-  const active=['recording','finalizing'].includes(state.status?.phase);video.disabled=gif.disabled=!state.supported||!state.runtime_ready||active;stop.disabled=!active||state.status?.phase==='finalizing';install.hidden=!state.supported||state.runtime_ready;install.disabled=state.installing||active;
+  const active=['recording','pausing','paused','finalizing'].includes(state.status?.phase);video.disabled=gif.disabled=!state.supported||!state.runtime_ready||active;stop.disabled=!active||state.status?.phase==='finalizing';install.hidden=!state.supported||state.runtime_ready;install.disabled=state.installing||active;
   const phase=state.status?.phase||'idle';status.dataset.phase=phase;
-  status.textContent=!state.supported?t('錄影目前支援 Windows；Mac 仍可使用截圖。'):!state.runtime_ready?t('錄影需要一次安裝約 82 MB 的 FFmpeg 元件。僅在按下安裝後下載，影片不含聲音。'):phase==='recording'?t('錄影中；再次按相同錄影快捷鍵或系統匣「Stop recording」停止。'):phase==='finalizing'?t('正在完成錄影，請稍候…'):phase==='error'?[t('錄影失敗'),state.status.error,state.status.recovery].filter(Boolean).join('\n'):phase==='saved'?t('錄影已加入素材區'):t('無聲影片 WebM / GIF；最長 120 秒，25 MB。');
+  status.textContent=!state.supported?t('錄影目前支援 Windows；Mac 仍可使用截圖。'):!state.runtime_ready?t('錄影需要一次安裝約 82 MB 的 FFmpeg 元件。僅在按下安裝後下載，影片不含聲音。'):phase==='recording'?t('錄影中；再次按相同錄影快捷鍵或系統匣「Stop recording」停止。'):phase==='paused'?t('錄影已暫停'):phase==='pausing'?t('正在暫停錄影…'):phase==='cancelled'?t('已取消錄影，未加入素材'):phase==='finalizing'?t('正在完成錄影，請稍候…'):phase==='error'?[t('錄影失敗'),state.status.error,state.status.recovery].filter(Boolean).join('\n'):phase==='saved'?t('錄影已加入素材區'):t('無聲影片 WebM / GIF；最長 120 秒，25 MB。');
   save.disabled=!hotkeys?.supported;for(const f of fields)f.input.disabled=!hotkeys?.supported;
   if(hotkeys?.error){shortcutStatus.textContent=hotkeys.error;details.open=true;}
  }

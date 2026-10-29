@@ -22,12 +22,17 @@ pub struct Status {
     pub format: Option<Format>,
     pub error: Option<String>,
     pub recovery: Option<String>,
+    pub elapsed_ms: u64,
+    pub completion_sound_played: bool,
 }
 #[derive(Default)]
 pub struct Recorder {
     status: Mutex<Status>,
     stop: AtomicBool,
     installing: AtomicBool,
+    pause: AtomicBool,
+    discard: AtomicBool,
+    clock: Mutex<RecordingClock>,
 }
 pub fn runtime_path() -> Option<PathBuf> {
     #[cfg(windows)]
@@ -46,18 +51,25 @@ impl Recorder {
     pub fn active(&self) -> bool {
         matches!(
             self.status.lock().unwrap().phase.as_str(),
-            "recording" | "finalizing"
+            "recording" | "pausing" | "paused" | "finalizing"
         )
+    }
+    pub fn cancel(&self) {
+        self.discard.store(true, Ordering::SeqCst);
+        self.stop();
     }
     pub fn stop(&self) {
         self.stop.store(true, Ordering::SeqCst);
     }
 }
 fn emit(app: &tauri::AppHandle) {
-    let status = app.state::<Recorder>().status.lock().unwrap().clone();
+    let status = snapshot(&app.state::<Recorder>());
     if let Some(tray) = app.tray_by_id("main-tray") {
         let mut pixels = include_bytes!("../icons/tray.rgba").to_vec();
-        if matches!(status.phase.as_str(), "recording" | "finalizing") {
+        if matches!(
+            status.phase.as_str(),
+            "recording" | "pausing" | "paused" | "finalizing"
+        ) {
             for y in 0..14 {
                 for x in 18..32 {
                     if (x as i32 - 25).pow(2) + (y as i32 - 7).pow(2) <= 36 {
@@ -76,7 +88,8 @@ fn emit(app: &tauri::AppHandle) {
             "before-you-do"
         }));
     }
-    let _ = app.emit_to("main", "recording-state", status);
+    let _ = app.emit_to("main", "recording-state", status.clone());
+    let _ = app.emit_to("recording-controls", "recording-state", status);
 }
 #[derive(Serialize)]
 pub struct View {
@@ -90,14 +103,14 @@ pub fn recording_state(
     w: tauri::WebviewWindow,
     state: tauri::State<Recorder>,
 ) -> Result<View, String> {
-    if w.label() != "main" {
+    if !["main", "recording-controls"].contains(&w.label()) {
         return Err("Manager only".into());
     }
     Ok(View {
         supported: cfg!(windows),
         runtime_ready: runtime_path().is_some_and(|p| p.is_file()),
         installing: state.installing.load(Ordering::SeqCst),
-        status: state.status.lock().unwrap().clone(),
+        status: snapshot(&state),
     })
 }
 #[tauri::command]
@@ -125,7 +138,12 @@ pub fn preview_recording(
         return Err("Isolated recording test mode required".into());
     }
     let frame = crate::capture::capture("fullscreen", 0)?;
-    start(app, format, [frame.x, frame.y, 160, 120])
+    let rect = if std::env::args().any(|a| a == "--recording-ui-test") {
+        [frame.x + 180, frame.y + 140, 360, 240]
+    } else {
+        [frame.x, frame.y, 160, 120]
+    };
+    start(app, format, rect)
 }
 #[tauri::command]
 pub async fn recording_install(
@@ -254,7 +272,10 @@ pub fn start(app: tauri::AppHandle, format: Format, rect: [i32; 4]) -> Result<()
         if state.installing.load(Ordering::SeqCst) {
             return Err("Recording component installation is still in progress".into());
         }
-        if matches!(status.phase.as_str(), "recording" | "finalizing") {
+        if matches!(
+            status.phase.as_str(),
+            "recording" | "pausing" | "paused" | "finalizing"
+        ) {
             return Err("Recording already in progress".into());
         }
         *status = Status {
@@ -264,14 +285,29 @@ pub fn start(app: tauri::AppHandle, format: Format, rect: [i32; 4]) -> Result<()
         };
     }
     state.stop.store(false, Ordering::SeqCst);
+    state.pause.store(false, Ordering::SeqCst);
+    state.discard.store(false, Ordering::SeqCst);
+    *state.clock.lock().unwrap() = RecordingClock::default();
     emit(&app);
     std::thread::spawn(move || {
-        let result = run(&app, &executable, &format, rect);
+        let result = crate::recording_overlay::show(&app, rect)
+            .map_err(|e| (e, None))
+            .and_then(|_| run(&app, &executable, &format, rect));
+        crate::recording_overlay::hide(&app);
+        let elapsed = app.state::<Recorder>().clock.lock().unwrap().elapsed_ms();
         let state = app.state::<Recorder>();
         match result {
             Ok(()) => {
                 *state.status.lock().unwrap() = Status {
-                    phase: "saved".into(),
+                    phase: if state.discard.load(Ordering::SeqCst) {
+                        "cancelled"
+                    } else {
+                        "saved"
+                    }
+                    .into(),
+                    elapsed_ms: elapsed,
+                    completion_sound_played: !state.discard.load(Ordering::SeqCst)
+                        && completion_sound(),
                     format: Some(format),
                     ..Default::default()
                 }
@@ -282,6 +318,7 @@ pub fn start(app: tauri::AppHandle, format: Format, rect: [i32; 4]) -> Result<()
                     format: Some(format),
                     error: Some(error),
                     recovery,
+                    elapsed_ms: elapsed,
                     ..Default::default()
                 }
             }
@@ -291,53 +328,94 @@ pub fn start(app: tauri::AppHandle, format: Format, rect: [i32; 4]) -> Result<()
     });
     Ok(())
 }
-fn run(
-    app: &tauri::AppHandle,
-    executable: &Path,
-    format: &Format,
-    rect: [i32; 4],
-) -> Result<(), (String, Option<String>)> {
-    use std::io::{Read, Write};
-    let directory = app
-        .state::<crate::materials::Materials>()
-        .recording_directory()
-        .map_err(|e| (e, None))?;
-    let extension = if *format == Format::Gif {
-        "gif"
-    } else {
-        "webm"
-    };
-    let filename = format!(
-        "recording-{}.{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos(),
-        extension
-    );
-    let output = directory.join(&filename);
-    let recovery = Some(output.to_string_lossy().to_string());
-    let args = encoder_args(format, rect, &output).map_err(|e| (e, None))?;
-    let mut command = std::process::Command::new(executable);
-    command
-        .args(args)
+#[derive(Default)]
+struct RecordingClock {
+    accumulated: Duration,
+    running: Option<Instant>,
+}
+impl RecordingClock {
+    fn resume(&mut self) {
+        if self.running.is_none() {
+            self.running = Some(Instant::now());
+        }
+    }
+    fn pause(&mut self) {
+        if let Some(t) = self.running.take() {
+            self.accumulated += t.elapsed();
+        }
+    }
+    fn elapsed_ms(&self) -> u64 {
+        (self.accumulated + self.running.map(|t| t.elapsed()).unwrap_or_default())
+            .as_millis()
+            .min(u64::MAX as u128) as u64
+    }
+}
+fn snapshot(state: &Recorder) -> Status {
+    let mut status = state.status.lock().unwrap().clone();
+    status.elapsed_ms = state.clock.lock().unwrap().elapsed_ms();
+    status
+}
+#[tauri::command]
+pub fn recording_control(
+    w: tauri::WebviewWindow,
+    state: tauri::State<Recorder>,
+    app: tauri::AppHandle,
+    action: String,
+) -> Result<(), String> {
+    if !["main", "recording-controls"].contains(&w.label()) {
+        return Err("Recording controls only".into());
+    }
+    let phase = state.status.lock().unwrap().phase.clone();
+    match (action.as_str(), phase.as_str()) {
+        ("stop", "recording" | "paused" | "pausing") => state.stop(),
+        ("cancel", "recording" | "paused" | "pausing") => state.cancel(),
+        ("pause", "recording") => {
+            state.pause.store(true, Ordering::SeqCst);
+            state.status.lock().unwrap().phase = "pausing".into();
+            emit(&app);
+        }
+        ("resume", "paused") => {
+            state.pause.store(false, Ordering::SeqCst);
+        }
+        _ => return Err("Recording action is not available in the current state".into()),
+    }
+    Ok(())
+}
+fn completion_sound() -> bool {
+    if std::env::args().any(|a| a == "--recording-test")
+        && !std::env::args().any(|a| a == "--recording-sound-test")
+    {
+        return false;
+    }
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::Media::Audio::*;
+        let wave = include_bytes!("../assets/recording-complete.wav");
+        return PlaySoundW(
+            wave.as_ptr() as *const u16,
+            std::ptr::null_mut(),
+            SND_MEMORY | SND_ASYNC | SND_NODEFAULT,
+        ) != 0;
+    }
+    #[cfg(not(windows))]
+    false
+}
+fn command(executable: &Path, args: &[String]) -> std::process::Command {
+    let mut cmd = std::process::Command::new(executable);
+    cmd.args(args)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped());
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
-        command.creation_flags(0x08000000);
+        cmd.creation_flags(0x08000000);
     }
-    let mut child = command.spawn().map_err(|e| (e.to_string(), None))?;
-    #[cfg(windows)]
-    let _job = ChildJob::attach(&child).map_err(|e| {
-        let _ = child.kill();
-        let _ = child.wait();
-        (e, None)
-    })?;
-    let stderr = child.stderr.take().unwrap();
-    let logs = std::thread::spawn(move || {
+    cmd
+}
+fn drain(stderr: std::process::ChildStderr) -> std::thread::JoinHandle<String> {
+    std::thread::spawn(move || {
+        use std::io::Read;
         let mut bytes = Vec::new();
         let mut reader = stderr;
         let mut buf = [0u8; 1024];
@@ -350,58 +428,211 @@ fn run(
             }
         }
         String::from_utf8_lossy(&bytes).into_owned()
-    });
-    let started = Instant::now();
-    let mut stopped = None;
-    let status = loop {
-        match child.try_wait() {
-            Ok(Some(status)) => break status,
-            Err(e) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err((e.to_string(), recovery));
-            }
-            _ => {}
+    })
+}
+fn finalize(executable: &Path, args: &[String]) -> Result<(), String> {
+    let mut cmd = command(executable, args);
+    cmd.stdin(std::process::Stdio::null());
+    let mut child = cmd.spawn().map_err(|e| e.to_string())?;
+    #[cfg(windows)]
+    let _job = ChildJob::attach(&child).map_err(|e| {
+        let _ = child.kill();
+        let _ = child.wait();
+        e
+    })?;
+    let logs = drain(child.stderr.take().unwrap());
+    let start = Instant::now();
+    loop {
+        if let Some(status) = child.try_wait().map_err(|e| e.to_string())? {
+            let log = logs.join().unwrap_or_default();
+            return if status.success() {
+                Ok(())
+            } else {
+                Err(format!("Recording finalization failed: {log}"))
+            };
         }
-        if stopped.is_none()
-            && (app.state::<Recorder>().stop.load(Ordering::SeqCst)
-                || started.elapsed() >= Duration::from_secs(120))
-        {
-            app.state::<Recorder>().status.lock().unwrap().phase = "finalizing".into();
-            emit(app);
-            if let Some(mut stdin) = child.stdin.take() {
-                let _ = stdin.write_all(b"q\n");
-            }
-            stopped = Some(Instant::now());
-        }
-        if stopped.is_some_and(|t| t.elapsed() > Duration::from_secs(15)) {
+        if start.elapsed() > Duration::from_secs(120) {
             let _ = child.kill();
             let _ = child.wait();
-            return Err((
-                "Recorder did not finalize; partial output retained".into(),
-                recovery,
-            ));
+            return Err("Recording finalization timed out; segments retained".into());
         }
         std::thread::park_timeout(Duration::from_millis(40));
-    };
-    let log = logs.join().unwrap_or_default();
-    if !status.success() {
-        return Err((format!("Recording failed: {log}"), recovery));
     }
+}
+fn run(
+    app: &tauri::AppHandle,
+    executable: &Path,
+    format: &Format,
+    rect: [i32; 4],
+) -> Result<(), (String, Option<String>)> {
+    use std::io::Write;
+    let root = app
+        .state::<crate::materials::Materials>()
+        .recording_directory()
+        .map_err(|e| (e, None))?;
+    let key = format!(
+        "recording-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let dir = root.join(&key);
+    std::fs::create_dir(&dir).map_err(|e| (e.to_string(), None))?;
+    let recovery = Some(dir.to_string_lossy().to_string());
+    let state = app.state::<Recorder>();
+    let mut segments = Vec::new();
+    let mut bytes = 0u64;
+    while !state.stop.load(Ordering::SeqCst) {
+        while state.pause.load(Ordering::SeqCst) && !state.stop.load(Ordering::SeqCst) {
+            std::thread::park_timeout(Duration::from_millis(40));
+        }
+        if state.stop.load(Ordering::SeqCst) {
+            break;
+        }
+        if segments.len() >= 100 {
+            state.stop();
+            break;
+        }
+        let path = dir.join(format!("segment-{}.webm", segments.len()));
+        let args = encoder_args(&Format::Video, rect, &path).map_err(|e| (e, recovery.clone()))?;
+        let mut child = command(executable, &args)
+            .spawn()
+            .map_err(|e| (e.to_string(), recovery.clone()))?;
+        #[cfg(windows)]
+        let _job = ChildJob::attach(&child).map_err(|e| {
+            let _ = child.kill();
+            let _ = child.wait();
+            (e, recovery.clone())
+        })?;
+        let logs = drain(child.stderr.take().unwrap());
+        state.clock.lock().unwrap().resume();
+        state.status.lock().unwrap().phase = "recording".into();
+        crate::recording_overlay::paused(false);
+        emit(app);
+        let mut closing = None;
+        let exit = loop {
+            match child.try_wait() {
+                Ok(Some(exit)) => break exit,
+                Err(e) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err((e.to_string(), recovery));
+                }
+                _ => {}
+            }
+            if closing.is_none()
+                && (state.stop.load(Ordering::SeqCst)
+                    || state.pause.load(Ordering::SeqCst)
+                    || state.clock.lock().unwrap().elapsed_ms() >= 120_000)
+            {
+                if state.clock.lock().unwrap().elapsed_ms() >= 120_000 {
+                    state.stop();
+                }
+                state.clock.lock().unwrap().pause();
+                state.status.lock().unwrap().phase = if state.stop.load(Ordering::SeqCst) {
+                    "finalizing"
+                } else {
+                    "pausing"
+                }
+                .into();
+                emit(app);
+                if let Some(mut stdin) = child.stdin.take() {
+                    let _ = stdin.write_all(b"q\n");
+                }
+                closing = Some(Instant::now());
+            }
+            if closing.is_some_and(|t| t.elapsed() > Duration::from_secs(15)) {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(("Recorder did not stop; segments retained".into(), recovery));
+            }
+            std::thread::park_timeout(Duration::from_millis(40));
+        };
+        state.clock.lock().unwrap().pause();
+        let log = logs.join().unwrap_or_default();
+        if !exit.success() {
+            return Err((format!("Recording failed: {log}"), recovery));
+        }
+        bytes += std::fs::metadata(&path)
+            .map_err(|e| (e.to_string(), recovery.clone()))?
+            .len();
+        segments.push(path);
+        if bytes >= 24 * 1024 * 1024 || closing.is_none() {
+            state.stop();
+        }
+        if state.pause.load(Ordering::SeqCst) && !state.stop.load(Ordering::SeqCst) {
+            state.status.lock().unwrap().phase = "paused".into();
+            crate::recording_overlay::paused(true);
+            emit(app);
+        }
+    }
+    if state.discard.load(Ordering::SeqCst) {
+        for p in segments {
+            let _ = std::fs::remove_file(p);
+        }
+        let _ = std::fs::remove_dir(&dir);
+        return Ok(());
+    }
+    if segments.is_empty() {
+        return Err(("No recorded frames; nothing was saved".into(), recovery));
+    }
+    state.status.lock().unwrap().phase = "finalizing".into();
+    emit(app);
+    let list = dir.join("segments.txt");
+    std::fs::write(
+        &list,
+        (0..segments.len())
+            .map(|i| format!("file 'segment-{i}.webm'\n"))
+            .collect::<String>(),
+    )
+    .map_err(|e| (e.to_string(), recovery.clone()))?;
+    let name = format!(
+        "{key}.{}",
+        if *format == Format::Gif {
+            "gif"
+        } else {
+            "webm"
+        }
+    );
+    let output = dir.join(&name);
+    let mut args = vec![
+        "-hide_banner".into(),
+        "-loglevel".into(),
+        "error".into(),
+        "-y".into(),
+        "-f".into(),
+        "concat".into(),
+        "-safe".into(),
+        "1".into(),
+        "-i".into(),
+        list.to_string_lossy().into_owned(),
+        "-an".into(),
+    ];
+    if *format == Format::Video {
+        args.extend(["-c:v", "copy"].map(String::from));
+    } else {
+        args.extend(["-vf","fps=10,scale='min(960,iw)':-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=single[p];[b][p]paletteuse=new=1:dither=bayer","-loop","0"].map(String::from));
+    }
+    args.push(output.to_string_lossy().into_owned());
+    finalize(executable, &args).map_err(|e| (e, recovery.clone()))?;
     let size = std::fs::metadata(&output)
         .map_err(|e| (e.to_string(), recovery.clone()))?
         .len();
     if size == 0 || size > 25 * 1024 * 1024 {
         return Err((
-            "Recording is empty or exceeds 25 MB; output retained".into(),
+            "Recording is empty or exceeds 25 MB; segments retained".into(),
             recovery,
         ));
     }
-    let bytes = std::fs::read(&output).map_err(|e| (e.to_string(), recovery.clone()))?;
+    let content = std::fs::read(&output).map_err(|e| (e.to_string(), recovery.clone()))?;
     app.state::<crate::materials::Materials>()
-        .add_recording(filename, bytes, *format == Format::Gif)
+        .add_recording(name, content, *format == Format::Gif)
         .map_err(|e| (e, recovery.clone()))?;
-    let _ = std::fs::remove_file(&output);
+    for path in segments.into_iter().chain([list, output]) {
+        let _ = std::fs::remove_file(path);
+    }
+    let _ = std::fs::remove_dir(dir);
     Ok(())
 }
 // Closing the app also closes this Job handle, so a crashed app cannot leave a recorder running.
@@ -445,6 +676,33 @@ impl Drop for ChildJob {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn paused_clock_does_not_accumulate_wall_time() {
+        let mut clock = RecordingClock {
+            accumulated: Duration::from_millis(500),
+            running: Some(Instant::now() - Duration::from_secs(2)),
+        };
+        clock.pause();
+        let paused = clock.elapsed_ms();
+        assert!(paused >= 2500);
+        assert_eq!(clock.elapsed_ms(), paused);
+        assert!(clock.running.is_none());
+        clock.resume();
+        assert!(clock.running.is_some());
+        assert!(clock.elapsed_ms() >= paused);
+    }
+    #[test]
+    fn completion_wave_is_real_pcm_audio() {
+        let wav = include_bytes!("../assets/recording-complete.wav");
+        assert_eq!(&wav[..4], b"RIFF");
+        assert_eq!(&wav[8..12], b"WAVE");
+        assert_eq!(u16::from_le_bytes([wav[20], wav[21]]), 1);
+        assert_eq!(u32::from_le_bytes(wav[24..28].try_into().unwrap()), 22050);
+        assert!(wav[44..]
+            .chunks_exact(2)
+            .map(|s| i16::from_le_bytes([s[0], s[1]]))
+            .any(|v| v.abs() > 2000));
+    }
     #[test]
     fn native_arguments_are_bounded_and_shell_free() {
         let args = encoder_args(

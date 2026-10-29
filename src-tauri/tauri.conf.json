@@ -59,6 +59,23 @@
         "backgroundColor": "#000000",
         "width": 800,
         "height": 600
+      },
+      {
+        "label": "recording-controls",
+        "title": "before-you-do · Recording",
+        "url": "index.html?recording-controls",
+        "visible": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "focus": false,
+        "focusable": false,
+        "width": 380,
+        "height": 42,
+        "backgroundColor": "#242424",
+        "dragDropEnabled": false
       }
     ],
     "security": {

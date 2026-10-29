@@ -5,7 +5,8 @@
   "windows": [
     "main",
     "picker",
-    "capture"
+    "capture",
+    "recording-controls"
   ],
   "permissions": [
     "core:event:allow-listen",

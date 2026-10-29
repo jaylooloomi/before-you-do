@@ -20,6 +20,7 @@ export function installBridge(){
     state.materials??={items:[]};
     state.recording??={supported:true,runtime_ready:true,installing:false,status:{phase:'idle'}};
     state.captureHotkeys??={supported:true,registered:true,error:null,config:{region:'Shift+PrintScreen',fullscreen:'PrintScreen',window:'Alt+PrintScreen',video:'Ctrl+Shift+PrintScreen',gif:'Ctrl+Alt+Shift+PrintScreen'}};
+    if(cmd==='recording_control'){const next={pause:'paused',resume:'recording',stop:'finalizing',cancel:'cancelled'}[args.action];state.recording.status={...state.recording.status,phase:next};emit('recording-state',state.recording.status);return;}
     if(cmd==='recording_state')return structuredClone(state.recording);
     if(cmd==='recording_install'){state.recording.runtime_ready=true;return;}
     if(cmd==='recording_stop'){state.recording.status={phase:'finalizing'};emit('recording-state',state.recording.status);return;}

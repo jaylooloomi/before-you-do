@@ -2,6 +2,7 @@
 mod platform;
 mod materials;
 mod recording;
+mod recording_overlay;
 mod capture_hotkeys;
 mod capture;
 mod picker_position;
@@ -733,7 +734,7 @@ fn main() {
             materials::materials_load, materials::materials_text, materials::materials_import,
             materials::materials_order, materials::materials_remove, materials::materials_preview,
             materials::materials_export, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish,
-            recording::recording_state, recording::recording_stop, recording::recording_install, recording::preview_recording,
+            recording_overlay::preview_recording_overlay, recording::recording_control, recording::recording_state, recording::recording_stop, recording::recording_install, recording::preview_recording,
             capture_hotkeys::capture_hotkeys_get, capture_hotkeys::capture_hotkeys_save,
             request_quit,
             confirm_quit,
@@ -823,6 +824,9 @@ fn main() {
             app.manage(recording::Recorder::default());
             app.manage(capture_hotkeys::Hotkeys::new(path.with_file_name("capture-hotkeys.json")));
             if (!preview && !integration) || (preview && std::env::args().any(|a|a=="--capture-hotkeys-test")){capture_hotkeys::start(app.handle().clone());}
+            if let Some(bar)=app.get_webview_window("recording-controls"){
+                let handle=app.handle().clone();bar.on_window_event(move|event|{if let tauri::WindowEvent::CloseRequested{api,..}=event{api.prevent_close();handle.state::<recording::Recorder>().cancel();}});
+            }
             capture::track();
             if let Some(capture)=app.get_webview_window("capture"){
                 let handle=app.handle().clone();
