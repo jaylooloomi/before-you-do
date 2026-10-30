@@ -1,5 +1,8 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["按住喚出，放開貼入；再按一次按鍵取消。","按住唤出，松开贴入；再按一次按键取消。","Hold to open, release to paste. Press the key again to cancel.","長押しで開き、離して貼り付け。キーをもう一度押すとキャンセル。"],
+["內建短句隨語言切換，自訂短句不變。","内置短句随语言切换，自定义短句不变。","Built-in snippets follow the language; custom snippets stay unchanged.","内蔵短文は言語に合わせて切り替わり、自作短文は変わりません。"],
+["登入後在系統匣執行，不開啟主視窗。","登录后在系统托盘运行，不打开主窗口。","Runs in the system tray after login without opening the window.","ログイン後はメイン画面を開かず、トレイで起動します。"],
 ["AI 教學","AI 教学","AI guide","AI ガイド"],
 ["外觀","外观","Appearance","外観"],
 ["管理快捷鍵、介面語言、啟動與外觀選項。","管理快捷键、界面语言、启动与外观选项。","Manage shortcuts, language, startup and appearance.","ショートカット・言語・起動・外観を設定します。"],

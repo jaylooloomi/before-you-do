@@ -341,7 +341,7 @@ if (picker) {
   bar.onpointerdown = e => { if (e.button === 0 && !e.target.closest('button')) invoke('window_action', { action: 'drag' }); };
   document.querySelectorAll('[data-action]').forEach(button => { button.onclick = () => button.dataset.action === 'close' ? hide() : invoke('window_action', { action: button.dataset.action }); });
   const transparency = document.querySelector('#transparency'), theme = document.querySelector('#theme');
-  const appearanceCard=el('section','settings-card');appearanceCard.dataset.settingsView='settings';appearanceCard.innerHTML='<h3>外觀</h3><p>選擇亮色、暗色或跟隨系統。</p>';const settingsTheme=theme.cloneNode(true);settingsTheme.id='settings-theme';settingsTheme.value=appearance.theme;settingsTheme.onchange=()=>{theme.value=settingsTheme.value;theme.onchange();};appearanceCard.append(settingsTheme);settings.panel.querySelector('#language').closest('.settings-card').after(appearanceCard);
+  const appearanceCard=el('section','settings-card');appearanceCard.dataset.settingsView='settings';appearanceCard.innerHTML='<h3>外觀</h3>';const settingsTheme=theme.cloneNode(true);settingsTheme.id='settings-theme';settingsTheme.value=appearance.theme;settingsTheme.onchange=()=>{theme.value=settingsTheme.value;theme.onchange();};appearanceCard.append(settingsTheme);settings.panel.querySelector('#language').closest('.settings-card').after(appearanceCard);
   transparency.value = appearance.transparency; theme.value = appearance.theme;
   document.querySelector('#transparency-value').value = `${appearance.transparency}%`;
   let effectTimer;

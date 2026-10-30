@@ -168,3 +168,12 @@
 @media(min-width:851px){.app-shell[data-page=library] .manager,.app-shell .materials-panel{grid-template-columns:minmax(0,7fr) minmax(0,18fr)}}
 .app-shell[data-page=ai] .manager{grid-template-columns:minmax(0,1fr)}
 .app-shell[data-page=ai] .manager>aside{display:none}
+
+/* Compact application settings; AI guide keeps its reading layout. */
+.settings-panel[data-view=settings]{gap:12px;padding:22px 27px}
+.settings-panel[data-view=settings] .settings-heading p{display:none}
+.settings-panel[data-view=settings] .settings-card{padding:16px 20px}
+.settings-panel[data-view=settings] .settings-card h3{margin-bottom:10px}
+.settings-panel[data-view=settings] .settings-card p{margin:8px 0;line-height:1.6}
+.settings-panel[data-view=settings] .settings-buttons{margin-top:8px}
+.settings-panel[data-view=settings] select{margin-bottom:0}
