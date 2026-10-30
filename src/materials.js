@@ -3,7 +3,8 @@ import {createCaptureAccess} from './capture-access.js';
 import {createCaptureTools} from './capture-tools.js';
 import {uiIcon,actionIcon,formatBytes,formatDuration} from './workspace-ui.js';
 import {shortcutLabel,onShortcutChange} from './shortcut.js';
-export function materialPrompt(items){return items.map(item=>item.kind==='text'?item.text:`[Attachment: ${item.name}]`).filter(Boolean).join('\n\n');}
+export function materialNumber(index){return String(index+1).padStart(2,'0');}
+export function materialPrompt(items){return items.map((item,index)=>`[Material #${materialNumber(index)}]\n`+(item.kind==='text'?item.text:`[Attachment: ${materialNumber(index)}-${item.name}]`)).join('\n\n');}
 export function moveMaterial(items,id,delta){const index=items.findIndex(i=>i.id===id),next=index+delta;if(index<0||next<0||next>=items.length)return items.map(i=>i.id);const ids=items.map(i=>i.id);[ids[index],ids[next]]=[ids[next],ids[index]];return ids;}
 export function createMaterialsPage({invoke,listen,onBack}){
  const panel=document.createElement('section');panel.className='materials-panel';panel.hidden=true;
@@ -20,7 +21,7 @@ export function createMaterialsPage({invoke,listen,onBack}){
   for(const card of list.children)card.classList.toggle('is-selected',card.dataset.id===selectedId);
   if(!item){const empty=document.createElement('p');empty.className='preview-empty';empty.textContent=t('選取素材以預覽');body.append(empty);return;}
   const preview=document.createElement('div');preview.className='inspector-preview-card';body.append(preview);
-  const title=document.createElement('h3');title.textContent=item.kind==='text'?t('任務文字'):item.name;
+  const title=document.createElement('h3');title.textContent=`#${materialNumber(items.indexOf(item))} · ${item.kind==='text'?t('任務文字'):item.name}`;
   let realSize=item.size;const summary=document.createElement('p');summary.className='inspector-metadata';summary.textContent=item.kind==='text'?t('{count} 字',{count:Array.from(pending.get(item.id)??item.text??'').length}):formatBytes(realSize);
   const heading=document.createElement('h4');heading.textContent=t('詳細資訊');const table=document.createElement('dl');table.className='material-details';body.append(heading,table);
   const videoKind=item.kind!=='image'&&/\.(webm|mp4)$/i.test(item.name),extension=item.name.split('.').at(-1).toUpperCase();
@@ -80,7 +81,7 @@ export function createMaterialsPage({invoke,listen,onBack}){
    card.onclick=event=>{if(event.target.closest('button,summary,textarea,video,input'))return;selectedId=item.id;inspect();};
    const head=document.createElement('div');head.className='material-card-head';const preview=document.createElement('button');preview.type='button';preview.className='material-select';actionIcon(preview,item.kind==='text'?'text':item.kind==='image'?'image':videoKind?'play':'file',item.kind==='text'?t(type):item.name,t('預覽素材')+' '+(index+1));preview.onclick=()=>{selectedId=item.id;inspect();};
    const drag=document.createElement('button');drag.type='button';drag.className='material-drag';drag.draggable=true;drag.setAttribute('aria-label',t('拖曳素材')+' '+(index+1));drag.title=t('拖曳排序');drag.innerHTML=uiIcon('drag');drag.ondragstart=event=>{if(busy){event.preventDefault();return;}draggingId=item.id;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',item.id);card.classList.add('material-dragging');};drag.ondragend=()=>{draggingId=null;for(const node of list.children)node.classList.remove('material-drop-target','material-dragging');};card.append(drag);
-   const number=document.createElement('span');number.className='material-number';number.textContent='#'+(index+1);head.append(preview,number);
+   const number=document.createElement('span');number.className='material-number';number.textContent='#'+materialNumber(index);head.append(preview,number);
    const menu=document.createElement('details');menu.className='material-menu';const summary=document.createElement('summary');summary.setAttribute('role','button');summary.setAttribute('aria-label',t('素材選單')+' '+(index+1));summary.textContent='⋮';menu.append(summary);const options=document.createElement('div');options.className='material-menu-options';menu.append(options);
    for(const [label,delta]of [['上移素材',-1],['下移素材',1],['移除素材',0]]){const button=document.createElement('button');button.type='button';button.textContent=delta?t(label):'';button.setAttribute('aria-label',t(label)+` ${index+1}`);button.title=t(label);button.disabled=delta<0&&index===0||delta>0&&index===items.length-1;if(!delta)button.innerHTML=uiIcon('close');
     button.onclick=()=>run(async()=>{const oldIndex=items.findIndex(i=>i.id===selectedId);items=(await invoke(delta?'materials_order':'materials_remove',delta?{ids:moveMaterial(items,item.id,delta)}:{itemId:item.id})).items;if(!items.some(i=>i.id===selectedId))selectedId=items[Math.min(oldIndex,items.length-1)]?.id??null;render();});(delta?options:head).append(button);}

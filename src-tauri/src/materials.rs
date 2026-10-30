@@ -401,6 +401,7 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
     fs::create_dir_all(&dir).map_err(err)?;
     let mut prompt = String::new();
     for (n, item) in current.items.iter().enumerate() {
+        prompt.push_str(&format!("[Material #{:02}]\n", n + 1));
         if item.kind == "text" {
             prompt.push_str(&format!("{}\n\n", item.text));
         } else {
@@ -410,9 +411,14 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
         }
     }
     fs::write(dir.join("prompt.md"), prompt).map_err(err)?;
+    let mut manifest=serde_json::to_value(&*current).map_err(err)?;
+    for (n,item) in manifest["items"].as_array_mut().ok_or("Invalid manifest")?.iter_mut().enumerate(){
+        item["number"]=serde_json::json!(format!("{:02}",n+1));
+        if item["kind"]!="text" {item["export_name"]=serde_json::json!(format!("{:02}-{}",n+1,current.items[n].name));}
+    }
     fs::write(
         dir.join("manifest.json"),
-        serde_json::to_vec_pretty(&*current).map_err(err)?,
+        serde_json::to_vec_pretty(&manifest).map_err(err)?,
     )
     .map_err(err)?;
     fs::rename(&dir, &final_dir).map_err(err)?;
@@ -786,6 +792,35 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn numbered_exports_follow_order_and_keep_original_materials() {
+        let dir=std::env::temp_dir().join(id());
+        let store=Materials::new(dir.clone()).unwrap();
+        for (key,kind,name,text,bytes) in [("text","text","Task","literal <script>",None),("image","image","same.png","",Some(&b"image"[..])),("file","file","same.png","",Some(&b"file"[..]))] {
+            store.append(Item{id:key.into(),kind:kind.into(),name:name.into(),text:text.into(),size:bytes.map_or(0,|b|b.len() as u64)},bytes).unwrap();
+        }
+        for ids in [["text","image","file"],["file","text","image"]] {
+            let next=reorder(&store.bundle.lock().unwrap(),&ids.map(String::from)).unwrap();
+            store.commit(&next).unwrap();
+            *store.bundle.lock().unwrap()=next;
+            let before=serde_json::to_value(&*store.bundle.lock().unwrap()).unwrap();
+            let exported=PathBuf::from(export_bundle(&store).unwrap());
+            let manifest:serde_json::Value=serde_json::from_slice(&fs::read(exported.join("manifest.json")).unwrap()).unwrap();
+            let mut expected=String::new();
+            for (n,key) in ids.iter().enumerate(){
+                let number=format!("{:02}",n+1);expected.push_str(&format!("[Material #{}]\n",number));
+                assert_eq!(manifest["items"][n]["id"],*key);assert_eq!(manifest["items"][n]["number"],number);
+                if *key=="text" {expected.push_str("literal <script>\n\n");}else{
+                    let filename=format!("{}-same.png",number);expected.push_str(&format!("[Attachment: {}]\n\n",filename));
+                    assert_eq!(manifest["items"][n]["export_name"],filename);
+                    assert_eq!(fs::read(exported.join(filename)).unwrap(),if *key=="image"{b"image".to_vec()}else{b"file".to_vec()});
+                }
+            }
+            assert_eq!(fs::read_to_string(exported.join("prompt.md")).unwrap(),expected);
+            assert_eq!(serde_json::to_value(&*store.bundle.lock().unwrap()).unwrap(),before);
+        }
+        fs::remove_dir_all(dir).unwrap();
+    }
     #[test]
     fn material_details_read_real_files_and_never_mutate_bundle() {
         let root=std::env::temp_dir().join(format!("material-info-{}",id()));

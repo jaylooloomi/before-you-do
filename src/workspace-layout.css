@@ -127,3 +127,7 @@
 .app-shell[data-page=library] .editor-heading h2{font-size:21px}
 .app-shell[data-page=library] .workspace .role-scroll{height:56px}
 
+
+/* Visible sequence matches preview titles, copied prompt and exported attachment names. */
+.app-shell .material-card .material-number{display:block;position:absolute;top:3px;left:23px;z-index:2;margin:0;padding:0 4px;border-radius:4px;background:var(--soft-blue);color:var(--ink);font-size:11px;font-weight:750;line-height:20px;pointer-events:none}
+.app-shell .material-card .material-select{left:64px;text-align:left}
