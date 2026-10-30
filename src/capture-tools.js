@@ -28,7 +28,7 @@ export function createCaptureTools({invoke,listen,run,onHotkeys=()=>{},captureAc
  save.onclick=()=>run(async()=>{try{hotkeys=await invoke('capture_hotkeys_save',{config:Object.fromEntries(fields.map(({key,input})=>[key,input.value.trim()]))});dirty=false;onHotkeys(hotkeys);shortcutStatus.textContent=t('截圖快捷鍵已儲存');}catch(e){shortcutStatus.textContent=errorMessage(e);}});
  function render(){
   for(const [index,b]of [...actions.children].entries())actionIcon(b,['video','gif','close','settings'][index],t(['錄影','GIF','停止錄影','安裝錄影元件'][index]),t(b.dataset.label));
-  summary.textContent=t('截圖快捷鍵與選項');help.textContent=t('單擊擷取、拖曳框選、Tab 切換父層、Esc 或右鍵取消。快捷鍵可填 Ctrl/Alt/Shift + PrintScreen 或 F6–F12；留空停用。');
+  summary.textContent=t('截圖快捷鍵與選項');summary.dataset.shortLabel=t('設定');summary.title=t('截圖快捷鍵與選項');help.textContent=t('單擊擷取、拖曳框選、Tab 切換父層、Esc 或右鍵取消。快捷鍵可填 Ctrl/Alt/Shift + PrintScreen 或 F6–F12；留空停用。');
   for(const p of preferences)p.text.textContent=t(p.key);for(const [index,field]of fields.entries()){actionIcon(field.execute,['region','region','window','video','gif'][index],t(field.label),t('執行')+' '+t(field.label));field.execute.disabled=!field.target||field.target.disabled;field.input.setAttribute('aria-label',t(field.label));field.row.setAttribute('aria-label',t(field.label)+' '+t('快捷鍵'));}save.textContent=t('儲存截圖快捷鍵');
   if(!state){video.disabled=gif.disabled=install.disabled=stop.disabled=true;return;}
   const active=['recording','pausing','paused','finalizing'].includes(state.status?.phase);video.disabled=gif.disabled=!state.supported||!state.runtime_ready||active;stop.disabled=!active||state.status?.phase==='finalizing';install.hidden=!state.supported||state.runtime_ready;install.disabled=state.installing||active;
@@ -41,5 +41,6 @@ export function createCaptureTools({invoke,listen,run,onHotkeys=()=>{},captureAc
  async function refresh(){try{[state,hotkeys]=await Promise.all([invoke('recording_state'),invoke('capture_hotkeys_get')]);if(!dirty){for(const f of fields)f.input.value=hotkeys.config[f.key];}loaded=true;onHotkeys(hotkeys);render();}catch(e){status.textContent=errorMessage(e);}}
  listen('recording-state',event=>{if(state){state.status=event.payload;render();}}).catch(e=>{status.textContent=errorMessage(e);});
  listen('capture-hotkeys-changed',event=>{hotkeys=event.payload;onHotkeys(hotkeys);shortcutStatus.textContent=hotkeys.error||t('截圖快捷鍵已儲存');if(!dirty)for(const f of fields)f.input.value=hotkeys.config[f.key];render();}).catch(e=>{status.textContent=errorMessage(e);});
- element.append(actions,status,details);onLanguageChange(render);render();return {element,details,refresh,render,get loaded(){return loaded;}};
+ const content=document.createElement('div');content.className='capture-tools-content';content.append(...[...details.children].filter(node=>node!==summary));details.append(content);
+ element.append(actions,status,details);onLanguageChange(render);render();return {element,details,content,refresh,render,get loaded(){return loaded;}};
 }

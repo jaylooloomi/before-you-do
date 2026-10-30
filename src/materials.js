@@ -56,7 +56,9 @@ export function createMaterialsPage({invoke,listen,onBack}){
  const access=createCaptureAccess({invoke,run,onCapture:capture,isBusy:()=>busy});toolbar.append(access.element);
  const hintBox=document.createElement('div');hintBox.className='material-heading-tools';const hints=document.createElement('div');hints.className='material-shortcut-hints';hintBox.append(hints);center.querySelector('header').append(hintBox);let captureBinding=null;
  function updateHints(value){if(value)captureBinding=value;hints.replaceChildren();for(const [label,binding]of [['選句貼入',shortcutLabel()],['錄影開始／停止',captureBinding?.config?.video]]){const row=document.createElement('div');row.append(document.createTextNode(t(label)));const key=document.createElement('kbd');key.textContent=binding||'—';row.append(key);hints.append(row);}}
- const tools=createCaptureTools({invoke,listen,run,onHotkeys:updateHints,captureActions:access.buttons});toolbar.append(tools.element);hintBox.append(tools.details);tools.details.append(panel.querySelector('[data-material=save]'));onShortcutChange(()=>updateHints());updateHints();
+ const tools=createCaptureTools({invoke,listen,run,onHotkeys:updateHints,captureActions:access.buttons});toolbar.append(tools.element);const settingsAnchor=document.createElement('div');settingsAnchor.className='material-settings-anchor';toolbar.append(settingsAnchor);settingsAnchor.append(tools.details);tools.content.append(panel.querySelector('[data-material=save]'));
+ function placeCaptureSettings(){if(!tools.details.open)return;const anchor=settingsAnchor.getBoundingClientRect(),area=center.getBoundingClientRect(),width=Math.min(390,area.width-16,innerWidth-24);tools.content.style.width=width+'px';tools.content.style.left=(Math.max(area.left+8,Math.min(anchor.right-width,area.right-width-8))-anchor.left)+'px';tools.content.style.maxHeight=Math.max(140,anchor.top-area.top-16)+'px';}
+ tools.details.addEventListener('toggle',placeCaptureSettings);window.addEventListener('resize',placeCaptureSettings);new ResizeObserver(placeCaptureSettings).observe(toolbar);onShortcutChange(()=>updateHints());updateHints();
  const addTextButton=control('加入文字',async()=>{items=(await invoke('materials_text',{itemId:null,text:''})).items;selectedId=items.at(-1)?.id;render();list.querySelector('article:last-child textarea')?.focus();});
  const file=document.createElement('input');file.type='file';file.multiple=true;file.hidden=true;file.setAttribute('aria-label',t('選擇素材檔案'));panel.append(file);
  const fileButton=control('加入檔案',()=>{});fileButton.onclick=()=>{if(!busy)file.click();};
@@ -97,6 +99,6 @@ export function createMaterialsPage({invoke,listen,onBack}){
  panel.addEventListener('keydown',event=>{if(event.key==='Escape')for(const menu of panel.querySelectorAll('details[open]'))menu.open=false;});
  listen('capture-error',event=>message(errorMessage(event.payload))).catch(e=>message(errorMessage(e)));
  listen('materials-updated',()=>{queue.then(()=>run(reload));}).catch(e=>message(String(e)));
- onLanguageChange(()=>{renderActionIcons();updateHints();if(!panel.hidden)render();});
+ onLanguageChange(()=>{renderActionIcons();updateHints();if(!panel.hidden)render();placeCaptureSettings();});
  return {panel,get busy(){return busy;},async open(){panel.hidden=false;return run(async()=>{try{await reload();await access.refresh();await tools.refresh();message(t('素材已儲存'));}catch(e){loadFailed=true;list.replaceChildren();throw e;}});},async flush(){try{await queue;await flushInternal();}catch(e){message(t('素材操作失敗')+'：'+errorMessage(e));throw e;}},hasPending:()=>pending.size>0||loadFailed};
 }

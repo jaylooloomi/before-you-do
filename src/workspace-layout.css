@@ -96,3 +96,18 @@
 @media(max-width:850px){.app-shell .materials-center .material-list{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}.material-heading-tools .capture-tools[open]{max-height:480px}}
 .paired-capture-action span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .material-card.inline-playing>.material-tile-play{display:none}
+/* Horizontal role cards and capture settings anchored to the action toolbar. */
+.app-shell .role-switcher{display:grid;grid-template-columns:19px minmax(0,1fr) 19px;gap:4px;align-items:center}
+.app-shell .role-switcher>button{display:flex;align-items:center;justify-content:center;width:19px;height:46px;padding:0;border:0;border-radius:5px;background:var(--hover);font-size:19px;color:var(--muted)}
+.app-shell .role-cards{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:none;min-height:52px;gap:7px;padding:3px 1px 7px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:thin}
+.app-shell .role-card{flex:0 0 106px;min-width:106px;max-width:106px;min-height:42px;justify-content:center;padding:9px 8px;scroll-snap-align:start;border-radius:8px}
+.app-shell .role-card strong{white-space:nowrap;font-size:13px;overflow:hidden;text-overflow:ellipsis}.app-shell .role-card-content{width:100%;text-align:center}
+.material-settings-anchor{position:relative;order:3;flex:0 0 auto;z-index:35}
+.material-settings-anchor>.capture-tools{display:block;margin:0;padding:0;border:0;border-radius:0;background:transparent;max-width:none}
+.material-settings-anchor>.capture-tools>summary{display:flex;align-items:center;justify-content:center;gap:5px;list-style:none;cursor:pointer;font-size:0;height:36px;padding:8px 9px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--muted)}
+.material-settings-anchor>.capture-tools>summary::-webkit-details-marker{display:none}.material-settings-anchor>.capture-tools>summary::before{content:'⚙';font-size:17px}.material-settings-anchor>.capture-tools>summary::after{content:attr(data-short-label);font-size:11px}
+.material-settings-anchor>.capture-tools[open]>summary{border-color:var(--accent);color:var(--accent);background:var(--soft-blue)}
+.material-settings-anchor .capture-tools-content{position:absolute;bottom:calc(100% + 8px);left:0;width:390px;max-height:560px;overflow:auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);box-shadow:0 8px 28px #0004;font-size:12px;color:var(--ink)}
+.material-settings-anchor .capture-tools-content label{font-size:12px}.material-settings-anchor .capture-tools-content>p{line-height:1.7}
+.material-settings-anchor .capture-tools-content [data-material=save]{display:flex;width:100%;margin-top:12px}
+@media(max-width:850px){.app-shell .role-card{flex-basis:104px;min-width:104px;max-width:104px}.app-shell .role-card strong{font-size:12px}.material-settings-anchor>.capture-tools>summary{height:34px;padding:7px}.material-settings-anchor>.capture-tools>summary::after{font-size:10px}}
