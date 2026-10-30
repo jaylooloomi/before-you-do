@@ -264,6 +264,40 @@ pub fn materials_text(
     }
 }
 #[tauri::command]
+pub async fn materials_choose_files(w:tauri::WebviewWindow,app:tauri::AppHandle)->Result<Bundle,String>{
+    manager(&w)?;
+    #[cfg(windows)] {
+        let owner=w.hwnd().map_err(err)?.0 as usize;
+        tauri::async_runtime::spawn_blocking(move||{
+            use windows_sys::Win32::UI::Controls::Dialogs::*;
+            let mut buffer=vec![0u16;65536];let mut dialog:OPENFILENAMEW=unsafe{std::mem::zeroed()};
+            dialog.lStructSize=std::mem::size_of::<OPENFILENAMEW>() as u32;dialog.hwndOwner=owner as _;
+            dialog.lpstrFile=buffer.as_mut_ptr();dialog.nMaxFile=buffer.len() as u32;
+            dialog.Flags=OFN_EXPLORER|OFN_ALLOWMULTISELECT|OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;
+            let ok=unsafe{GetOpenFileNameW(&mut dialog)};
+            let state=app.state::<Materials>();state.ready()?;
+            if ok==0{let code=unsafe{CommDlgExtendedError()};return if code==0{Ok(state.bundle.lock().map_err(err)?.clone())}else{Err(format!("File dialog failed: {code}"))};}
+            let paths=chosen_paths(&buffer)?;
+            for path in paths {
+                if fs::metadata(&path).map_err(err)?.len()>MAX_FILE as u64{return Err("Maximum file size is 25 MB".into());}
+                let bytes=fs::read(&path).map_err(err)?;if bytes.len()>MAX_FILE{return Err("Maximum file size is 25 MB".into());}
+                let name=path.file_name().and_then(|s|s.to_str()).ok_or("Invalid filename")?.to_string();validate_name(&name)?;
+                let kind=if image_mime(&bytes).is_some(){"image"}else{"file"};
+                state.append(Item{id:id(),name,kind:kind.into(),text:String::new(),size:bytes.len() as u64},Some(&bytes))?;
+            }
+            let result=state.bundle.lock().map_err(err)?.clone();let _=app.emit_to("main","materials-updated",());Ok(result)
+        }).await.map_err(err)?
+    }
+    #[cfg(not(windows))] {let _=app;Err("Global file shortcuts currently support Windows only".into())}
+}
+#[cfg(any(windows,test))]
+fn chosen_paths(buffer:&[u16])->Result<Vec<PathBuf>,String>{
+    let values=buffer.split(|c|*c==0).take_while(|part|!part.is_empty()).map(|part|String::from_utf16(part).map_err(err)).collect::<Result<Vec<_>,_>>()?;
+    let Some(first)=values.first() else{return Ok(vec![])};
+    if values.len()==1{return Ok(vec![PathBuf::from(first)]);}
+    Ok(values[1..].iter().map(|name|PathBuf::from(first).join(name)).collect())
+}
+#[tauri::command]
 pub fn materials_import(
     w: tauri::WebviewWindow,
     state: tauri::State<Materials>,
@@ -792,6 +826,14 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn selected_file_paths_support_cancel_single_and_multiple_unicode_names(){
+        let encode=|s:&str|s.encode_utf16().collect::<Vec<_>>();
+        assert!(chosen_paths(&[0,0]).unwrap().is_empty());
+        assert_eq!(chosen_paths(&encode("C:\\files\\單張.png\0\0")).unwrap(),vec![PathBuf::from("C:\\files\\單張.png")]);
+        assert_eq!(chosen_paths(&encode("C:\\files\0a.png\0b.txt\0\0")).unwrap(),vec![PathBuf::from("C:\\files").join("a.png"),PathBuf::from("C:\\files").join("b.txt")]);
+    }
+
     #[test]
     fn numbered_exports_follow_order_and_keep_original_materials() {
         let dir=std::env::temp_dir().join(id());

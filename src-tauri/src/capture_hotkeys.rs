@@ -8,7 +8,13 @@ pub struct Config {
     pub window: String,
     pub video: String,
     pub gif: String,
+    #[serde(default="default_text")]
+    pub text: String,
+    #[serde(default="default_file")]
+    pub file: String,
 }
+fn default_text()->String{"Ctrl+Shift+F11".into()}
+fn default_file()->String{"Ctrl+Shift+F12".into()}
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -17,17 +23,19 @@ impl Default for Config {
             window: "Alt+PrintScreen".into(),
             video: "Ctrl+Shift+PrintScreen".into(),
             gif: "Ctrl+Alt+Shift+PrintScreen".into(),
+            text:default_text(),file:default_file(),
         }
     }
 }
 impl Config {
-    pub fn entries(&self) -> [(&str, &str); 5] {
+    pub fn entries(&self) -> [(&str, &str); 7] {
         [
             (&self.region, "region"),
             (&self.fullscreen, "fullscreen"),
             (&self.window, "window"),
             (&self.video, "record-video"),
             (&self.gif, "record-gif"),
+            (&self.text,"add-text"),(&self.file,"add-file"),
         ]
     }
     pub fn validate(&self) -> Result<(), String> {
@@ -232,7 +240,7 @@ pub fn start(app: tauri::AppHandle) {
             Ok(())
         };
         let unregister = || {
-            for id in 100..105 {
+            for id in 100..107 {
                 UnregisterHotKey(std::ptr::null_mut(), id);
             }
         };
@@ -274,7 +282,7 @@ pub fn start(app: tauri::AppHandle) {
                 }
                 continue;
             }
-            if msg.message == WM_HOTKEY && (100..105).contains(&(msg.wParam as i32)) {
+            if msg.message == WM_HOTKEY && (100..107).contains(&(msg.wParam as i32)) {
                 let index = msg.wParam as usize - 100;
                 let _ = app
                     .state::<crate::State>()
@@ -307,6 +315,9 @@ mod tests {
         ] {
             assert!(parse(s).is_err());
         }
+        let legacy:Config=serde_json::from_str(r#"{"region":"","fullscreen":"","window":"","video":"","gif":""}"#).unwrap();
+        assert_eq!(legacy.text,"Ctrl+Shift+F11");assert_eq!(legacy.file,"Ctrl+Shift+F12");
+        let mut clash=c.clone();clash.file=clash.text.clone();assert!(clash.validate().is_err());
         let mut duplicate = c.clone();
         duplicate.gif = duplicate.video.clone();
         assert!(duplicate.validate().is_err());

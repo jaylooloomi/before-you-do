@@ -230,6 +230,7 @@ if (picker) {
   settingsButton.onclick = async () => { if(materials.busy)return;try{await materials.flush();}catch(e){return;}materials.panel.hidden=true;materialsButton.setAttribute('aria-pressed','false');stash(); workspace.hidden = true; settings.panel.hidden = false; settingsButton.setAttribute('aria-pressed', 'true'); await settings.refresh(); };
   const materialsButton=el('button','settings-link','本次 prompt 素材');materialsButton.type='button';materialsButton.setAttribute('aria-pressed','false');settingsButton.before(materialsButton);
   const materials=createMaterialsPage({invoke,listen,onBack:showLibrary});document.querySelector('.manager').append(materials.panel);
+  await listen('material-action',async event=>{if(materials.busy||saving||switchingRole||document.querySelector('dialog[open]'))return;await roleSync;stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');await materials.open();materials.executeAction(event.payload);});
   materialsButton.onclick=()=>{stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');materials.open();};
   document.querySelector('.library-heading h1').setAttribute('aria-label','短句資料庫');document.querySelector('.library-heading h1').textContent='常用短句';
   const sidebarIntro=el('p','sidebar-intro','選擇角色，快速套用實用的指令短句。');document.querySelector('.library-heading').after(sidebarIntro);

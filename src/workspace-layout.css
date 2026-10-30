@@ -134,3 +134,5 @@
 /* Selected-card descriptions inherit the foreground chosen for the selection background. */
 .app-shell .role-card.selected small{color:inherit;opacity:1}
 .app-shell[data-page=library] .workspace .role-card small{font-size:11px;line-height:1.4}
+
+.material-settings-anchor .capture-shortcut-save{position:sticky;bottom:0;z-index:4;background:var(--paper);box-shadow:0 -5px 10px var(--paper)}

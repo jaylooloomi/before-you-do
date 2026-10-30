@@ -596,6 +596,12 @@ fn activate_picker_role(app: &tauri::AppHandle, id: &str, items: &[Snippet]) -> 
 }
 fn handle_action(app: &tauri::AppHandle, action: Action) {
     if let Action::Capture(ref mode)=action {
+        if mode=="add-text"||mode=="add-file" {
+            if app.state::<recording::Recorder>().active()||app.state::<materials::Materials>().busy.load(Ordering::SeqCst){return;}
+            platform::cancel_selection();app.state::<State>().picker.lock().unwrap().finish(false);
+            if let Some(picker)=app.get_webview_window("picker"){let _=picker.hide();}
+            let target=platform::foreground_target().filter(|target|!platform::is_app_target(*target));let handle=app.clone();let mode=mode.clone();let _=app.run_on_main_thread(move||{if let Some(target)=target{manage_from_target(&handle,target);}else{manage(&handle);}let _=handle.emit_to("main","material-action",mode);});return;
+        }
         let handle=app.clone();let mode=mode.clone();
         tauri::async_runtime::spawn(async move{
             if handle.state::<recording::Recorder>().active(){if mode.starts_with("record-"){handle.state::<recording::Recorder>().stop();}return;}
@@ -734,7 +740,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             materials::materials_load, materials::materials_text, materials::materials_import,
             materials::materials_order, materials::materials_remove, materials::materials_preview, materials::materials_info,
-            materials::materials_export, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish, materials::preview_capture_gate, materials::preview_capture_start, materials::preview_capture_presentation, materials::capture_prime, materials::capture_present, materials::capture_prepare_failed,
+            materials::materials_export, materials::materials_choose_files, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish, materials::preview_capture_gate, materials::preview_capture_start, materials::preview_capture_presentation, materials::capture_prime, materials::capture_present, materials::capture_prepare_failed,
             recording_overlay::preview_recording_overlay, recording::recording_control, recording::recording_state, recording::recording_stop, recording::recording_install, recording::preview_recording,
             capture_hotkeys::capture_hotkeys_get, capture_hotkeys::capture_hotkeys_save,
             request_quit,
