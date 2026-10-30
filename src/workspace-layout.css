@@ -241,3 +241,16 @@
 .app-shell .materials-center>.material-heading-tools{align-self:flex-start}
 .app-shell .material-shortcut-hints>div{justify-content:flex-start}
 
+
+/* Reserve an action row: only the editor card scrolls, never the save/delete controls. */
+.app-shell[data-page=library] .workspace{overflow:hidden}
+.app-shell[data-page=library] .workspace>*{flex-shrink:0}
+.app-shell[data-page=library] .workspace>#editor{flex:1 1 0;min-height:0;grid-template-rows:minmax(0,1fr) auto}
+.app-shell[data-page=library] .role-save-overview{max-height:54px;overflow:auto}
+.app-shell .editor-actions-footer{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--palette-field);min-width:0}
+.app-shell .editor-actions-footer .save-scope{margin:0 0 8px;font-size:12px;line-height:1.5}
+.app-shell .editor-actions-footer .save-issues{margin:0 0 8px;max-height:80px}
+.app-shell .editor-actions-footer .form-actions{min-height:38px;gap:12px}
+.app-shell .editor-actions-footer .delete{min-height:36px;padding:8px 12px;border:1px solid #c63f4e44;border-radius:8px}
+.app-shell .editor-actions-footer .delete:not(:disabled){color:#b42332;background:#c63f4e0c}
+:root[data-theme=dark] .app-shell .editor-actions-footer .delete:not(:disabled){color:#ffacb4;background:#ffacb410;border-color:#ffacb43d}

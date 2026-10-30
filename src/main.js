@@ -130,6 +130,7 @@ if (picker) {
   const saveOverview=el('div','role-save-overview');saveOverview.setAttribute('role','status');roleSwitcher.after(saveOverview);
   const issuePanel=el('div','save-issues');issuePanel.setAttribute('aria-label',t('待完成的短句'));issuePanel.hidden=true;document.querySelector('.form-actions').before(issuePanel);
   const saveScope=el('div','save-scope');document.querySelector('.form-actions').before(saveScope);
+  const editorActionsFooter=el('footer','editor-actions-footer');const formActions=document.querySelector('.form-actions');formActions.before(editorActionsFooter);editorActionsFooter.append(issuePanel,saveScope,formActions);
   function unsavedRoleIds(){return roles.filter(role=>role.id===activeRole?dirty:roleSessions.get(role.id)?.dirty).map(role=>role.id);}
   function renderSaveOverview(){
     const pending=unsavedRoleIds(),others=pending.filter(id=>id!==activeRole);
