@@ -165,3 +165,5 @@
 :root[data-theme=dark] .app-shell .role-card-choice:has(.role-card.selected) .role-default-star{color:#172238}
 :root[data-theme=dark] .app-shell .role-card-choice:has(.role-card.selected) .role-default-star[aria-pressed=true]{color:#755000}
 .app-shell[data-page=library] .workspace .role-card-choice>.role-card{width:100%;min-width:0;max-width:none;padding-right:26px}
+/* Seventy percent of the prior one-third left panel, with aligned dividers across tabs. */
+@media(min-width:851px){.app-shell[data-page=library] .manager,.app-shell .materials-panel{grid-template-columns:minmax(0,7fr) minmax(0,23fr)}}
