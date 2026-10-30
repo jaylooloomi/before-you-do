@@ -15,8 +15,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { prepareSnippetSave, reorderSnippets, savedVersions, snippetIssues } from './model.js';
 import './style.css';
+import './workspace-layout.css';
 import { askConfirmation } from './dialog.js';
-import { t, getLanguage, onLanguageChange, bindTranslations, errorMessage } from './i18n.js';
+import { t, getLanguage, getPreference, setLanguage, onLanguageChange, bindTranslations, errorMessage } from './i18n.js';
 import { findTemplate } from './template-locales.js';
 import { createSettingsPage } from './settings.js';
 import { roles, roleName, roleDescription, getRoleDefaults, findRoleTemplate } from './roles.js';
@@ -170,7 +171,7 @@ if (picker) {
       button.type='button';button.dataset.role=role.id;button.setAttribute('aria-pressed',String(role.id===activeRole));button.disabled=switchingRole;
       const mark=el('span','role-mark',role.mark);mark.setAttribute('aria-hidden','true');
       const content=el('span','role-card-content');content.append(el('strong','',roleName(role.id,getLanguage())),el('small','',roleDescription(role,getLanguage())));
-      button.append(mark,content);button.title=roleDescription(role,getLanguage());button.onclick=()=>switchRole(role.id);return button;
+      button.setAttribute('aria-label',roleName(role.id,getLanguage())+' '+roleDescription(role,getLanguage()));button.append(mark,content);button.title=roleDescription(role,getLanguage());button.onclick=()=>switchRole(role.id);return button;
     }));
     roleCards.setAttribute('aria-label',t('選擇角色'));
     roleSwitcher.title=t('主畫面：← → 切換角色，↑ ↓ 選擇短句；編輯文字時保留游標操作。');
@@ -229,6 +230,14 @@ if (picker) {
   const materialsButton=el('button','settings-link','本次 prompt 素材');materialsButton.type='button';materialsButton.setAttribute('aria-pressed','false');settingsButton.before(materialsButton);
   const materials=createMaterialsPage({invoke,listen,onBack:showLibrary});document.querySelector('.manager').append(materials.panel);
   materialsButton.onclick=()=>{stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');materials.open();};
+  const pageNav=el('nav','workspace-nav');pageNav.setAttribute('aria-label',t('頁面導覽'));
+  const libraryButton=el('button','settings-link','常用短句');libraryButton.type='button';libraryButton.setAttribute('aria-pressed','true');
+  document.querySelector('.window-controls').before(pageNav);pageNav.append(libraryButton,materialsButton,settingsButton);
+  libraryButton.onclick=async()=>{if(materials.busy)return;try{await materials.flush();showLibrary();}catch{}};
+  document.querySelector('.search-box').after(roleSwitcher);
+  const syncPage=()=>{const mode=!materials.panel.hidden?'materials':!settings.panel.hidden?'settings':'library';document.querySelector('.app-shell').dataset.page=mode;libraryButton.setAttribute('aria-pressed',String(mode==='library'));};
+  new MutationObserver(syncPage).observe(document.querySelector('.manager'),{subtree:true,attributes:true,attributeFilter:['hidden']});syncPage();
+  const appFooter=el('footer','app-footer');const footerLanguage=document.createElement('select');footerLanguage.setAttribute('aria-label',t('顯示語言'));footerLanguage.innerHTML='<option value="system">'+t('跟隨系統')+'</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option>';footerLanguage.value=getPreference();footerLanguage.onchange=()=>setLanguage(footerLanguage.value);onLanguageChange(()=>{footerLanguage.value=getPreference();document.getElementById('language').value=getPreference();});appFooter.append(document.querySelector('.sidebar-foot'),footerLanguage);document.querySelector('.app-shell').append(appFooter);
   function stash() {
     const item=items[selected];if(!item)return;
     const displayed=localizedSnippet(item,activeRole,getLanguage());
@@ -262,15 +271,15 @@ if (picker) {
       const item=localizedSnippet(savedItem,activeRole,getLanguage());
       if (!matchesSnippetQuery(item, query, templateInfo(item)?.scenario??'')) return;
       const button = el('button', `snippet ${i === selected ? 'selected' : ''}`);
-      button.draggable = !query;
+      button.setAttribute('aria-label',(item.name||t('未命名短句'))+' '+(item.text||t('新增你的常用文字…')));button.draggable = !query;
       button.ondragstart = event => { if (query) { event.preventDefault(); return; } stash(); dragging = i; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', String(i)); button.classList.add('dragging'); };
       button.ondragover = event => { if (dragging < 0 || query) return; event.preventDefault(); event.dataTransfer.dropEffect = 'move'; const below = event.clientY > button.getBoundingClientRect().top + button.offsetHeight / 2; button.classList.toggle('drop-after', below); button.classList.toggle('drop-before', !below); };
       button.ondragleave = () => button.classList.remove('drop-before', 'drop-after');
       button.ondragend = () => { dragging = -1; document.querySelectorAll('.snippet').forEach(row => row.classList.remove('dragging', 'drop-before', 'drop-after')); };
       button.ondrop = event => { if (dragging < 0 || query) return; event.preventDefault(); const from = dragging; const below = event.clientY > button.getBoundingClientRect().top + button.offsetHeight / 2; let to = i + (below ? 1 : 0); if (from < to) to--; button.classList.remove('drop-before', 'drop-after'); moveSnippet(from, to); dragging = -1; };
       const badge = el('span', 'item-icon'); badge.innerHTML = icon('text');
-      const content = el('span', 'snippet-info'); content.append(el('strong', '', item.name || '未命名短句'), el('span', '', item.text || '新增你的常用文字…'));
-      button.append(badge, content); button.onclick = () => { stash(); selected = i; render(); showLibrary(); }; list.append(button);
+      const content = el('span', 'snippet-info'); content.append(el('strong', '', item.name || '未命名短句'), el('span', '', templateInfo(item)?.scenario || item.text || '新增你的常用文字…'));
+      button.append(badge, content); button.onclick = () => { stash(); selected = i; render(); if(materials.panel.hidden)showLibrary(); }; const row=el('div','snippet-row');const copy=el('button','snippet-copy','⧉');copy.type='button';copy.setAttribute('aria-label',t('複製短句')+' '+(i+1));copy.title=item.name;copy.onclick=async()=>{try{await invoke('copy_text',{text:item.text});copy.textContent='✓';}catch(error){setSaveError(error);}};row.append(button,copy);list.append(row);
     });
     if (!list.children.length) list.append(el('p', 'empty-search', '沒有符合的短句'));
   }
@@ -367,7 +376,7 @@ if (picker) {
 
 
 
-bindTranslations(document.body);
+
 const syncNativeLanguage = () => invoke('set_ui_language', {language:getLanguage()}).catch(console.warn);
 onLanguageChange(syncNativeLanguage);
 await syncNativeLanguage();
@@ -376,6 +385,7 @@ document.documentElement.lang = getLanguage();
 renderShortcut();
 }
 
+bindTranslations(document.body);
 // Startup IPC failures must not leave a writable, partially initialized editor.
 await startApp().catch(error => {
   document.querySelector('#app').inert = true;

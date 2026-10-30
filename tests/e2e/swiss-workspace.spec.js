@@ -1,0 +1,24 @@
+import {readFileSync} from 'node:fs';
+import {test,expect,Manager} from './fixture.js';
+const video='data:video/webm;base64,'+readFileSync(new URL('../fixtures/material-video.webm',import.meta.url)).toString('base64');
+test('Swiss workspace selection, preview, media isolation and preserved snippet drafts',async({page})=>{
+ const manager=new Manager(page);await manager.open();await manager.text.fill('保留我的未儲存草稿');
+ await page.evaluate(video=>{window.qa.state.materials={items:[{id:'task',kind:'text',name:'Task',text:'修正登入流程，實際測試並回報。',size:0},{id:'shot',kind:'image',name:'login.png',text:'',size:1024},{id:'clip',kind:'file',name:'login.webm',text:'',size:53255},{id:'pdf',kind:'file',name:'requirements.pdf',text:'',size:2048}]};window.qa.mediaPreviews={clip:video};},video);
+ await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();await page.getByRole('button',{name:'預覽素材 3',exact:true}).click();const selected=page.getByLabel('選取素材 login.webm',{exact:true}),inline=page.getByLabel('影片預覽 login.webm',{exact:true});await expect.poll(()=>selected.evaluate(v=>v.videoWidth)).toBe(128);
+ await inline.evaluate(async v=>{v.muted=true;await v.play();});await selected.evaluate(async v=>{v.muted=true;await v.play();});await expect.poll(()=>inline.evaluate(v=>v.paused)).toBe(true);
+ await page.getByRole('button',{name:'上移素材 3',exact:true}).click();await expect(page.getByLabel('選取素材 login.webm',{exact:true})).toBeVisible();
+ for(const width of [1920,1280,940,780]){await page.setViewportSize({width,height:width===780?680:860});await expect(page.getByRole('button',{name:'匯出素材包',exact:true})).toBeInViewport();await expect(page.getByRole('button',{name:'加入文字',exact:true})).toBeInViewport();await page.screenshot({path:`artifacts/swiss-workspace-${width}.png`});}
+ await page.setViewportSize({width:1280,height:860});await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(manager.text).toHaveValue('保留我的未儲存草稿');await expect.poll(()=>page.getByLabel('選取素材 login.webm',{exact:true}).evaluate(v=>v.paused)).toBe(true);expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
+});
+
+test('left snippets copy without leaving materials; preview follows edits and removal',async({page})=>{
+ const manager=new Manager(page);await manager.open();await manager.text.fill('尚未儲存的短句內容');await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.getByRole('textbox',{name:'任務文字 1',exact:true}).fill('這次任務');await expect(page.getByText('這次任務',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'複製短句 1',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.qa.clipboard)).toBe('尚未儲存的短句內容');await expect(page.getByRole('heading',{name:'本次 prompt 素材',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.getByRole('textbox',{name:'任務文字 2',exact:true}).fill('另一個任務');await page.getByRole('button',{name:'移除素材 2',exact:true}).click();await expect(page.getByText('這次任務',{exact:true})).toBeVisible();await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(manager.text).toHaveValue('尚未儲存的短句內容');expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
+});
+test('workspace footer switches four languages and dark theme keeps actions reachable',async({page})=>{
+ await new Manager(page).open();await page.setViewportSize({width:1280,height:860});await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();
+ await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.getByRole('textbox',{name:'任務文字 1',exact:true}).fill('刪除');
+ for(const [language,title] of [['en','Prompt workspace'],['ja','今回のプロンプト素材'],['zh-CN','本次 prompt 素材'],['zh-TW','本次 prompt 素材']]){await page.getByRole('combobox',{name:/顯示語言|显示语言|Display language|クイック言語切替/}).selectOption(language);await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();await expect.poll(()=>page.evaluate(()=>localStorage.getItem('quicksay.language'))).toBe(language);await expect(page.getByText('刪除',{exact:true}).filter({visible:true})).toBeVisible();await page.screenshot({path:`artifacts/swiss-workspace-${language}.png`});}
+ await page.evaluate(()=>{localStorage.setItem('quicksay.language','en');localStorage.setItem('quicksay.appearance',JSON.stringify({version:2,theme:'dark',transparency:35}));});await page.reload();await page.getByRole('button',{name:'Prompt workspace',exact:true}).click();await expect(page.getByRole('button',{name:'Export material bundle',exact:true})).toBeInViewport();await expect.poll(()=>page.evaluate(()=>document.documentElement.dataset.theme)).toBe('dark');await page.screenshot({path:'artifacts/swiss-workspace-en-dark.png'});
+});

@@ -1,0 +1,61 @@
+/* Scoped desktop workspace; capture overlays and picker retain their own geometry. */
+.app-shell{background:var(--shell)}
+.app-shell .windowbar{height:58px;padding:0 20px;border-bottom:1px solid var(--line);gap:24px}
+.app-shell .window-subtitle{display:none}
+.workspace-nav{display:flex;align-self:stretch;align-items:stretch;gap:8px;margin:auto;min-width:0}
+.workspace-nav .settings-link{margin:0;border:0;border-radius:0;background:transparent;padding:0 18px;border-bottom:3px solid transparent;white-space:nowrap}
+.workspace-nav .settings-link[aria-pressed=true]{color:var(--accent);background:var(--soft-blue);border-bottom-color:var(--accent)}
+.app-shell .manager{height:calc(100% - 58px);grid-template-columns:240px minmax(0,1fr)}
+.app-shell .manager>aside{padding:24px 16px 16px;background:var(--sidebar);border-right:1px solid var(--line);gap:12px;min-height:0}
+.app-shell .library-heading h1{font-size:21px}
+.app-shell .role-switcher{margin:0;gap:3px;flex-shrink:0}
+.app-shell .role-cards{gap:5px;flex-wrap:wrap;max-height:112px;overflow:auto}
+.app-shell .role-card{min-width:0;width:auto;flex:0 0 auto;padding:8px 10px;border-radius:7px}
+.app-shell .role-card small,.app-shell .role-card .role-icon{display:none}
+.app-shell .role-card strong{font-size:12px}
+.app-shell .role-switcher>button{display:none}
+.app-shell .snippet{border:1px solid var(--line);border-radius:10px;margin:0 0 10px;padding:14px 12px;min-height:84px;background:var(--paper)}
+.app-shell .snippet.selected{background:var(--soft-blue);border-color:var(--accent)}
+.app-shell .snippet-info>span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.65}
+.app-shell .workspace{padding:24px 28px;gap:14px}
+.app-shell .materials-panel{display:grid;grid-template-columns:minmax(0,1fr) 285px;padding:0;gap:0;overflow:hidden;min-height:0}
+.materials-center{min-width:0;min-height:0;display:flex;flex-direction:column;padding:24px 18px 14px;gap:12px;overflow:hidden}
+.materials-center>header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0}
+.materials-center h2,.material-inspector h2{font-size:22px;margin:0}
+.materials-center .eyebrow{display:none}
+.materials-intro{margin:0;font-size:12px;color:var(--muted)}
+.materials-center .material-status{font-size:12px;min-height:18px;flex-shrink:0}
+.materials-center .material-list{overflow:auto;min-height:0;flex:1;display:flex;flex-direction:column;gap:12px;padding:2px 4px 6px 0}
+.materials-center .material-card{flex-shrink:0;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px}
+.materials-center .material-card.is-selected{border-color:var(--accent)}
+.materials-center .material-card-head{gap:6px;flex-wrap:wrap}
+.materials-center .material-card-head strong{flex:1;overflow-wrap:anywhere;font-size:12px}
+.materials-center .material-card-head button{font-size:10px;padding:5px 7px}
+.materials-center .material-card textarea{min-height:100px;max-height:200px;resize:vertical}
+.materials-center .material-card img,.materials-center .material-card video{max-height:210px;object-fit:contain;width:100%;background:var(--hover);border-radius:6px}
+.materials-center .material-toolbar{order:9;display:flex;flex-wrap:wrap;gap:6px;padding-top:10px;border-top:1px solid var(--line);flex-shrink:0;max-height:205px;overflow:auto}
+.material-toolbar button{padding:8px;font-size:11px}
+.material-toolbar .capture-access,.material-toolbar .recording-actions{display:flex;flex-wrap:wrap;gap:6px}
+.material-toolbar .capture-tools-section{display:contents}
+.material-toolbar .recording-status{font-size:11px;margin:0}
+.material-toolbar .capture-tools{width:100%}
+.material-inspector{min-width:0;min-height:0;padding:24px 16px 16px;display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--line);background:var(--sidebar)}
+.inspector-content{overflow:auto;flex:1;min-height:0;overflow-wrap:anywhere}
+.inspector-content img,.inspector-content video{width:100%;max-height:310px;object-fit:contain;border-radius:8px;background:var(--hover)}
+.inspector-content h3{font-size:14px;line-height:1.6}
+.inspector-metadata{color:var(--muted);font-size:12px;line-height:1.8}
+.inspector-text{white-space:pre-wrap;line-height:1.8;font-size:13px}
+.material-inspector .material-export{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.material-inspector .material-export button{width:100%;padding:12px}
+.material-inspector .materials-help,.material-inspector .material-path{font-size:10px;margin:0;line-height:1.6;overflow-wrap:anywhere}
+@media(min-width:1500px){.app-shell .manager{grid-template-columns:290px minmax(0,1fr)}.app-shell .materials-panel{grid-template-columns:minmax(0,1fr) 340px}.materials-center{padding:28px}.app-shell .role-cards{max-height:150px}}
+@media(max-width:1050px){.app-shell .manager{grid-template-columns:210px minmax(0,1fr)}.app-shell .materials-panel{grid-template-columns:minmax(0,1fr) 215px}.workspace-nav .settings-link{padding:0 9px;font-size:11px}.app-shell .windowbar{gap:8px;padding:0 12px}.materials-center{padding:18px 10px 10px}.material-inspector{padding:18px 10px}.materials-center h2,.material-inspector h2{font-size:18px}.materials-intro{display:none}}
+@media(max-width:850px){.app-shell .manager{grid-template-columns:190px minmax(0,1fr)}.app-shell .materials-panel{grid-template-columns:minmax(0,1fr)}.material-inspector{border-left:0;border-top:1px solid var(--line);padding:8px 10px;gap:6px}.material-inspector>h2,.inspector-content,.material-inspector .materials-help{display:none}.material-inspector .material-export{flex-direction:row}.material-inspector .material-export button{font-size:10px;padding:8px}.app-shell .materials-panel{grid-template-rows:minmax(0,1fr) auto}.app-shell .window-brand{font-size:14px}.workspace-nav{gap:0}.workspace-nav .settings-link{padding:0 7px}.app-shell .workspace{padding:18px}.app-shell .manager>aside{padding:18px 10px}}
+.snippet-row{position:relative;flex-shrink:0}.snippet-row .snippet{width:100%;padding-right:28px}.snippet-copy{position:absolute;right:5px;top:9px;border:0;background:transparent;color:var(--muted);font-size:16px;padding:4px}.snippet-copy:hover{color:var(--accent);background:var(--soft-blue)}
+.app-shell .role-switcher{display:block;width:100%}.app-shell .role-card .role-mark{display:none}.app-shell .role-card-content{gap:0}.app-shell .role-cards{width:100%;padding:2px;scroll-snap-type:none}.app-shell .role-card{max-width:none}.app-shell .role-card.selected{background:var(--accent);color:var(--shell)}
+:root:not([data-theme=dark]) .app-shell{--shell:#f8fafc;--sidebar:#fff;--paper:#fff;--line:#e2e8f0;--soft-blue:#edf4ff;--accent:#0866ed;--ink:#172238;--muted:#52627b}
+.materials-center h2::before,.material-inspector h2::before{content:'1';display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-right:10px;background:var(--accent);color:white;border-radius:6px;font-size:18px}.material-inspector h2::before{content:'2'}
+.materials-center .material-toolbar .capture-mode-buttons{display:flex;flex-wrap:wrap;gap:6px}.materials-center .material-toolbar .capture-access{width:100%}
+.app-shell .manager{height:calc(100% - 96px)}.app-footer{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-top:1px solid var(--line);background:var(--sidebar);color:var(--muted);font-size:11px}.app-footer .sidebar-foot{margin:0;padding:0;display:flex;align-items:center;gap:6px;font-size:11px}.app-footer select{border:0;background:transparent;padding:5px;font-size:11px}.app-shell .manager>aside{padding-bottom:12px}.app-shell .role-cards{max-height:124px;scrollbar-width:thin}
+.materials-center h2::before,.material-inspector h2::before{content:none}.step-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-right:10px;background:var(--accent);color:#fff;border-radius:6px;font-size:18px}.material-toolbar>.secondary{order:-2}.material-toolbar .capture-access{order:-3}.material-toolbar .recording-actions{order:-1}.material-toolbar .recording-status{order:1}.material-toolbar .capture-tools{order:2}
+@media(max-width:850px){.material-inspector .material-export{flex-wrap:nowrap}.material-inspector .material-export button{width:auto;min-width:0;flex:1}}

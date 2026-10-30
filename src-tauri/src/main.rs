@@ -887,8 +887,8 @@ fn main() {
             if let Some(monitor) = main.current_monitor()? {
                 let scale = monitor.scale_factor();
                 let area = monitor.work_area();
-                let width = 940.0_f64.min((area.size.width as f64 / scale - 32.0).max(1.0));
-                let height = 820.0_f64.min((area.size.height as f64 / scale - 32.0).max(1.0));
+                let width = 1280.0_f64.min((area.size.width as f64 / scale - 32.0).max(1.0));
+                let height = 860.0_f64.min((area.size.height as f64 / scale - 32.0).max(1.0));
                 main.set_min_size(Some(tauri::LogicalSize::new(
                     780.0_f64.min(width),
                     680.0_f64.min(height),

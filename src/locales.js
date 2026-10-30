@@ -1,5 +1,13 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["顯示語言","显示语言","Display language","クイック言語切替"],
+["頁面導覽","页面导航","Page navigation","ページナビゲーション"],
+["常用短句","常用短句","Snippets","定型文"],
+["素材預覽","素材预览","Material preview","素材プレビュー"],
+["選取素材","选取素材","Selected material","選択した素材"],
+["預覽素材","预览素材","Preview material","素材をプレビュー"],
+["預覽","预览","Preview","プレビュー"],
+["複製短句","复制短句","Copy snippet","定型文をコピー"],
 ["影片預覽","视频预览","Video preview","動画プレビュー"],
 ["無法播放影片，請匯出素材包後以外部播放器開啟。","无法播放视频，请导出素材包后使用外部播放器打开。","Unable to play this video. Export the bundle and open it in an external player.","動画を再生できません。素材をエクスポートし、外部プレーヤーで開いてください。"],
 ["已取消錄影，未加入素材", "已取消录制，未加入素材", "Recording cancelled; no material added", "録画を取消しました。素材は追加されません。"],
