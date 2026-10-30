@@ -11,9 +11,9 @@ test('Swiss workspace selection, preview, media isolation and preserved snippet 
  await page.setViewportSize({width:1280,height:860});await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(manager.text).toHaveValue('保留我的未儲存草稿');await expect.poll(()=>page.getByLabel('選取素材 login.webm',{exact:true}).evaluate(v=>v.paused)).toBe(true);expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
 });
 
-test('left snippets copy without leaving materials; preview follows edits and removal',async({page})=>{
+test('materials hide library controls while preview edits and removal preserve snippet drafts',async({page})=>{
  const manager=new Manager(page);await manager.open();await manager.text.fill('尚未儲存的短句內容');await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.getByRole('textbox',{name:'任務文字 1',exact:true}).fill('這次任務');await expect(page.getByText('這次任務',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'複製短句 1',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.qa.clipboard)).toBe('尚未儲存的短句內容');await expect(page.getByRole('heading',{name:'本次 prompt 素材',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'複製短句 1',exact:true})).toBeHidden();await expect(page.getByRole('heading',{name:'本次 prompt 素材',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.getByRole('textbox',{name:'任務文字 2',exact:true}).fill('另一個任務');await page.getByRole('button',{name:'移除素材 2',exact:true}).click();await expect(page.getByText('這次任務',{exact:true})).toBeVisible();await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(manager.text).toHaveValue('尚未儲存的短句內容');expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
 });
 test('workspace footer switches four languages and dark theme keeps actions reachable',async({page})=>{

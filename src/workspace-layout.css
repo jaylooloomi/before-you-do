@@ -146,3 +146,6 @@
  .app-shell .materials-center .material-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,175px),1fr))}
  .material-inspector .inspector-preview-card>img,.material-inspector .inspector-preview-card>video{height:auto;max-height:48vh;object-fit:contain}
 }
+/* The snippet sidebar belongs only to the library tab. */
+.app-shell[data-page=materials] .manager,.app-shell[data-page=settings] .manager{grid-template-columns:minmax(0,1fr)}
+.app-shell[data-page=materials] .manager>aside,.app-shell[data-page=settings] .manager>aside{display:none}
