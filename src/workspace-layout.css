@@ -136,3 +136,13 @@
 .app-shell[data-page=library] .workspace .role-card small{font-size:11px;line-height:1.4}
 
 .material-settings-anchor .capture-shortcut-save{position:sticky;bottom:0;z-index:4;background:var(--paper);box-shadow:0 -5px 10px var(--paper)}
+/* Desktop material workspace: collection 1/3, preview panel 2/3. */
+@media(min-width:851px){
+ .app-shell .materials-panel{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+ .app-shell .materials-center{overflow:visible}
+ .materials-center>header{padding-right:0;flex-direction:column;gap:8px}
+ .materials-center .material-heading-tools{position:static;align-self:flex-end}
+ .materials-center .materials-intro{white-space:normal;padding-left:0}
+ .app-shell .materials-center .material-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,175px),1fr))}
+ .material-inspector .inspector-preview-card>img,.material-inspector .inspector-preview-card>video{height:auto;max-height:48vh;object-fit:contain}
+}
