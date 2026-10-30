@@ -8,7 +8,7 @@ test('materials preserve snippet drafts; text, files, ordering, export and refre
  await page.getByRole('button',{name:'素材選單 2',exact:true}).click();await page.getByRole('button',{name:'上移素材 2',exact:true}).click();await expect(page.getByRole('listitem',{name:'01 · context.txt',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'複製整合文字',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.qa.clipboard)).toContain('<script>alert(1)</script>');
  await page.getByRole('button',{name:'匯出素材包',exact:true}).click();await expect(page.getByText('匯出位置：QA_ONLY/prompt-materials/exports/test-bundle',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'返回短句',exact:true}).click();await expect(manager.text).toHaveValue('Original unsaved snippet draft');expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
+ await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(manager.text).toHaveValue('Original unsaved snippet draft');expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
  await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();await expect(page.getByRole('textbox',{name:'任務文字 2'})).toHaveValue('<script>alert(1)</script>\n請分析這個問題');
  await page.reload();await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();await expect(page.getByRole('textbox',{name:'任務文字 2'})).toHaveValue('<script>alert(1)</script>\n請分析這個問題');
  await page.getByRole('button',{name:'移除素材 1',exact:true}).click();await expect(page.getByRole('listitem',{name:'01 · 任務文字',exact:true})).toBeVisible();
@@ -21,8 +21,8 @@ test('capture commands, async guard, errors and retry keep text',async({page})=>
  await page.evaluate(()=>delete window.qa.failures.capture_start);await page.getByRole('button',{name:'區域截圖',exact:true}).click();expect(await page.evaluate(()=>window.qa.calls.filter(c=>c.cmd==='capture_start').map(c=>c.args.mode))).toEqual(['fullscreen','window','region','region']);
 });
 test('save failure retains editable text and blocks leaving until retry',async({page})=>{
- await open(page);await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.evaluate(()=>window.qa.failures.materials_text='Disk full');await page.getByRole('textbox',{name:'任務文字 1'}).fill('unsaved material');await page.getByRole('button',{name:'返回短句',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'素材操作失敗：Disk full'})).toBeVisible();await expect(page.getByRole('textbox',{name:'任務文字 1'})).toHaveValue('unsaved material');
- await page.evaluate(()=>delete window.qa.failures.materials_text);await page.getByRole('button',{name:'返回短句',exact:true}).click();await expect(page.getByRole('heading',{name:'把常說的話，留在手邊。'})).toBeVisible();
+ await open(page);await page.getByRole('button',{name:'加入文字',exact:true}).click();await page.evaluate(()=>window.qa.failures.materials_text='Disk full');await page.getByRole('textbox',{name:'任務文字 1'}).fill('unsaved material');await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'素材操作失敗：Disk full'})).toBeVisible();await expect(page.getByRole('textbox',{name:'任務文字 1'})).toHaveValue('unsaved material');
+ await page.evaluate(()=>delete window.qa.failures.materials_text);await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(page.getByRole('heading',{name:'把常說的話，留在手邊。'})).toBeVisible();
 });
 test('capture overlay maps drag to physical pixels and Escape cancels',async({page})=>{
  await page.goto('/?capture-region');await expect.poll(()=>page.evaluate(()=>window.qa.calls.some(c=>c.cmd==='plugin:event|listen'&&c.args.event==='capture-ready'))).toBe(true);await page.evaluate(()=>window.qa.emit('capture-ready',null));await expect(page.getByRole('img')).toHaveAttribute('src',/^data:image/);

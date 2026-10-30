@@ -17,5 +17,5 @@ export class Manager {
   constructor(page){this.page=page;this.name=page.getByRole('textbox',{name:'短句名稱',exact:true});this.text=page.getByRole('textbox',{name:'短句內容',exact:true});this.scenario=page.getByRole('textbox',{name:'適用情境（選填）',exact:true});this.save=page.getByRole('button',{name:'儲存短句',exact:true});}
   async open(){await this.page.goto('/');await expect(this.name).toHaveValue('理解後直接進行');}
   async settings(){await this.page.getByRole('button',{name:'設定與 AI 教學',exact:true}).click();await expect(this.page.getByRole('heading',{name:'設定與 AI 教學'})).toBeVisible();}
-  async back(){await this.page.getByRole('button',{name:'返回短句',exact:true}).click();}
+  async back(){await this.page.getByRole('button',{name:'常用短句',exact:true}).click();}
 }

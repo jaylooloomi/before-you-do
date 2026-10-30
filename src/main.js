@@ -224,7 +224,7 @@ if (picker) {
   settingsButton.type = 'button'; settingsButton.setAttribute('aria-pressed', 'false');
   document.querySelector('.sidebar-foot').before(settingsButton);
   function showLibrary() { materials.panel.hidden=true; materialsButton.setAttribute('aria-pressed','false'); settings.panel.hidden = true; workspace.hidden = false; settingsButton.setAttribute('aria-pressed', 'false'); }
-  const settings = createSettingsPage({ invoke, askConfirmation, onBack: showLibrary, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario,custom:true}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
+  const settings = createSettingsPage({ invoke, askConfirmation, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario,custom:true}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
     onReload: async () => {
       if (dirty && !await askConfirmation({title: '重新載入檔案？', message: '將以檔案內容取代目前編輯與未儲存草稿。請確認要保留的內容已儲存或另行備份。', confirmText: '重新載入'})) return false;
       const refreshed = await invoke('reload_snippets'); loadedSnapshot=await snapshotFor(refreshed);items = refreshed; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
@@ -234,7 +234,7 @@ if (picker) {
   document.querySelector('.manager').append(settings.panel);
   settingsButton.onclick = async () => { if(materials.busy)return;try{await materials.flush();}catch(e){return;}materials.panel.hidden=true;materialsButton.setAttribute('aria-pressed','false');stash(); workspace.hidden = true; settings.panel.hidden = false; settingsButton.setAttribute('aria-pressed', 'true'); await settings.refresh(); };
   const materialsButton=el('button','settings-link','本次 prompt 素材');materialsButton.type='button';materialsButton.setAttribute('aria-pressed','false');settingsButton.before(materialsButton);
-  const materials=createMaterialsPage({invoke,listen,onBack:showLibrary});document.querySelector('.manager').append(materials.panel);
+  const materials=createMaterialsPage({invoke,listen});document.querySelector('.manager').append(materials.panel);
   await listen('material-action',async event=>{if(materials.busy||saving||switchingRole||document.querySelector('dialog[open]'))return;await roleSync;stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');await materials.open();materials.executeAction(event.payload);});
   materialsButton.onclick=()=>{stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');materials.open();};
   document.querySelector('.library-heading h1').setAttribute('aria-label','短句資料庫');document.querySelector('.library-heading h1').textContent='常用短句';

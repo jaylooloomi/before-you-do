@@ -7,10 +7,10 @@ import { filePrompt, chatPrompt } from './ai-prompts.js';
 import { getTemplates } from './template-locales.js';
 import { parseSnippetImport, serializeSnippetExport } from './model.js';
 
-export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, onImport, onAddTemplate }) {
+export function createSettingsPage({ invoke, askConfirmation, onReload, onImport, onAddTemplate }) {
   const panel = document.createElement('section');
   panel.className = 'settings-panel'; panel.hidden = true;
-  panel.innerHTML = `<header class="settings-heading"><div><h2>設定與 AI 教學</h2><p>用你習慣的 AI 管理短句，不需要串接 API。</p></div><button type="button" data-settings="back">返回短句</button></header>
+  panel.innerHTML = `<header class="settings-heading"><div><h2>設定與 AI 教學</h2><p>用你習慣的 AI 管理短句，不需要串接 API。</p></div></header>
     <section class="settings-card"><h3>快捷鍵設定</h3><p>預設 Alt+H，可更換組合；按住喚出、放開貼入的操作不變。</p><div class="shortcut-setting"><label for="shortcut-modifier">組合鍵</label><select id="shortcut-modifier"><option value="alt">Alt / Option</option><option value="altShift">Alt / Option + Shift</option><option value="ctrl">Ctrl</option><option value="ctrlShift">Ctrl + Shift</option></select><label for="shortcut-key">按鍵</label><select id="shortcut-key"></select></div><p id="shortcut-current"></p><div class="settings-buttons"><button data-settings="shortcut-save">儲存快捷鍵</button><button data-settings="shortcut-reset">恢復 Alt+H</button></div><p>選單開啟時再按一次設定的按鍵可取消。放開組合鍵後才會貼入；不使用單獨字母或常見的 Ctrl 複製、貼上、儲存組合。</p><p>Windows 會檢查快捷鍵是否被占用；macOS 請避開其他 App 使用的組合。</p></section>
     <section class="settings-card"><h3>介面語言</h3><select id="language" aria-label="介面語言"><option value="system">跟隨系統</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select><p>內建短句隨語言切換；新增或自訂的短句保留原文。</p></section>
     <section class="settings-card"><h3>範本庫</h3><p>預覽並新增範本；不會取代現有短句。</p><select id="template-language" aria-label="範本語言"><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select><select id="template-choice" aria-label="範本庫"></select><div id="template-preview"><h4></h4><p></p><pre></pre></div><button type="button" data-settings="template">新增此範本</button></section>
@@ -61,7 +61,6 @@ export function createSettingsPage({ invoke, askConfirmation, onBack, onReload, 
   panel.addEventListener('click', async event => {
     const button = event.target.closest('button[data-settings]'); if (!button || button.disabled) return;
     const action = button.dataset.settings;
-    if (action === 'back') { onBack(); return; }
     button.disabled = true;
     try {
       if (!info) await refresh();
