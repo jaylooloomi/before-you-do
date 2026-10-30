@@ -1,5 +1,9 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["執行","执行","Run","実行"],
+["快捷鍵","快捷键","Shortcut","ショートカット"],
+["拖曳素材","拖动素材","Drag material","素材をドラッグ"],
+["播放素材","播放素材","Play material","素材を再生"],
 ["本次素材", "本次素材", "Materials", "今回の素材"],
 ["整合任務文字、截圖、錄影與檔案，整理成一份素材包。", "整合任务文字、截图、录屏与文件，整理成一份素材包。", "Combine task text, screenshots, recordings, and files into one bundle.", "タスク・スクリーンショット・録画・ファイルを一つにまとめます。"],
 ["素材選單", "素材菜单", "Material options", "素材メニュー"],

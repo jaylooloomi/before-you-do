@@ -69,3 +69,30 @@
 .material-video-row video{height:108px}.inspector-preview-card>img,.inspector-preview-card>video{height:250px;max-height:250px;object-fit:contain}
 @media(max-width:1150px){.inspector-preview-card>img,.inspector-preview-card>video{height:200px;max-height:200px}}
 @media(min-width:1500px){.material-video-row video{height:160px}.inspector-preview-card>img,.inspector-preview-card>video{height:280px;max-height:280px}}
+/* ShareX-style gallery: filename above, consistent media tile, unobtrusive close. */
+.app-shell .materials-center .material-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));grid-auto-rows:196px;gap:16px 12px;align-content:start;padding:2px 4px 8px 0}
+.material-list .material-empty{grid-column:1/-1}
+.app-shell .materials-center .material-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;height:196px;padding:26px 7px 7px;border:1px solid transparent;background:var(--hover);border-radius:7px;overflow:visible;cursor:pointer}
+.app-shell .materials-center .material-card.is-selected{border-color:var(--accent);background:var(--soft-blue)}
+.app-shell .material-card .material-card-head{position:static;display:contents;width:auto;height:auto;margin:0}
+.app-shell .material-card .material-select{position:absolute;top:3px;left:24px;right:25px;display:block;height:20px;padding:0;text-align:center;background:transparent;border:0;font-size:11px;line-height:20px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.app-shell .material-select svg,.app-shell .material-card .material-number{display:none}.app-shell .material-select span{display:inline}
+.app-shell .material-card-head>button:last-child{position:absolute;right:2px;top:2px;display:flex;align-items:center;justify-content:center;width:23px;height:23px;padding:3px;background:var(--paper);border:0;border-radius:5px;color:var(--muted);z-index:3}
+.app-shell .material-card-head>button:last-child:hover{color:#e45d64;background:var(--soft-blue)}
+.material-card .material-drag{position:absolute;left:2px;top:3px;width:20px;height:22px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;padding:2px;color:var(--muted);cursor:grab;z-index:3}.material-drag svg{width:15px;height:17px}
+.app-shell .material-card .material-menu{position:absolute;bottom:5px;left:5px;right:auto;top:auto;z-index:6;margin:0;opacity:0}.material-card:hover .material-menu,.material-card:focus-within .material-menu,.material-card .material-menu[open]{opacity:1}.material-menu-options{top:auto;bottom:25px;left:0;right:auto}
+.app-shell .materials-center .material-card>img{display:block;width:100%;height:160px;max-height:160px;min-height:0;object-fit:contain;object-position:center;margin:0;border-radius:4px;background:var(--paper)}
+.app-shell .material-card .material-video-row{display:block;position:relative;width:100%;height:160px;min-height:0}
+.app-shell .material-video-row video{display:block;width:100%;height:160px;max-height:160px;margin:0;object-fit:contain;border-radius:4px;background:#17202b}
+.app-shell .material-video-row .material-file-summary{display:none}
+.material-tile-play{position:absolute;top:78px;left:calc(50% - 22px);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#152131bb;color:#fff;z-index:2;cursor:pointer}.material-tile-play svg{width:30px;height:30px}
+.app-shell .materials-center .material-text textarea{position:static;height:160px;min-height:0;max-height:none;width:100%;margin:0;padding:9px;resize:none;font-size:12px;line-height:1.6;cursor:text}.app-shell .material-text textarea::first-line{font-size:13px}
+.app-shell .material-file>.material-file-summary{position:static;display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px;min-width:0}.app-shell .material-file>.material-file-summary strong{display:none}.app-shell .material-file .file-kind-badge{width:46px;height:56px;font-size:12px;flex-shrink:0}.app-shell .material-file .material-file-summary small{font-size:11px}
+.material-dragging{opacity:.45}.app-shell .material-card.material-drop-target{outline:2px dashed var(--accent);outline-offset:2px}
+.material-card .material-media-error{font-size:10px;position:absolute;inset:32px 6px 6px;padding:8px;background:var(--paper);overflow:auto;z-index:1}
+.capture-shortcut-rows{display:flex;flex-direction:column;gap:8px;margin:12px 0}.capture-shortcut-row{display:grid;grid-template-columns:128px minmax(0,1fr);align-items:center;gap:8px}.capture-shortcut-row>.paired-capture-action{display:flex;align-items:center;gap:7px;width:100%;height:36px;min-width:0;padding:7px 8px;text-align:left;white-space:nowrap;font-size:12px}.paired-capture-action svg{width:17px;height:17px;flex-shrink:0}.capture-shortcut-row input{width:100%;min-width:0;height:36px;padding:7px 8px;font-size:12px;box-sizing:border-box}
+.material-heading-tools .capture-tools[open]{width:390px;max-width:min(390px,calc(100vw - 30px))}
+@media(max-width:1150px){.app-shell .materials-center .material-list{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 8px;grid-auto-rows:180px}.app-shell .materials-center .material-card{height:180px}.app-shell .materials-center .material-card>img,.app-shell .material-video-row video,.app-shell .material-card .material-video-row,.app-shell .materials-center .material-text textarea{height:145px;max-height:145px}.material-tile-play{top:70px}}
+@media(max-width:850px){.app-shell .materials-center .material-list{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}.material-heading-tools .capture-tools[open]{max-height:480px}}
+.paired-capture-action span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.material-card.inline-playing>.material-tile-play{display:none}

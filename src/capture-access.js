@@ -25,5 +25,5 @@ export function createCaptureAccess({invoke,run,onCapture,isBusy=()=>false}){
   else if(!canCapture(capability))status.textContent=errorMessage(capability.reason||'error.capture_permission');
   else status.textContent=t(capability.windowSemantics==='independent_window'?'目前視窗會擷取切回本程式前的其他 App 視窗內容。':'目前視窗擷取可見的桌面像素，被遮住的內容可能無法取得。');
  }
- onLanguageChange(render);render();return {element,refresh,render};
+ onLanguageChange(render);render();return {element,refresh,render,buttons:Object.fromEntries(labels.map(([key],index)=>[key,buttons[index]]))};
 }

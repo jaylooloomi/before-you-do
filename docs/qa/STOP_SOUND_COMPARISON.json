@@ -1,0 +1,22 @@
+{
+  "sharex_action_completed": {
+    "path": "D:\\git\\i-want-to-say\\temp\\ShareX\\ShareX\\Resources\\ActionCompletedSound.wav",
+    "sha256": "b68898efb9d61cb81116f25d9379aa2d87648fa093faf1deae96ccb7e1a61727",
+    "seconds": 0.3813,
+    "sample_rate": 44100,
+    "channels": 1,
+    "bits": 16,
+    "peak_dbfs": -10.67,
+    "rms_dbfs": -34.63
+  },
+  "before_you_do_recording_completed": {
+    "path": "D:\\git\\i-want-to-say\\src-tauri\\assets\\recording-complete.wav",
+    "sha256": "635a282bc51943335083c02e234b7ce4814bfde6348ab35143f0239af4c9550a",
+    "seconds": 0.36,
+    "sample_rate": 22050,
+    "channels": 1,
+    "bits": 16,
+    "peak_dbfs": -15.92,
+    "rms_dbfs": -19.55
+  }
+}
