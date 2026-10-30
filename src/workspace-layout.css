@@ -221,3 +221,14 @@
 /* Summary text stays accessible; the compact toolbar label is drawn by its existing pseudo-element. */
 .app-shell .material-settings-anchor>.capture-tools>summary{font-size:0}
 
+
+/* Page titles follow the library sidebar's responsive inset and typography. */
+.app-shell{--page-inset-x:26px;--page-inset-y:26px;--page-title-size:24px}
+.app-shell .manager>aside{padding-top:var(--page-inset-y);padding-left:var(--page-inset-x);padding-right:var(--page-inset-x)}
+.app-shell .materials-center,.app-shell .material-inspector,.app-shell .settings-panel[data-view]{padding-top:var(--page-inset-y);padding-left:var(--page-inset-x);padding-right:var(--page-inset-x)}
+.app-shell .library-heading h1,.app-shell .materials-center h2,.app-shell .material-inspector h2,.app-shell .settings-heading h2{font-size:var(--page-title-size);font-weight:750;line-height:1.4;letter-spacing:-.6px;margin:0}
+.app-shell .materials-center>header{min-height:0;padding-right:0}
+.app-shell .materials-center .materials-intro{margin:0}
+.app-shell .materials-center>.material-heading-tools{position:static;align-self:flex-end;flex-shrink:0}
+@media(max-width:1150px){.app-shell{--page-inset-x:16px;--page-inset-y:22px}}
+@media(max-width:850px){.app-shell{--page-inset-x:12px;--page-inset-y:20px;--page-title-size:21px}.app-shell .material-inspector{padding:8px 12px}}
