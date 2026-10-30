@@ -152,3 +152,5 @@
 /* Give text tiles separate header, editor and menu zones; keep the focus ring inside the editor. */
 .app-shell .materials-center .material-text{padding:34px 7px 32px}
 .app-shell .materials-center .material-text textarea{flex:1;height:auto;max-height:none;min-height:0;outline-offset:-2px}
+/* Align the library divider with the material collection divider. */
+@media(min-width:851px){.app-shell[data-page=library] .manager{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
