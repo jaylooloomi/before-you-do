@@ -16,6 +16,6 @@ test('library roles stay above the editor and return after materials/settings wi
  }
  await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();await expect(roles).toBeHidden();
  await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(m.text).toHaveValue('不可遺失的草稿');
- await page.getByRole('button',{name:'設定與 AI 教學',exact:true}).click();await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(m.text).toHaveValue('不可遺失的草稿');expect((await roles.boundingBox()).x).toBeGreaterThan(230);
+ await page.getByRole('button',{name:'設定',exact:true}).click();await page.getByRole('button',{name:'常用短句',exact:true}).click();await expect(m.text).toHaveValue('不可遺失的草稿');expect((await roles.boundingBox()).x).toBeGreaterThan(230);
  await page.screenshot({animations:'disabled',path:'artifacts/library-right-role-cards.png'});expect(await page.evaluate(()=>window.qa.count('save_snippets'))).toBe(0);
 });

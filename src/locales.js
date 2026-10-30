@@ -1,5 +1,9 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["AI 教學","AI 教学","AI guide","AI ガイド"],
+["外觀","外观","Appearance","外観"],
+["管理快捷鍵、介面語言、啟動與外觀選項。","管理快捷键、界面语言、启动与外观选项。","Manage shortcuts, language, startup and appearance.","ショートカット・言語・起動・外観を設定します。"],
+["選擇亮色、暗色或跟隨系統。","选择亮色、暗色或跟随系统。","Choose light, dark or system appearance.","ライト・ダーク・システム設定から選択します。"],
 ["設為預設角色","设为默认角色","Set default role","デフォルトの役割に設定"],
 ["取消預設角色","取消默认角色","Clear default role","デフォルトの役割を解除"],
 ["{shortcut} 開啟時預設選取此角色","{shortcut} 打开时默认选择此角色","Select this role by default when opening {shortcut}","{shortcut} で短文メニューを開くときにこの役割を選択"],

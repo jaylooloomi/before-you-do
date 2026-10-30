@@ -35,7 +35,7 @@ test('material workspace fits supported minimum viewport and four languages',asy
  await page.setViewportSize({width:780,height:680});const manager=await open(page);
  await expect(page.getByRole('button',{name:'區域截圖',exact:true})).toBeInViewport();
  for(const [language,title,region]of [['en','Prompt workspace','Capture region'],['ja','今回のプロンプト素材','範囲を撮影'],['zh-CN','本次 prompt 素材','区域截图'],['zh-TW','本次 prompt 素材','區域截圖']]){
-  await page.getByRole('button',{name:/設定與 AI 教學|Settings & AI guide|设置与 AI 教学|設定と AI/}).click();
+  await page.getByRole('button',{name:/^(設定|设置|Settings)$/}).click();
   await page.getByRole('combobox',{name:/介面語言|Interface language|界面语言|表示言語/}).selectOption(language);
   await page.getByRole('button',{name:/本次 prompt 素材|Prompt workspace|今回のプロンプト素材/,exact:true}).click();
   await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();await expect(page.getByRole('button',{name:region,exact:true})).toBeInViewport();

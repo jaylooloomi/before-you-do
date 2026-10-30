@@ -1,0 +1,8 @@
+import {test,expect,Manager} from './fixture.js';
+test('settings and AI guide have separate tabs and keep both form and snippet drafts',async({page})=>{
+ const m=new Manager(page);await m.open();await m.text.fill('原本未儲存短句');await m.settings();await expect(page.getByRole('combobox',{name:'介面語言',exact:true})).toBeVisible();await expect(page.getByRole('textbox',{name:'AI 回傳的短句 JSON',exact:true})).toBeHidden();await expect(page.getByRole('heading',{name:'外觀',exact:true})).toBeVisible();
+ await page.getByLabel('按鍵',{exact:true}).selectOption('J');await m.guide();await expect(page.getByRole('combobox',{name:'介面語言',exact:true})).toBeHidden();const json=page.getByRole('textbox',{name:'AI 回傳的短句 JSON',exact:true});await json.fill('這是還沒套用的草稿');await m.settings();await expect(page.getByLabel('按鍵',{exact:true})).toHaveValue('J');await m.guide();await expect(json).toHaveValue('這是還沒套用的草稿');
+ await expect(page.getByRole('button',{name:'AI 教學',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.getByRole('button',{name:'設定',exact:true})).toHaveAttribute('aria-pressed','false');await expect(page.getByRole('button',{name:'複製短句 1',exact:true})).toBeHidden();await page.screenshot({path:'artifacts/separate-ai-guide.png',animations:'disabled'});
+ await m.settings();await page.getByRole('combobox',{name:'介面主題',exact:true}).selectOption('dark');await expect.poll(()=>page.evaluate(()=>document.documentElement.dataset.theme)).toBe('dark');await page.screenshot({path:'artifacts/separate-settings.png',animations:'disabled'});
+ await m.back();await expect(m.text).toHaveValue('原本未儲存短句');expect(await page.evaluate(()=>qa.count('save_snippets'))).toBe(0);
+});

@@ -16,7 +16,7 @@ test('permission revocation and runtime failure report translated errors and rec
 });
 test('permission state and guidance translate into all four languages',async({page})=>{
  await open(page);for(const [language,phrase]of [['en','Screen capture permission is required'],['ja','画面撮影の許可が必要'],['zh-CN','需要屏幕截取权限'],['zh-TW','需要螢幕擷取權限']]){
- await page.getByRole('button',{name:/設定與 AI 教學|Settings & AI guide|设置与 AI 教学|設定と AI/}).click();await page.getByRole('combobox',{name:/介面語言|Interface language|界面语言|表示言語/}).selectOption(language);await page.getByRole('button',{name:/本次 prompt 素材|Prompt workspace|今回のプロンプト素材/,exact:true}).click();await expect(page.getByRole('status',{name:/截圖狀態|截图状态|Capture status|撮影状態/})).toContainText(phrase);
+ await page.getByRole('button',{name:/^(設定|设置|Settings)$/}).click();await page.getByRole('combobox',{name:/介面語言|Interface language|界面语言|表示言語/}).selectOption(language);await page.getByRole('button',{name:/本次 prompt 素材|Prompt workspace|今回のプロンプト素材/,exact:true}).click();await expect(page.getByRole('status',{name:/截圖狀態|截图状态|Capture status|撮影状態/})).toContainText(phrase);
  }
 });
 

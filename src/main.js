@@ -220,9 +220,10 @@ if (picker) {
   function setSaveError(error) { statusError=error; saveStatus.textContent=t('目前角色：{role} · {status}',{role:roleName(activeRole,getLanguage()),status:errorMessage(error)});renderSaveOverview(); }
   function setSaveStatus(key, params = {}) { statusError=null; statusKey = key; statusParams = params; saveStatus.textContent = t('目前角色：{role} · {status}',{role:roleName(activeRole,getLanguage()),status:t(key, params)});renderSaveOverview(); }
   const workspace = document.querySelector('.workspace');
-  const settingsButton = el('button', 'settings-link', '設定與 AI 教學');
+  const settingsButton = el('button', 'settings-link', '設定');
   settingsButton.type = 'button'; settingsButton.setAttribute('aria-pressed', 'false');
   document.querySelector('.sidebar-foot').before(settingsButton);
+  const aiButton=el('button','settings-link','AI 教學');aiButton.type='button';aiButton.setAttribute('aria-pressed','false');
   function showLibrary() { materials.panel.hidden=true; materialsButton.setAttribute('aria-pressed','false'); settings.panel.hidden = true; workspace.hidden = false; settingsButton.setAttribute('aria-pressed', 'false'); }
   const settings = createSettingsPage({ invoke, askConfirmation, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario,custom:true}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
     onReload: async () => {
@@ -232,7 +233,8 @@ if (picker) {
     onImport: async imported => { const custom=imported.map(item=>({...item,scenario:item.scenario??'',custom:true}));await invoke('save_snippets', {items: custom,expected:loadedSnapshot,expectedRole:activeRole});loadedSnapshot=savedSnapshot(custom,true); items = custom; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; search.value = ''; render(); setSaveStatus('已儲存'); },
   });
   document.querySelector('.manager').append(settings.panel);
-  settingsButton.onclick = async () => { if(materials.busy)return;try{await materials.flush();}catch(e){return;}materials.panel.hidden=true;materialsButton.setAttribute('aria-pressed','false');stash(); workspace.hidden = true; settings.panel.hidden = false; settingsButton.setAttribute('aria-pressed', 'true'); await settings.refresh(); };
+  async function openSettingsView(view){if(materials.busy)return;try{await materials.flush();}catch{return;}const alreadyOpen=!settings.panel.hidden;materials.panel.hidden=true;materialsButton.setAttribute('aria-pressed','false');stash();workspace.hidden=true;settings.show(view);settings.panel.hidden=false;if(!alreadyOpen)await settings.refresh();}
+  settingsButton.onclick=()=>openSettingsView('settings');aiButton.onclick=()=>openSettingsView('ai');
   const materialsButton=el('button','settings-link','本次 prompt 素材');materialsButton.type='button';materialsButton.setAttribute('aria-pressed','false');settingsButton.before(materialsButton);
   const materials=createMaterialsPage({invoke,listen});document.querySelector('.manager').append(materials.panel);
   await listen('material-action',async event=>{if(materials.busy||saving||switchingRole||document.querySelector('dialog[open]'))return;await roleSync;stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');await materials.open();materials.executeAction(event.payload);});
@@ -241,10 +243,10 @@ if (picker) {
   const sidebarIntro=el('p','sidebar-intro','選擇角色，快速套用實用的指令短句。');document.querySelector('.library-heading').after(sidebarIntro);
   const pageNav=el('nav','workspace-nav');pageNav.setAttribute('aria-label',t('頁面導覽'));
   const libraryButton=el('button','settings-link','常用短句');libraryButton.type='button';libraryButton.setAttribute('aria-pressed','true');
-  document.querySelector('.window-controls').before(pageNav);pageNav.append(libraryButton,materialsButton,settingsButton);for(const [button,key]of [[libraryButton,'file'],[materialsButton,'folder'],[settingsButton,'settings']]){const mark=el('span','nav-icon');mark.innerHTML=uiIcon(key);button.prepend(mark);}materialsButton.setAttribute('aria-label','本次 prompt 素材');materialsButton.lastChild.textContent='本次素材';
+  document.querySelector('.window-controls').before(pageNav);pageNav.append(libraryButton,materialsButton,settingsButton,aiButton);for(const [button,key]of [[libraryButton,'file'],[materialsButton,'folder'],[settingsButton,'settings'],[aiButton,'guide']]){const mark=el('span','nav-icon');mark.innerHTML=uiIcon(key);button.prepend(mark);}materialsButton.setAttribute('aria-label','本次 prompt 素材');materialsButton.lastChild.textContent='本次素材';
   libraryButton.onclick=async()=>{if(materials.busy)return;try{await materials.flush();showLibrary();}catch{}};
-  const syncPage=()=>{const mode=!materials.panel.hidden?'materials':!settings.panel.hidden?'settings':'library';document.querySelector('.app-shell').dataset.page=mode;if(mode==='library'){if(roleSwitcher.parentElement!==workspace)workspace.insertBefore(roleSwitcher,saveOverview);}else{const searchBox=document.querySelector('.search-box');if(roleSwitcher.previousElementSibling!==searchBox)searchBox.after(roleSwitcher);}libraryButton.setAttribute('aria-pressed',String(mode==='library'));};
-  new MutationObserver(syncPage).observe(document.querySelector('.manager'),{subtree:true,attributes:true,attributeFilter:['hidden']});syncPage();
+  const syncPage=()=>{const mode=!materials.panel.hidden?'materials':!settings.panel.hidden?(settings.panel.dataset.view==='ai'?'ai':'settings'):'library';document.querySelector('.app-shell').dataset.page=mode;if(mode==='library'){if(roleSwitcher.parentElement!==workspace)workspace.insertBefore(roleSwitcher,saveOverview);}else{const searchBox=document.querySelector('.search-box');if(roleSwitcher.previousElementSibling!==searchBox)searchBox.after(roleSwitcher);}libraryButton.setAttribute('aria-pressed',String(mode==='library'));settingsButton.setAttribute('aria-pressed',String(mode==='settings'));aiButton.setAttribute('aria-pressed',String(mode==='ai'));};
+  new MutationObserver(syncPage).observe(document.querySelector('.manager'),{subtree:true,attributes:true,attributeFilter:['hidden','data-view']});syncPage();
   const appFooter=el('footer','app-footer');const footerLanguage=document.createElement('select');footerLanguage.setAttribute('aria-label',t('顯示語言'));footerLanguage.innerHTML='<option value="system">'+t('跟隨系統')+'</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option>';footerLanguage.value=getPreference();footerLanguage.onchange=()=>setLanguage(footerLanguage.value);onLanguageChange(()=>{footerLanguage.value=getPreference();document.getElementById('language').value=getPreference();});const foot=document.querySelector('.sidebar-foot');foot.innerHTML=uiIcon('folder');foot.append(document.createTextNode(t('本機儲存・不自動送出')));appFooter.append(foot,footerLanguage);document.querySelector('.app-shell').append(appFooter);
   function stash() {
     const item=items[selected];if(!item)return;
@@ -339,11 +341,12 @@ if (picker) {
   bar.onpointerdown = e => { if (e.button === 0 && !e.target.closest('button')) invoke('window_action', { action: 'drag' }); };
   document.querySelectorAll('[data-action]').forEach(button => { button.onclick = () => button.dataset.action === 'close' ? hide() : invoke('window_action', { action: button.dataset.action }); });
   const transparency = document.querySelector('#transparency'), theme = document.querySelector('#theme');
+  const appearanceCard=el('section','settings-card');appearanceCard.dataset.settingsView='settings';appearanceCard.innerHTML='<h3>外觀</h3><p>選擇亮色、暗色或跟隨系統。</p>';const settingsTheme=theme.cloneNode(true);settingsTheme.id='settings-theme';settingsTheme.value=appearance.theme;settingsTheme.onchange=()=>{theme.value=settingsTheme.value;theme.onchange();};appearanceCard.append(settingsTheme);settings.panel.querySelector('#language').closest('.settings-card').after(appearanceCard);
   transparency.value = appearance.transparency; theme.value = appearance.theme;
   document.querySelector('#transparency-value').value = `${appearance.transparency}%`;
   let effectTimer;
   transparency.oninput = () => { appearance.transparency = Number(transparency.value); document.querySelector('#transparency-value').value = `${appearance.transparency}%`; clearTimeout(effectTimer); effectTimer = setTimeout(() => applyAppearance(true), 70); };
-  theme.onchange = () => { appearance.theme = theme.value; applyAppearance(true); };
+  theme.onchange = () => { appearance.theme = theme.value;settingsTheme.value=theme.value; applyAppearance(true); };
   // WebView key handling can consume a registered hotkey before the global path.
   // The focused manager always treats its shortcut as dismiss-only.
   document.addEventListener('keydown', e => {

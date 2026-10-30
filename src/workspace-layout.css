@@ -166,3 +166,5 @@
 .app-shell[data-page=library] .workspace .role-card-choice>.role-card{width:100%;min-width:0;max-width:none;padding-right:26px}
 /* Left panels enlarged 1.2x from their previous 7/30 viewport share; dividers stay aligned. */
 @media(min-width:851px){.app-shell[data-page=library] .manager,.app-shell .materials-panel{grid-template-columns:minmax(0,7fr) minmax(0,18fr)}}
+.app-shell[data-page=ai] .manager{grid-template-columns:minmax(0,1fr)}
+.app-shell[data-page=ai] .manager>aside{display:none}
