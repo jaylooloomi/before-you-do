@@ -190,3 +190,34 @@
 .settings-panel[data-view=ai] #template-preview pre{white-space:pre-wrap;margin:8px 0 12px;line-height:1.65}
 .settings-panel[data-view=ai] textarea{min-height:120px}
 .settings-panel[data-view=ai] .settings-buttons{margin-top:8px}
+/* Shared visual language, anchored to the snippet editor. Layout proportions stay unchanged. */
+.app-shell{--ui-card-radius:12px;--ui-control-radius:8px;--ui-primary:#3468b7;--ui-primary-hover:#295898;--ui-space:14px}
+.app-shell .workspace,.app-shell .settings-panel,.app-shell .materials-center,.app-shell .material-inspector{background:var(--palette-bg)}
+.app-shell .settings-panel[data-view]{padding:24px 28px;gap:var(--ui-space)}
+.app-shell .settings-heading h2,.app-shell .editor-heading h2,.app-shell .materials-center h2,.app-shell .material-inspector h2{font-size:21px;line-height:1.4;font-weight:600;letter-spacing:-.6px;margin:0;color:var(--ink)}
+.app-shell .step-badge{display:none}
+.app-shell .materials-intro{padding-left:0}
+.app-shell .materials-center,.app-shell .material-inspector{padding-top:24px}
+.app-shell .editor-card,.app-shell .settings-panel[data-view] .settings-card,.app-shell .materials-center .material-card,.app-shell .inspector-preview-card{border:1px solid var(--line);border-radius:var(--ui-card-radius);background:var(--palette-field);box-shadow:none}
+.app-shell .settings-panel[data-view] .settings-card{padding:16px 20px}
+.app-shell .settings-panel[data-view] .settings-card h3,.app-shell .settings-panel[data-view] .settings-card summary{font-size:14px;font-weight:600;line-height:1.5;color:var(--ink)}
+.app-shell .settings-panel[data-view] .settings-card p,.app-shell .settings-panel[data-view] .settings-card li,.app-shell .materials-intro,.app-shell .sidebar-intro{font-size:13px;line-height:1.65;color:var(--muted)}
+.app-shell .settings-panel[data-view] .settings-card p{margin:8px 0}
+.app-shell .settings-panel button,.app-shell .secondary,.app-shell .material-toolbar button,.app-shell .material-settings-anchor>.capture-tools>summary{border:1px solid var(--line);border-radius:var(--ui-control-radius);background:var(--hover);color:var(--ink);font-size:13px;font-weight:500;min-height:34px;padding:7px 12px;box-shadow:none}
+.app-shell .settings-panel button:hover,.app-shell .secondary:hover,.app-shell .material-toolbar button:hover{background:var(--selected)}
+.app-shell select{border:1px solid var(--line);border-radius:var(--ui-control-radius);background:var(--hover);color:var(--ink);font-size:13px;padding:7px 9px}
+.app-shell .primary,.app-shell .material-inspector [data-material=export]{background:var(--ui-primary);border:1px solid var(--ui-primary);border-radius:var(--ui-control-radius);color:#fff;font-size:13px;font-weight:600;box-shadow:none}
+.app-shell .primary:hover,.app-shell .material-inspector [data-material=export]:hover{background:var(--ui-primary-hover);border-color:var(--ui-primary-hover)}
+.app-shell .material-inspector .material-export button{border-radius:var(--ui-control-radius);font-size:13px;gap:8px;min-height:38px;padding:10px 14px}
+.app-shell .material-inspector [data-material=copy]{border:1px solid var(--line);background:var(--hover);color:var(--ink)}
+.app-shell .material-inspector .material-export svg{width:18px;height:18px}
+.app-shell .inspector-preview-card{padding:10px}
+.app-shell .inspector-preview-card h3{font-size:14px;font-weight:600;line-height:1.5}
+.app-shell .material-details{font-size:13px;color:var(--muted)}
+.app-shell :is(button,select,summary):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:850px){.app-shell .settings-panel[data-view]{padding:18px}.app-shell .material-toolbar button,.app-shell .material-settings-anchor>.capture-tools>summary{font-size:11px;padding:7px 8px}.app-shell .materials-center h2,.app-shell .material-inspector h2{font-size:19px}}
+@media(forced-colors:active){.app-shell{--ui-primary:ButtonFace;--ui-primary-hover:Highlight}.app-shell .primary,.app-shell .material-inspector [data-material=export]{color:ButtonText;border-color:ButtonText}}
+
+/* Summary text stays accessible; the compact toolbar label is drawn by its existing pseudo-element. */
+.app-shell .material-settings-anchor>.capture-tools>summary{font-size:0}
+
