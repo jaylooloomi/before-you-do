@@ -149,3 +149,6 @@
 /* The snippet sidebar belongs only to the library tab. */
 .app-shell[data-page=materials] .manager,.app-shell[data-page=settings] .manager{grid-template-columns:minmax(0,1fr)}
 .app-shell[data-page=materials] .manager>aside,.app-shell[data-page=settings] .manager>aside{display:none}
+/* Give text tiles separate header, editor and menu zones; keep the focus ring inside the editor. */
+.app-shell .materials-center .material-text{padding:34px 7px 32px}
+.app-shell .materials-center .material-text textarea{flex:1;height:auto;max-height:none;min-height:0;outline-offset:-2px}
