@@ -1,0 +1,4 @@
+import {test,expect,Manager} from './fixture.js';
+import {readFileSync} from 'node:fs';
+const {version}=JSON.parse(readFileSync(new URL('../../package.json',import.meta.url),'utf8'));
+test('version under product name matches package manifest and keeps navigation reachable',async({page})=>{const m=new Manager(page);await m.open();for(const width of [780,940,1280]){await page.setViewportSize({width,height:860});const label=page.getByText(`v${version}`,{exact:true});await expect(label).toBeVisible();const brand=page.getByText('before-you-do',{exact:true});expect((await label.boundingBox()).y).toBeGreaterThan((await brand.boundingBox()).y);for(const name of ['常用短句','本次 prompt 素材','設定','AI 教學'])await expect(page.getByRole('button',{name,exact:true})).toBeInViewport();await page.screenshot({path:`artifacts/release-v${version}/brand-${width}.png`});}});

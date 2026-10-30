@@ -44,9 +44,11 @@ Save the instructions you keep repeating to AI — “plan first,” “change o
 
 **It pastes; you send.** You choose when to add an instruction and which one to use, and can edit it before sending. Prompts express your expectations; they do not guarantee that AI will follow them.
 
-## Prompt workspace (v0.5 development branch)
+## Prompt workspace (v0.5.0)
 
-Open **Prompt workspace** in the sidebar to collect a one-off task separately from your reusable snippets:
+**v0.5.0:** Four tabs — Snippets, Materials, Settings and AI guide — now share consistent titles and controls. The current version appears below the app name. Materials supports screenshots, Windows silent recording/GIF, editable text, files, drag sorting, numbered exports and video previews. Existing snippets and the Alt+H workflow remain available.
+
+Open the **Materials** tab to collect a one-off task separately from your reusable snippets:
 
 1. Capture a region, all screens, or the last other application window you used (**Windows; macOS 14+**, with Mac hardware validation still pending).
 2. Add editable task text and local files. PNG, JPEG, GIF and WebP images have previews.
@@ -128,7 +130,7 @@ The picker preserves focus in the original input field. Its role bar shows the c
 
 ## Installation
 
-**Latest feature release: [v0.4.8](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.4.8).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.4.8.md) · [Release process](docs/RELEASING.md).
+**Latest feature release: [v0.5.0](https://github.com/jaylooloomi/before-you-do/releases/tag/v0.5.0).** Built-in prompts follow your language while custom snippets keep their text. Includes startup recovery, consistent emoji limits, safer JSON tools and external-file conflict protection. [Release notes](docs/releases/v0.5.0.md) · [Release process](docs/RELEASING.md).
 
 ### Windows
 
@@ -147,7 +149,7 @@ After obtaining a Windows build:
 
 The Windows executable is `before-you-do.exe`. Automatic updates are not currently available.
 
-To start automatically at sign-in, open **Settings & AI guide → Startup → Start automatically when I sign in**. This is enabled by default on first use; turning it off is remembered on later launches. Login startup runs in the system tray without opening the manager; launching the app normally still opens it. Windows uses a per-user Run registry entry; macOS uses a LaunchAgent. No administrator permission is required. If you move the portable app, turn the setting off and on again; turn it off before removing the app. OS Startup settings and device policies can override these entries.
+To start automatically at sign-in, open **Settings → Startup → Start automatically when I sign in**. This is enabled by default on first use; turning it off is remembered on later launches. Login startup runs in the system tray without opening the manager; launching the app normally still opens it. Windows uses a per-user Run registry entry; macOS uses a LaunchAgent. No administrator permission is required. If you move the portable app, turn the setting off and on again; turn it off before removing the app. OS Startup settings and device policies can override these entries.
 
 Closing the manager window hides the app; the shortcut remains available. To exit completely, choose “Quit before-you-do” from the system tray menu.
 
@@ -165,7 +167,7 @@ In the **snippet manager**, use **← / →** to switch roles and **↑ / ↓** 
 
 When the manager has keyboard focus, the shortcut only hides it: no picker opens and nothing is pasted. Unsaved drafts stay in the app. Focus an external input and press the shortcut again to select a snippet. When invoked from an external app, the manager is hidden before the picker opens.
 
-The table uses the default **Alt+H**. Change it under **Settings & AI guide → Keyboard shortcut**. The picker updates its hints; pressing your newly configured key a second time cancels it.
+The table uses the default **Alt+H**. Change it under **Settings → Keyboard shortcut**. The picker updates its hints; pressing your newly configured key a second time cancels it.
 
 | Key | Action |
 |---|---|
@@ -239,7 +241,7 @@ For example, a scenario can say “Use after implementation, when the main workf
 
 ### Customize the shortcut
 
-The default is **Alt+H**. In **Settings & AI guide → Keyboard shortcut**, choose Alt / Option or Ctrl, optionally add Shift, and select A–Z, 0–9 or Space. Click **Save shortcut** to apply it immediately and keep it across restarts. You can also reset it to Alt+H.
+The default is **Alt+H**. In **Settings → Keyboard shortcut**, choose Alt / Option or Ctrl, optionally add Shift, and select A–Z, 0–9 or Space. Click **Save shortcut** to apply it immediately and keep it across restarts. You can also reset it to Alt+H.
 
 For example, with **Ctrl+Shift+J**, hold Ctrl+Shift and press J, select with ↑ / ↓, then release the modifiers to paste. Press J again while the picker is open to cancel. On Windows, if the new combination is already registered, the app retains your previous shortcut and settings. On macOS, avoid combinations used by other apps. Common Ctrl editing combinations, such as copy, paste and save, cannot be assigned.
 
@@ -263,13 +265,13 @@ Drafts remain in memory until completed and saved. They are not automatically re
 
 ### Four interface and template languages
 
-In Settings & AI guide, choose **繁體中文, 简体中文, English, 日本語**, or follow the system language. Switching updates the manager and picker immediately and remembers your choice. Unsupported system languages fall back to English.
+In Settings, choose **繁體中文, 简体中文, English, 日本語**, or follow the system language. Switching updates the manager and picker immediately and remembers your choice. Unsupported system languages fall back to English.
 
 **Unmodified built-in snippets follow the interface language**, including their names, bodies and the text pasted by the picker. Switching languages does not rewrite the saved JSON. Added, imported or customized snippets keep their original text, including unsaved drafts. Legacy built-ins are recognized only by an exact match of both name and body with no custom scenario. The template library also offers four language versions; “Add this template” appends a personal draft without replacing your list.
 
 ### Use your own AI to edit snippets
 
-Settings & AI guide provides two workflows without connecting the app to an AI service:
+AI guide provides two workflows without connecting the app to an AI service:
 
 - **Chat-based AI:** Copy the instructions and saved snippets, ask your AI to edit them, then paste the complete JSON back into settings. The app validates it and, after your confirmation, applies it and backs up the previous file.
 - **AI with local file access:** Copy the editing instructions containing the actual file path. Have your AI back up and edit the file, then click “Reload file” in the app so stale editor content does not overwrite the updated file.
@@ -320,7 +322,7 @@ Snippets are stored in a local JSON file. The app has no built-in cloud sync and
 | Windows | `%APPDATA%\dev.quicksay.desktop\snippets.json` |
 | macOS | `~/Library/Application Support/dev.quicksay.desktop/snippets.json` |
 
-Shortcut settings are stored separately in `shortcut.json` in the same folder. Settings & AI guide shows the actual paths and lets you open the folder. Saving retains each role’s previous version in its corresponding `.json.bak` file; this is not a full version history. Before restoring, quit the app, keep a separate copy of the current file, then copy that role’s backup to the original file name shown in settings.
+Shortcut settings are stored separately in `shortcut.json` in the same folder. AI guide shows the actual paths and lets you open the folder. Saving retains each role’s previous version in its corresponding `.json.bak` file; this is not a full version history. Before restoring, quit the app, keep a separate copy of the current file, then copy that role’s backup to the original file name shown in settings.
 
 The app was previously named QuickSay. Its `dev.quicksay.desktop` identifier, data paths and preferences remain unchanged to preserve existing data. Legacy WPF XML compatibility still reads `%APPDATA%\QuickSay\settings.xml`.
 

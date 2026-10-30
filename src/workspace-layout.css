@@ -232,3 +232,7 @@
 .app-shell .materials-center>.material-heading-tools{position:static;align-self:flex-end;flex-shrink:0}
 @media(max-width:1150px){.app-shell{--page-inset-x:16px;--page-inset-y:22px}}
 @media(max-width:850px){.app-shell{--page-inset-x:12px;--page-inset-y:20px;--page-title-size:21px}.app-shell .material-inspector{padding:8px 12px}}
+
+/* Version comes from the package manifest, directly below the product name. */
+.app-shell .window-brand-copy{display:flex;flex-direction:column;gap:2px;line-height:1.05}
+.app-shell .window-version{display:block;font-size:11px;font-weight:500;line-height:1.1;letter-spacing:.2px;color:var(--muted)}

@@ -28,9 +28,9 @@ Existing snippets and settings remain in %APPDATA%\dev.quicksay.desktop.
 Unsaved drafts live in memory; do not force-quit an app with edits you want to keep.
 
 Hold Alt and press H, use Left/Right for roles and Up/Down for snippets, release Alt to paste.
-Change the shortcut, interface language and theme under Settings & AI guide.
+Change the shortcut, interface language and theme under Settings.
 Choose Follow system, Light or Dark for the interface theme.
-Optional sign-in startup: Settings & AI guide > Startup. On by default on first use; remembers manual disabling; starts in the tray.
+Optional sign-in startup: Settings > Startup. On by default on first use; remembers manual disabling; starts in the tray.
 After moving the app, toggle startup off/on to update its path. Disable it before removing the app.
 Pristine built-in prompts follow your language. Added/customized prompts keep their text.
 The tool pastes text without sending the message. Pasting replaces the clipboard.
