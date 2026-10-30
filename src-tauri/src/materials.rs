@@ -394,6 +394,45 @@ fn material_info(state: &Materials, item_id: &str) -> Result<serde_json::Value, 
     let created=metadata.created().ok().and_then(|time|time.duration_since(UNIX_EPOCH).ok()).map(|time|time.as_millis() as u64);
     Ok(serde_json::json!({"size":metadata.len(),"created_ms":created}))
 }
+// Assets use extensionless internal IDs. A named opening copy gives the OS the real file association.
+fn prepare_open_file(state:&Materials,item_id:&str)->Result<PathBuf,String>{
+    state.ready()?;
+    let current=state.bundle.lock().map_err(err)?;
+    let item=current.items.iter().find(|i|i.id==item_id&&i.kind!="text").ok_or("Material file not found")?;
+    validate_name(&item.name)?;
+    let source=fs::canonicalize(state.asset(&item.id)).map_err(err)?;
+    let files=fs::canonicalize(state.root.join("files")).map_err(err)?;
+    if !source.starts_with(&files)||!source.is_file(){return Err("Invalid material path".into());}
+    let folder=state.root.join("opened").join(&item.id);fs::create_dir_all(&folder).map_err(err)?;
+    let destination=folder.join(&item.name);
+    if destination.exists(){
+        let target=fs::canonicalize(&destination).map_err(err)?;
+        if !target.starts_with(fs::canonicalize(&folder).map_err(err)?){return Err("Invalid opening path".into());}
+    }else{fs::copy(source,&destination).map_err(err)?;}
+    // Use a conventional absolute path for shell associations, after checking the canonical path.
+    fs::canonicalize(&destination).map_err(err)?;
+    Ok(destination)
+}
+#[tauri::command]
+pub async fn materials_open(w:tauri::WebviewWindow,state:tauri::State<'_,Materials>,item_id:String)->Result<(),String>{
+    manager(&w)?;let path=prepare_open_file(&state,&item_id)?;
+    let result=tauri::async_runtime::spawn_blocking(move||{
+        #[cfg(windows)] {
+            use std::os::windows::ffi::OsStrExt;
+            let filename:Vec<u16>=path.as_os_str().encode_wide().chain(Some(0)).collect();
+            let verb:Vec<u16>="open".encode_utf16().chain(Some(0)).collect();
+            let result=unsafe{windows_sys::Win32::UI::Shell::ShellExecuteW(std::ptr::null_mut(),verb.as_ptr(),filename.as_ptr(),std::ptr::null(),std::ptr::null(),1)};
+            if result as isize<=32{return Err(format!("Cannot open material with default app ({}).",result as isize));}
+        }
+        #[cfg(not(windows))] {
+            let status=std::process::Command::new(if cfg!(target_os="macos"){ "open" }else{ "xdg-open" }).arg(path).status().map_err(err)?;
+            if !status.success(){return Err("Cannot open material with default app".into());}
+        }
+        Ok(())
+    }).await.map_err(err)?;
+    if result.is_ok(){let _=w.set_always_on_top(false);}
+    result
+}
 #[tauri::command]
 pub fn materials_preview(
     w: tauri::WebviewWindow,
@@ -826,6 +865,19 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn opening_files_keeps_extensions_and_does_not_modify_sources(){
+        let dir=std::env::temp_dir().join(id());let store=Materials::new(dir.clone()).unwrap();
+        store.append(Item{id:"photo".into(),name:"圖片.png".into(),kind:"image".into(),text:String::new(),size:3},Some(b"png")).unwrap();
+        let session=fs::read(dir.join("session.json")).unwrap();
+        let opened=prepare_open_file(&store,"photo").unwrap();assert_eq!(opened.file_name().unwrap(),"圖片.png");assert_eq!(fs::read(&opened).unwrap(),b"png");
+        fs::write(&opened,b"external edit").unwrap();assert_eq!(prepare_open_file(&store,"photo").unwrap(),opened);assert_eq!(fs::read(&opened).unwrap(),b"external edit");
+        assert_eq!(fs::read(store.asset("photo")).unwrap(),b"png");assert_eq!(fs::read(dir.join("session.json")).unwrap(),session);
+        assert!(prepare_open_file(&store,"../../missing").is_err());
+        store.append(Item{id:"text".into(),name:"Text".into(),kind:"text".into(),text:"draft".into(),size:0},None).unwrap();assert!(prepare_open_file(&store,"text").is_err());
+        fs::remove_file(store.asset("photo")).unwrap();assert!(prepare_open_file(&store,"photo").is_err());fs::remove_dir_all(dir).unwrap();
+    }
+
     #[test]
     fn selected_file_paths_support_cancel_single_and_multiple_unicode_names(){
         let encode=|s:&str|s.encode_utf16().collect::<Vec<_>>();

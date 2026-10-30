@@ -740,7 +740,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             materials::materials_load, materials::materials_text, materials::materials_import,
             materials::materials_order, materials::materials_remove, materials::materials_preview, materials::materials_info,
-            materials::materials_export, materials::materials_choose_files, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish, materials::preview_capture_gate, materials::preview_capture_start, materials::preview_capture_presentation, materials::capture_prime, materials::capture_present, materials::capture_prepare_failed,
+            materials::materials_export, materials::materials_open, materials::materials_choose_files, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish, materials::preview_capture_gate, materials::preview_capture_start, materials::preview_capture_presentation, materials::capture_prime, materials::capture_present, materials::capture_prepare_failed,
             recording_overlay::preview_recording_overlay, recording::recording_control, recording::recording_state, recording::recording_stop, recording::recording_install, recording::preview_recording,
             capture_hotkeys::capture_hotkeys_get, capture_hotkeys::capture_hotkeys_save,
             request_quit,
