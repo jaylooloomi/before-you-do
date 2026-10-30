@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {formatBytes,formatDuration} from '../src/workspace-ui.js';
+test('material metadata uses readable binary sizes and bounded media clocks',()=>{assert.equal(formatBytes(0),'0.0 KB');assert.equal(formatBytes(1024),'1.0 KB');assert.equal(formatBytes(3.2*1024*1024),'3.2 MB');assert.equal(formatDuration(0),'00:00');assert.equal(formatDuration(38.9),'00:38');assert.equal(formatDuration(120),'02:00');assert.equal(formatDuration(NaN),'—');assert.equal(formatDuration(Infinity),'—');});

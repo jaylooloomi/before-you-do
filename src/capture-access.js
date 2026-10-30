@@ -1,3 +1,4 @@
+import {actionIcon} from './workspace-ui.js';
 import {t,onLanguageChange,errorMessage} from './i18n.js';
 export function canCapture(capability){return !!capability?.supported&&['granted','not_required'].includes(capability.permission);}
 export function createCaptureAccess({invoke,run,onCapture,isBusy=()=>false}){
@@ -14,8 +15,9 @@ export function createCaptureAccess({invoke,run,onCapture,isBusy=()=>false}){
  async function refresh(){try{capability=await invoke('capture_capabilities');failure=null;}catch(error){capability=null;failure=error;}render();return capability;}
  function render(){
   modes.setAttribute('aria-label',t('截圖操作'));status.setAttribute('aria-label',t('截圖狀態'));
-  buttons.forEach((button,i)=>{button.textContent=t(labels[i][1]);button.disabled=isBusy()||!canCapture(capability);});
+  buttons.forEach((button,i)=>{actionIcon(button,['region','region','window'][i],t(['區域截圖','全螢幕','視窗'][i]),t(labels[i][1]));button.disabled=isBusy()||!canCapture(capability);});
   for(const button of actions.children){button.textContent=t(button.dataset.label);button.disabled=isBusy();}
+  status.hidden=canCapture(capability)&&!failure&&!permissionPending;actions.hidden=canCapture(capability)&&!failure;
   const needsPermission=capability?.supported&&capability.permission==='required';request.hidden=!needsPermission;settings.hidden=!(needsPermission&&capability?.platform==='macos');
   if(permissionPending)status.textContent=t('正在等待螢幕擷取授權…');
   else if(failure)status.textContent=t('無法確認截圖能力')+'：'+errorMessage(failure);

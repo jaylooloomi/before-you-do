@@ -34,6 +34,7 @@ try{
  assert.equal(initialVisible,0,'Audit app must remain hidden');
  const bytes=[...readFileSync(resolve('tests/fixtures/material-video.webm'))];
  const imported=await call(main,'materials_import',{name:'inline-video.webm',bytes});const item=imported.items[0];assert.equal(item.kind,'file');
+ const info=await call(main,'materials_info',{itemId:item.id});assert.equal(info.size,bytes.length);assert(Number.isFinite(info.created_ms)&&info.created_ms>0&&info.created_ms<=Date.now());
  assert((await call(main,'materials_preview',{itemId:item.id})).startsWith('data:video/webm;base64,'));
  await main.getByRole('button',{name:/本次 prompt 素材|Prompt workspace/,exact:true,includeHidden:true}).evaluate(button=>button.onclick());
  const video=main.getByLabel(/影片預覽 inline-video.webm|Video preview inline-video.webm/,{exact:true});
@@ -43,5 +44,5 @@ try{
  await video.evaluate(v=>v.pause());await video.evaluate(v=>new Promise(r=>{v.addEventListener('seeked',r,{once:true});v.currentTime=1.1;}));assert(Math.abs(await video.evaluate(v=>v.currentTime)-1.1)<.1);await video.evaluate(v=>v.volume=.35);assert.equal(await video.evaluate(v=>v.volume),.35);
  await main.screenshot({path:join(output,'native-video-player.png')});
  const after=await call(main,'materials_load');assert.deepEqual(after,imported);assert.deepEqual(errors,[]);assert.equal(visibility(),0);
- const report={nativeVideo:true,codec:'VP8/Opus WebM',decodedSize:[128,72],playbackTimeAdvanced:true,paused:true,seek:true,volume:true,autoplay:false,materialUnchanged:true,runtimeErrors:0,desktopInput:false,clipboardAccess:false,visibleWindows:0};writeFileSync(join(output,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+ const report={nativeVideo:true,materialMetadata:true,metadataSize:info.size,createdMs:info.created_ms,codec:'VP8/Opus WebM',decodedSize:[128,72],playbackTimeAdvanced:true,paused:true,seek:true,volume:true,autoplay:false,materialUnchanged:true,runtimeErrors:0,desktopInput:false,clipboardAccess:false,visibleWindows:0};writeFileSync(join(output,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }finally{await browser?.close();child.kill();}

@@ -348,6 +348,19 @@ pub fn materials_remove(
     Ok(next)
 }
 #[tauri::command]
+pub fn materials_info(w: tauri::WebviewWindow, state: tauri::State<Materials>, item_id: String) -> Result<serde_json::Value, String> {
+    manager(&w)?;
+    state.ready()?;
+    material_info(&state, &item_id)
+}
+fn material_info(state: &Materials, item_id: &str) -> Result<serde_json::Value, String> {
+    let current=state.bundle.lock().map_err(err)?;
+    let item=current.items.iter().find(|i|i.id==item_id && i.kind!="text").ok_or("Material not found")?;
+    let metadata=fs::metadata(state.asset(&item.id)).map_err(err)?;
+    let created=metadata.created().ok().and_then(|time|time.duration_since(UNIX_EPOCH).ok()).map(|time|time.as_millis() as u64);
+    Ok(serde_json::json!({"size":metadata.len(),"created_ms":created}))
+}
+#[tauri::command]
 pub fn materials_preview(
     w: tauri::WebviewWindow,
     state: tauri::State<Materials>,
@@ -773,6 +786,21 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn material_details_read_real_files_and_never_mutate_bundle() {
+        let root=std::env::temp_dir().join(format!("material-info-{}",id()));
+        let store=Materials::new(root.clone()).unwrap();
+        let key=id();
+        store.append(Item{id:key.clone(),name:"sample.webm".into(),kind:"file".into(),text:String::new(),size:7},Some(b"example")).unwrap();
+        let original=fs::read(root.join("session.json")).unwrap();
+        let info=material_info(&store,&key).unwrap();
+        assert_eq!(info["size"].as_u64(),Some(7));
+        if let Some(created)=info["created_ms"].as_u64(){assert!(created>0);assert!(created<=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64);}
+        assert!(material_info(&store,"../../outside").is_err());
+        assert!(material_info(&store,"unknown").is_err());
+        assert_eq!(fs::read(root.join("session.json")).unwrap(),original);
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn video_preview_requires_a_recognized_container(){
         assert_eq!(super::video_mime(b"\x1a\x45\xdf\xa3webm"),Some("video/webm"));

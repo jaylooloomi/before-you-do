@@ -30,6 +30,7 @@ export function installBridge(){
     if(cmd==='capture_capabilities')return structuredClone(state.captureCapabilities||{platform:'windows',supported:true,permission:'not_required',reason:null,windowSemantics:'visible_pixels'});
     if(cmd==='capture_request_permission'){state.captureCapabilities.permission=qa.permissionDecision||'required';state.captureCapabilities.reason=state.captureCapabilities.permission==='granted'?null:'error.capture_permission';return structuredClone(state.captureCapabilities);}
     if(cmd==='capture_open_permissions')return;
+    if(cmd==='materials_info')return qa.materialInfo?.[args.itemId]??{};
     if(cmd==='materials_load')return structuredClone(state.materials);
     if(cmd==='materials_text'){if(args.itemId){state.materials.items.find(i=>i.id===args.itemId).text=args.text;}else state.materials.items.push({id:'m'+(++next),name:'Text',kind:'text',text:args.text,size:0});persist();return structuredClone(state.materials);}
     if(cmd==='materials_import'){state.materials.items.push({id:'m'+(++next),name:args.name,kind:args.name.endsWith('.png')?'image':'file',text:'',size:args.bytes.length});persist();return structuredClone(state.materials);}
