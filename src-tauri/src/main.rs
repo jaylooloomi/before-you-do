@@ -235,6 +235,12 @@ fn get_role(state: tauri::State<State>) -> String {
     state.role.lock().unwrap().clone()
 }
 #[tauri::command]
+fn get_default_role(w:tauri::WebviewWindow,state:tauri::State<State>)->Result<Option<String>,String>{if w.label()!="main"{return Err("Manager only".into());}roles::default_role(&state.path)}
+#[tauri::command]
+fn set_default_role(w:tauri::WebviewWindow,app:tauri::AppHandle,state:tauri::State<State>,role:Option<String>)->Result<Option<String>,String>{
+    if w.label()!="main"{return Err("Manager only".into());}let _role=state.role.lock().unwrap();roles::remember_default(&state.path,role.as_deref())?;let _=app.emit_to("main","default-role-changed",role.clone());Ok(role)
+}
+#[tauri::command]
 fn switch_role(
     app: tauri::AppHandle,
     role: String,
@@ -626,11 +632,13 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
                 state.picker.lock().unwrap().finish(false);
                 return;
             };
-            let items = state.items.lock().unwrap().clone();
+            let current=state.role.lock().unwrap().clone();
+            let initial=roles::picker_start(&state.path,&current,&state.items.lock().unwrap(),&state.language.lock().unwrap(),&state.files.lock().unwrap());
+            let (role,items)=match initial{Ok(value)=>value,Err(error)=>{platform::cancel_selection();state.picker.lock().unwrap().finish(false);set_status(app,error);return;}};
             {
                 let mut picker = state.picker.lock().unwrap();
                 picker.begin(items, target);
-                picker.role = state.role.lock().unwrap().clone();
+                picker.role = role;
                 let _ = app.emit_to("picker", "picker-state", picker.clone());
             }
             let handle = app.clone();
@@ -749,7 +757,7 @@ fn main() {
             get_snippets,
             get_autostart,
             set_autostart,
-            get_role,
+            get_role, get_default_role, set_default_role,
             switch_role,
             get_shortcut,
             save_shortcut,

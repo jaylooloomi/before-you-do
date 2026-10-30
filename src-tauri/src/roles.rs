@@ -79,6 +79,22 @@ pub fn remember(base: &Path, id: &str) -> Result<(), String> {
     fs::rename(temp, config).map_err(|e| e.to_string())
 }
 
+// Independent of the last role edited in the manager.
+pub fn default_role(base:&Path)->Result<Option<String>,String>{
+    let config=base.with_file_name("default-role.json");if !config.exists(){return Ok(None);}
+    let role:Option<String>=serde_json::from_slice(&fs::read(config).map_err(|e|e.to_string())?).map_err(|_|"error.role_invalid".to_string())?;
+    if let Some(ref id)=role{path(base,id)?;}Ok(role)
+}
+pub fn remember_default(base:&Path,role:Option<&str>)->Result<(),String>{
+    if let Some(id)=role{path(base,id)?;}fs::create_dir_all(base.parent().ok_or("error.io")?).map_err(|e|e.to_string())?;
+    let temp=base.with_file_name("default-role.tmp");let mut file=fs::File::create(&temp).map_err(|e|e.to_string())?;
+    file.write_all(&serde_json::to_vec(&role).map_err(|e|e.to_string())?).and_then(|_|file.sync_all()).map_err(|e|e.to_string())?;drop(file);
+    fs::rename(temp,base.with_file_name("default-role.json")).map_err(|e|e.to_string())
+}
+pub fn picker_start(base:&Path,current:&str,items:&[Snippet],language:&str,known:&KnownFiles)->Result<(String,Vec<Snippet>),String>{
+    let role=default_role(base)?.unwrap_or_else(||current.into());known.path(base,&role)?;
+    let selected=if role==current{items.to_vec()}else{load(base,&role,&defaults(&role,language)?)?};Ok((role,selected))
+}
 pub fn load(base: &Path, id: &str, defaults: &[Snippet]) -> Result<Vec<Snippet>, String> {
     let target = path(base, id)?;
     if target.exists() {
@@ -91,6 +107,19 @@ pub fn load(base: &Path, id: &str, defaults: &[Snippet]) -> Result<Vec<Snippet>,
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn default_picker_role_is_independent_and_never_rewrites_snippets(){
+        let dir=std::env::temp_dir().join(format!("default-role-{}",std::process::id()));fs::create_dir_all(&dir).unwrap();let base=dir.join("snippets.json");
+        storage::save(&base,&storage::defaults()).unwrap();remember(&base,"personal").unwrap();let original=fs::read(&base).unwrap();let known=KnownFiles::new(&base);
+        assert!(default_role(&base).unwrap().is_none());
+        remember_default(&base,Some("writer")).unwrap();assert_eq!(active(&base).unwrap(),"personal");
+        let (role,items)=picker_start(&base,"personal",&storage::defaults(),"en",&known).unwrap();assert_eq!(role,"writer");assert_eq!(items,defaults("writer","en").unwrap());assert!(!path(&base,"writer").unwrap().exists());
+        remember(&base,"developer").unwrap();assert_eq!(default_role(&base).unwrap().as_deref(),Some("writer"));assert_eq!(fs::read(&base).unwrap(),original);
+        assert!(remember_default(&base,Some("../bad")).is_err());assert_eq!(default_role(&base).unwrap().as_deref(),Some("writer"));
+        remember_default(&base,None).unwrap();let current=storage::defaults();assert_eq!(picker_start(&base,"developer",&current,"zh-TW",&known).unwrap(),("developer".into(),current));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
     use super::*;
     #[test]
     fn known_role_deletion_is_not_treated_as_first_use() {

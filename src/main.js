@@ -113,6 +113,7 @@ if (picker) {
 } else {
   let items = [], selected = 0, dirty = false, versions = new Map(), saveIssues = [];
   let activeRole = await invoke('get_role'), switchingRole = false;
+  let defaultRole=await invoke('get_default_role'),settingDefault=false;
   const roleSessions = new Map();
   let roleSync=Promise.resolve(), saveTask=Promise.resolve(), saving=false;
   // Bonus-05: snapshots never share objects with editable drafts, including cached roles.
@@ -162,24 +163,28 @@ if (picker) {
   },{passive:false});
   roleCards.addEventListener('keydown',event=>{
     if(!['Home','End'].includes(event.key))return;
-    const buttons=[...roleCards.querySelectorAll('button')],index=buttons.indexOf(event.target);if(index<0)return;
+    const buttons=[...roleCards.querySelectorAll('.role-card')],index=buttons.indexOf(event.target);if(index<0)return;
     event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:Math.max(0,Math.min(buttons.length-1,index+(event.key==='ArrowLeft'?-1:1)));
     buttons[next]?.focus({preventScroll:true});buttons[next]?.scrollIntoView({block:'nearest',inline:'nearest'});
   });
-  function renderRoles(){
+  function renderRoles(scrollSelected=true){
+    const previousScroll=roleCards.scrollLeft;
     roleCards.replaceChildren(...roles.map(role=>{
       const button=el('button','role-card'+(role.id===activeRole?' selected':''));
       button.type='button';button.dataset.role=role.id;button.setAttribute('aria-pressed',String(role.id===activeRole));button.disabled=switchingRole;
       const mark=el('span','role-mark',role.mark);mark.setAttribute('aria-hidden','true');
       const content=el('span','role-card-content');content.append(el('strong','',roleName(role.id,getLanguage())),el('small','',roleDescription(role,getLanguage())));
-      button.setAttribute('aria-label',roleName(role.id,getLanguage())+' '+roleDescription(role,getLanguage()));button.append(mark,content);button.title=roleDescription(role,getLanguage());button.onclick=()=>switchRole(role.id);return button;
+      button.setAttribute('aria-label',roleName(role.id,getLanguage())+' '+roleDescription(role,getLanguage()));button.append(mark,content);button.title=roleDescription(role,getLanguage());button.onclick=()=>switchRole(role.id);
+      const wrapper=el('div','role-card-choice');const star=el('button','role-default-star');star.type='button';star.disabled=settingDefault||switchingRole;star.setAttribute('aria-pressed',String(defaultRole===role.id));star.setAttribute('aria-label',t(defaultRole===role.id?'取消預設角色':'設為預設角色')+' '+roleName(role.id,getLanguage()));star.title=t('{shortcut} 開啟時預設選取此角色',{shortcut:shortcutLabel()});star.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>';
+      star.onclick=async()=>{if(settingDefault||switchingRole)return;settingDefault=true;renderRoles(false);try{defaultRole=await invoke('set_default_role',{role:defaultRole===role.id?null:role.id});}catch(error){setSaveError(error);}finally{settingDefault=false;renderRoles(false);}};
+      wrapper.append(button,star);return wrapper;
     }));
     roleCards.setAttribute('aria-label',t('選擇角色'));
     roleSwitcher.title=t('主畫面：← → 切換角色，↑ ↓ 選擇短句；編輯文字時保留游標操作。');
     document.querySelector('aside .section-label').textContent=roleName(activeRole,getLanguage());
     previousRoles.setAttribute('aria-label',t('向左捲動角色'));nextRoles.setAttribute('aria-label',t('向右捲動角色'));
     previousRoles.title=t('向左捲動角色');nextRoles.title=t('向右捲動角色');
-    roleCards.querySelector('[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});
+    if(scrollSelected)roleCards.querySelector('.role-card[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});else roleCards.scrollLeft=previousScroll;
     renderSaveOverview();requestAnimationFrame(updateRoleScroll);
   }
   async function switchRole(id){
@@ -293,6 +298,8 @@ if (picker) {
   function addSnippet() { stash(); if (items.length >= 100) return askConfirmation({title:t('最多 100 句。'),message:'',notice:true,confirmText:t('知道了')}); search.value = ''; items.push({ name: t('新短句'), text: '',scenario:'',custom:true }); selected = items.length - 1; dirty = true; render(); showLibrary(); setSaveStatus('尚未儲存'); name.focus(); name.select(); }
   document.querySelector('#add').onclick = addSnippet;
   async function consumeNewSnippet() { await roleSync; if (items.length && await invoke('consume_new_snippet')) addSnippet(); }
+  onShortcutChange(renderRoles);
+  await listen('default-role-changed',event=>{defaultRole=event.payload;renderRoles(false);});
   await listen('new-snippet', consumeNewSnippet);
   async function consumeOpenSettings(){await roleSync;if(await invoke('consume_open_settings'))showLibrary();}
   await listen('open-settings',consumeOpenSettings);

@@ -33,6 +33,8 @@ export function installBridge(){
     if(cmd==='materials_info')return qa.materialInfo?.[args.itemId]??{};
     if(cmd==='materials_choose_files'){for(const item of qa.chosenMaterials??[])state.materials.items.push(item);persist();return structuredClone(state.materials);}
     if(cmd==='materials_open')return;
+    if(cmd==='get_default_role')return state.defaultRole??null;
+    if(cmd==='set_default_role'){state.defaultRole=args.role;persist();emit('default-role-changed',args.role);return args.role;}
     if(cmd==='materials_load')return structuredClone(state.materials);
     if(cmd==='materials_text'){if(args.itemId){state.materials.items.find(i=>i.id===args.itemId).text=args.text;}else state.materials.items.push({id:'m'+(++next),name:'Text',kind:'text',text:args.text,size:0});persist();return structuredClone(state.materials);}
     if(cmd==='materials_import'){state.materials.items.push({id:'m'+(++next),name:args.name,kind:args.name.endsWith('.png')?'image':'file',text:'',size:args.bytes.length});persist();return structuredClone(state.materials);}

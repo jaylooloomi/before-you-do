@@ -154,3 +154,14 @@
 .app-shell .materials-center .material-text textarea{flex:1;height:auto;max-height:none;min-height:0;outline-offset:-2px}
 /* Align the library divider with the material collection divider. */
 @media(min-width:851px){.app-shell[data-page=library] .manager{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
+.role-card-choice{position:relative;flex:0 0 106px;min-width:106px;max-width:106px;scroll-snap-align:start}
+.app-shell .role-card-choice>.role-card{width:100%;min-width:0;max-width:none;height:100%;padding-right:26px}
+.app-shell[data-page=library] .workspace .role-card-choice{flex-basis:148px;min-width:148px;max-width:148px}
+.app-shell .role-default-star{position:absolute;right:4px;top:4px;width:20px;height:20px;padding:2px;display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--muted);z-index:2}
+.role-default-star svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.app-shell .role-default-star[aria-pressed=true]{color:#e9bd59}.role-default-star[aria-pressed=true] svg{fill:currentColor}
+.app-shell .role-default-star:hover{background:var(--hover)}
+.app-shell .role-card-choice:has(.role-card.selected) .role-default-star{color:#fff}
+:root[data-theme=dark] .app-shell .role-card-choice:has(.role-card.selected) .role-default-star{color:#172238}
+:root[data-theme=dark] .app-shell .role-card-choice:has(.role-card.selected) .role-default-star[aria-pressed=true]{color:#755000}
+.app-shell[data-page=library] .workspace .role-card-choice>.role-card{width:100%;min-width:0;max-width:none;padding-right:26px}

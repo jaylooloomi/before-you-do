@@ -1,5 +1,8 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["設為預設角色","设为默认角色","Set default role","デフォルトの役割に設定"],
+["取消預設角色","取消默认角色","Clear default role","デフォルトの役割を解除"],
+["{shortcut} 開啟時預設選取此角色","{shortcut} 打开时默认选择此角色","Select this role by default when opening {shortcut}","{shortcut} で短文メニューを開くときにこの役割を選択"],
 ["執行","执行","Run","実行"],
 ["快捷鍵","快捷键","Shortcut","ショートカット"],
 ["拖曳素材","拖动素材","Drag material","素材をドラッグ"],
