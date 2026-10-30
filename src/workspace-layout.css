@@ -236,3 +236,8 @@
 /* Version comes from the package manifest, directly below the product name. */
 .app-shell .window-brand-copy{display:flex;flex-direction:column;gap:2px;line-height:1.05}
 .app-shell .window-version{display:block;font-size:11px;font-weight:500;line-height:1.1;letter-spacing:.2px;color:var(--muted)}
+
+/* Keep shortcut hints aligned with the material title and description. */
+.app-shell .materials-center>.material-heading-tools{align-self:flex-start}
+.app-shell .material-shortcut-hints>div{justify-content:flex-start}
+
