@@ -1,0 +1,187 @@
+{
+  "source": "Current frontend, isolated browser IPC and fictional demo attachments; no native app connection.",
+  "sourceCommit": "ede8c774c404e83732880eef82f99eada790e7c2",
+  "screenshots": [
+    {
+      "file": "docs/images/current/manager-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/materials-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/capture-settings-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/settings-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/ai-guide-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/ai-json-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-personal-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-project-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-developer-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-marketing-en.png",
+      "language": "en",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/manager-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/materials-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/capture-settings-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/settings-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/ai-guide-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/ai-json-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 1560,
+        "height": 1000
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-personal-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-project-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-developer-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    },
+    {
+      "file": "docs/images/current/picker-marketing-zh-TW.png",
+      "language": "zh-TW",
+      "viewport": {
+        "width": 580,
+        "height": 480
+      },
+      "demoData": true
+    }
+  ],
+  "errors": []
+}

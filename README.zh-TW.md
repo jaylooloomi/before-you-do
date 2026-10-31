@@ -66,6 +66,49 @@
 
 **兩種操作分開：** **Alt+H** 貼入儲存的短句；**匯出素材包** 產生本機檔案。「複製整合文字」包含附件提示，不包含圖片與檔案本體。請自行附上匯出的檔案，檢查訊息後再送出。
 
+## 新版畫面與操作流程
+
+以下使用已提交的前端介面與隔離示範資料擷取，不含個人短句或桌面內容。畫面反映目前原始碼；上方註明的兩項 v0.5.0 後續介面修正尚未包含在公開下載包。[截圖來源紀錄](docs/images/current/capture-manifest.json)。
+
+### 收集素材、編號並預覽
+
+加入任務文字、截圖、錄影與需求檔，再拖曳卡片調整順序；**#01、#02…** 會同步更新到卡片、右側預覽和匯出內容。選取影片後可直接播放或拖曳進度；雙擊附件則以系統預設工具開啟。
+
+<p align="center"><img src="docs/images/current/materials-zh-TW.png" alt="新版繁體中文素材頁：編號文字、截圖、影片與檔案卡片、影片預覽和匯出操作" width="1100"></p>
+
+「**複製整合文字**」複製任務文字與附件提示；「**匯出素材包**」產生供你自行附上的檔案。兩者都不會替你把訊息送給 AI。
+
+<details>
+<summary>截圖、錄影、新增文字與檔案的快捷鍵</summary>
+
+開啟「**本次素材 → 設定**」，每個功能按鈕旁就是對應的快捷鍵欄位，可調整區域／全螢幕／目前視窗截圖、錄影、GIF、**新增文字**與**新增檔案**。圖中使用 Ctrl+Shift+F6–F12 示範，請依電腦上可用的按鍵設定；自動偵測與像素放大鏡也在這裡切換。
+
+<p align="center"><img src="docs/images/current/capture-settings-zh-TW.png" alt="繁體中文素材快捷鍵設定：七組功能按鈕與快捷鍵欄位、自動偵測及像素放大鏡" width="1100"></p>
+
+</details>
+
+<details>
+<summary>設定：快捷鍵、語言、外觀與登入啟動</summary>
+
+獨立的「**設定**」分頁可調整選句快捷鍵、四種介面語言、亮／暗／跟隨系統外觀與登入啟動。這裡的選句快捷鍵和素材頁的截圖快捷鍵分開管理。
+
+<p align="center"><img src="docs/images/current/settings-zh-TW.png" alt="新版繁體中文設定頁：選句快捷鍵、介面語言、外觀與登入啟動" width="1100"></p>
+
+</details>
+
+<details>
+<summary>AI 教學：範本、修改指令與 JSON 匯入／匯出</summary>
+
+選擇範本後可加入草稿，不會取代原有短句。也可複製指令交給能操作本機檔案的 AI，或使用一般聊天 AI 修改。頁面另提供目前角色的資料位置與備份說明。
+
+<p align="center"><img src="docs/images/current/ai-guide-zh-TW.png" alt="新版繁體中文 AI 教學頁：範本預覽、加入範本及本機資料位置" width="1100"></p>
+
+一般聊天 AI 的流程是：複製已儲存短句給 AI 修改，貼回完整 JSON，再按「**檢查並套用 JSON**」。套用會先備份並要求確認，再取代此角色的短句、排序與草稿。「**複製短句 JSON**」只匯出已儲存內容，不包含未儲存草稿。
+
+<p align="center"><img src="docs/images/current/ai-json-zh-TW.png" alt="繁體中文 JSON 操作：AI 回傳的短句內容、覆蓋提醒、檢查套用按鈕與已儲存短句匯出" width="1100"></p>
+
+</details>
+
 ## 本次 prompt 素材區（v0.5.0）
 
 **v0.5.0：** 常用短句、本次素材、設定、AI 教學四個分頁，統一標題與控制項風格；左上角名稱下方顯示版本號。素材區支援截圖、Windows 無聲錄影／GIF、文字與檔案、拖曳排序、同步編號匯出與影片預覽，保留原本短句與 Alt+H 操作。
@@ -138,12 +181,12 @@ Alt + H → 選「實作、測試並回報」→ 放開 Alt
 
 <table>
 <tr>
-<td align="center" width="50%"><strong>我的短句</strong><br><img src="docs/images/picker-personal-zh-TW.png" alt="我的短句 — 日常交代與實作驗證" width="460"><br><sub>日常交代與實作驗證</sub></td>
-<td align="center" width="50%"><strong>專案管理</strong><br><img src="docs/images/picker-project-zh-TW.png" alt="專案管理 — 拆解工作、追蹤進度與阻礙" width="460"><br><sub>拆解工作、追蹤進度與阻礙</sub></td>
+<td align="center" width="50%"><strong>我的短句</strong><br><img src="docs/images/current/picker-personal-zh-TW.png" alt="我的短句 — 日常交代與實作驗證" width="460"><br><sub>日常交代與實作驗證</sub></td>
+<td align="center" width="50%"><strong>專案管理</strong><br><img src="docs/images/current/picker-project-zh-TW.png" alt="專案管理 — 拆解工作、追蹤進度與阻礙" width="460"><br><sub>拆解工作、追蹤進度與阻礙</sub></td>
 </tr>
 <tr>
-<td align="center" width="50%"><strong>程式開發</strong><br><img src="docs/images/picker-developer-zh-TW.png" alt="程式開發 — 實作、除錯與測試" width="460"><br><sub>實作、除錯與測試</sub></td>
-<td align="center" width="50%"><strong>內容行銷</strong><br><img src="docs/images/picker-marketing-zh-TW.png" alt="內容行銷 — 依受眾改寫、規劃選題" width="460"><br><sub>依受眾改寫、規劃選題</sub></td>
+<td align="center" width="50%"><strong>程式開發</strong><br><img src="docs/images/current/picker-developer-zh-TW.png" alt="程式開發 — 實作、除錯與測試" width="460"><br><sub>實作、除錯與測試</sub></td>
+<td align="center" width="50%"><strong>內容行銷</strong><br><img src="docs/images/current/picker-marketing-zh-TW.png" alt="內容行銷 — 依受眾改寫、規劃選題" width="460"><br><sub>依受眾改寫、規劃選題</sub></td>
 </tr>
 </table>
 
@@ -238,7 +281,9 @@ Alt+H 選單底部依序是「新增快捷提示詞」與「設定」。選到�
 
 表中的數量是新角色的預設值；升級不會重設你已修改的內容。這些角色是短句分類，不會在 App 內呼叫 AI 或自動執行任務。
 
-<p align="center"><img src="docs/images/manager-roles.png" alt="短句管理主畫面：新版圖示、可橫向捲動的角色小卡、短句排序與使用情境" width="940"></p>
+<p align="center"><img src="docs/images/current/manager-zh-TW.png" alt="短句管理主畫面：新版圖示、可橫向捲動的角色小卡、短句排序與使用情境" width="940"></p>
+
+新版管理頁將角色卡放在編輯區上方，以星號設定選單預設角色，並保留獨立的「**刪除／儲存短句**」底部操作區；長內容在編輯區內捲動，按鈕保持可見。
 
 Alt+H 使用目前角色**已儲存**的短句。切換時，各角色未儲存的編輯與選取位置會留在目前程式中；重新啟動也會記住上次角色，但結束前仍需儲存編輯。匯入、重新載入及 AI 修改指令只針對目前角色。
 

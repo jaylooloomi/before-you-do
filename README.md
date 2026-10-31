@@ -68,6 +68,49 @@ Describe **what** you need. Keep reusable instructions for **how** AI should wor
 
 **Two separate actions:** **Alt+H** pastes a saved snippet; **Export material bundle** creates local files. Copy combined text includes attachment references, not the images or file bytes. Attach the exported files yourself, review the message and send it when ready.
 
+## Screenshots and new workflows
+
+These screenshots render the committed frontend with isolated demo data, not personal snippets or desktop captures. They show the current source interface; the two post-v0.5.0 UI adjustments noted above are not yet in the published download. [Capture manifest](docs/images/current/capture-manifest.json).
+
+### Collect, number and preview task materials
+
+Add task text, screenshots, a recording and a requirements file. Drag cards to change their order; **#01, #02…** stay consistent between cards, the selected preview and the exported bundle. Select a video to play or seek it in the preview. Double-click an attachment to open it with your default application.
+
+<p align="center"><img src="docs/images/current/materials-en.png" alt="Current English Materials tab with numbered text, screenshot, video and file cards, video preview and export controls" width="1100"></p>
+
+**Copy combined text** copies the task text and attachment references. **Export material bundle** creates the files for you to attach manually; neither action sends a message to AI.
+
+<details>
+<summary>Capture, recording, text and file shortcuts</summary>
+
+In **Materials → Settings**, each action sits beside its shortcut field. Customize region/full-screen/window capture, video, GIF, **Add text** and **Add file**. The image uses example Ctrl+Shift+F6–F12 bindings; choose available keys on your computer. Auto detection and the pixel magnifier can also be toggled here.
+
+<p align="center"><img src="docs/images/current/capture-settings-en.png" alt="English capture settings showing seven paired action buttons and editable shortcut fields, auto detection and pixel magnifier" width="1100"></p>
+
+</details>
+
+<details>
+<summary>Settings: shortcut, language, appearance and startup</summary>
+
+The standalone **Settings** tab controls the snippet picker shortcut, four interface languages, light/dark/system appearance and sign-in startup. These preferences are separate from the capture shortcuts in Materials.
+
+<p align="center"><img src="docs/images/current/settings-en.png" alt="Current English Settings tab with snippet shortcut, interface language, appearance and startup options" width="1100"></p>
+
+</details>
+
+<details>
+<summary>AI guide: templates, editing instructions and JSON import/export</summary>
+
+Choose a template and add it as a draft without replacing existing snippets. Copy instructions for a local-file AI or a regular chat AI. The guide also shows the current role's data path and backup guidance.
+
+<p align="center"><img src="docs/images/current/ai-guide-en.png" alt="Current English AI guide with template preview, add-template action and local data paths" width="1100"></p>
+
+For a chat AI, copy the saved snippets, ask for edits, paste the complete JSON and select **Validate & apply JSON**. Applying replaces this role's snippets, order and drafts after a backup and confirmation. **Copy snippets as JSON** exports saved entries only, excluding unsaved drafts.
+
+<p align="center"><img src="docs/images/current/ai-json-en.png" alt="English JSON workflow showing AI-returned snippet JSON, replacement warning, validate-and-apply action and saved-only JSON export" width="1100"></p>
+
+</details>
+
 ## Prompt workspace (v0.5.0)
 
 **v0.5.0:** Four tabs — Snippets, Materials, Settings and AI guide — now share consistent titles and controls. The current version appears below the app name. Materials supports screenshots, Windows silent recording/GIF, editable text, files, drag sorting, numbered exports and video previews. Existing snippets and the Alt+H workflow remain available.
@@ -141,12 +184,12 @@ Do not wait for my confirmation at every step.
 
 <table>
 <tr>
-<td align="center" width="50%"><strong>My snippets</strong><br><img src="docs/images/picker-personal-en.png" alt="My snippets — Everyday instructions and verification" width="460"><br><sub>Everyday instructions and verification</sub></td>
-<td align="center" width="50%"><strong>Project planning</strong><br><img src="docs/images/picker-project-en.png" alt="Project planning — Break down work and track blockers" width="460"><br><sub>Break down work and track blockers</sub></td>
+<td align="center" width="50%"><strong>My snippets</strong><br><img src="docs/images/current/picker-personal-en.png" alt="My snippets — Everyday instructions and verification" width="460"><br><sub>Everyday instructions and verification</sub></td>
+<td align="center" width="50%"><strong>Project planning</strong><br><img src="docs/images/current/picker-project-en.png" alt="Project planning — Break down work and track blockers" width="460"><br><sub>Break down work and track blockers</sub></td>
 </tr>
 <tr>
-<td align="center" width="50%"><strong>Development</strong><br><img src="docs/images/picker-developer-en.png" alt="Development — Implementation, debugging and testing" width="460"><br><sub>Implementation, debugging and testing</sub></td>
-<td align="center" width="50%"><strong>Marketing</strong><br><img src="docs/images/picker-marketing-en.png" alt="Marketing — Adapt content and plan topics" width="460"><br><sub>Adapt content and plan topics</sub></td>
+<td align="center" width="50%"><strong>Development</strong><br><img src="docs/images/current/picker-developer-en.png" alt="Development — Implementation, debugging and testing" width="460"><br><sub>Implementation, debugging and testing</sub></td>
+<td align="center" width="50%"><strong>Marketing</strong><br><img src="docs/images/current/picker-marketing-en.png" alt="Marketing — Adapt content and plan topics" width="460"><br><sub>Adapt content and plan topics</sub></td>
 </tr>
 </table>
 
@@ -241,7 +284,9 @@ The Agent commands role, between My snippets and Development, includes Claude Co
 
 Counts describe the initial presets; upgrading does not reset edited content. Roles organize snippets. They do not call AI or execute tasks inside the app.
 
-<p align="center"><img src="docs/images/manager-roles-en.png" alt="English snippet manager with horizontal role cards, reordering and editable usage scenarios" width="940"></p>
+<p align="center"><img src="docs/images/current/manager-en.png" alt="English snippet manager with horizontal role cards, reordering and editable usage scenarios" width="940"></p>
+
+The current manager keeps role cards above the editor, marks the default picker role with a star, and reserves a separate bottom area for **Delete / Save snippets**. Long editor content scrolls without moving those actions out of view.
 
 Alt+H uses the active role’s **saved** snippets. Switching preserves each role’s unsaved edits and selection in the current app session, and remembers the active role across restarts. Save edits before quitting. Imports, reloads and AI editing instructions apply only to the active role.
 
