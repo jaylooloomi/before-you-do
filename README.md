@@ -64,6 +64,8 @@ The export contains <code>prompt.md</code>, attachment copies and <code>manifest
 
 Data stays local and no API key is needed. You choose the AI, review the content and send it yourself.
 
+**v0.6.0:** keep separate [named task packs](docs/task-packs.md) and [annotate or redact images](docs/image-editor.md). Back up your materials before upgrading: the new task-pack format cannot be opened by older versions.
+
 ## Keyboard essentials
 
 | Action | Shortcut |

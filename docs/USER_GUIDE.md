@@ -11,22 +11,11 @@
 | **Settings** | Snippet shortcut, four interface languages, light/dark/system theme and sign-in startup |
 | **AI guide** | Template library, AI editing instructions, current-role JSON import/export, data paths and backup guidance |
 
-The source screenshots include two interface fixes newer than the v0.5.0 download: left-aligned material shortcut hints and the separate bottom Delete / Save action area.
-
-### Four tabs
-
-| Tab | Main tools |
-|---|---|
-| **Snippets** | 13 roles including My snippets, Agent commands, Development, Writing and Project management; scenarios, search, ordering, default-role star, editing and saving |
-| **Materials** | Region/full-screen/window screenshots, Windows silent video/GIF, text/files, numbered drag sorting, previews, double-click to open with the default app, combined text and bundle export |
-| **Settings** | Snippet shortcut, four interface languages, light/dark/system theme and sign-in startup |
-| **AI guide** | Template library, AI editing instructions, current-role JSON import/export, data paths and backup guidance |
-
-The source screenshots include two interface fixes newer than the v0.5.0 download: left-aligned material shortcut hints and the separate bottom Delete / Save action area.
+v0.6.0 includes the left-aligned capture/recording hints and the reserved Delete / Save area. The screenshots below were captured from the earlier source layout; named task packs and image annotation are described in the dedicated guides. [Task packs](task-packs.md) · [Image annotation](image-editor.md).
 
 ## Screenshots and new workflows
 
-These screenshots render the committed frontend with isolated demo data, not personal snippets or desktop captures. They show the current source interface; the two source-only UI adjustments described above are not yet in the published download. [Capture manifest](../docs/images/current/capture-manifest.json).
+These screenshots render the committed frontend with isolated demo data, not personal snippets or desktop captures. They illustrate the source layout before v0.6.0; the left-alignment and bottom-action fixes are now included in v0.6.0. [Capture manifest](../docs/images/current/capture-manifest.json).
 
 ### Collect, number and preview task materials
 

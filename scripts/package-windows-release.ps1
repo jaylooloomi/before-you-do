@@ -23,7 +23,8 @@ Extract all files together. Keep WebView2Loader.dll beside before-you-do.exe.
 Requires Microsoft Edge WebView2 Runtime:
 https://developer.microsoft.com/microsoft-edge/webview2/
 
-Before upgrading, save drafts in every role and fully quit the old app from the tray.
+Before upgrading, save drafts in every role, back up the entire data folder, and fully quit the old app from the tray.
+Task packs use a new material store. Older versions cannot open it; keep a full pre-upgrade backup for rollback.
 Existing snippets and settings remain in %APPDATA%\dev.quicksay.desktop.
 Unsaved drafts live in memory; do not force-quit an app with edits you want to keep.
 

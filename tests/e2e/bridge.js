@@ -35,6 +35,16 @@ export function installBridge(){
     if(cmd==='materials_open')return;
     if(cmd==='get_default_role')return state.defaultRole??null;
     if(cmd==='set_default_role'){state.defaultRole=args.role;persist();emit('default-role-changed',args.role);return args.role;}
+    if(cmd==='materials_packs'||cmd==='materials_select_pack'){
+      state.taskPacks??={version:1,active:'legacy',packs:[{id:'legacy',name:'My task',bundle:structuredClone(state.materials)}]};
+      const store=state.taskPacks;store.packs.find(p=>p.id===store.active).bundle=structuredClone(state.materials);
+      if(cmd==='materials_select_pack'){
+        if(args.name!=null){const name=args.name.trim();if(store.packs.some(p=>p.name.toLowerCase()===name.toLowerCase()))throw 'Task name already exists';const id='pack-'+Date.now();store.packs.push({id,name,bundle:{items:[]}});store.active=id;}
+        else {if(!store.packs.some(p=>p.id===args.target))throw 'Task pack not found';store.active=args.target;}
+        state.materials=structuredClone(store.packs.find(p=>p.id===store.active).bundle);persist();
+      }
+      return structuredClone(store);
+    }
     if(cmd==='materials_load')return structuredClone(state.materials);
     if(cmd==='materials_text'){if(args.itemId){state.materials.items.find(i=>i.id===args.itemId).text=args.text;}else state.materials.items.push({id:'m'+(++next),name:'Text',kind:'text',text:args.text,size:0});persist();return structuredClone(state.materials);}
     if(cmd==='materials_import'){state.materials.items.push({id:'m'+(++next),name:args.name,kind:args.name.endsWith('.png')?'image':'file',text:'',size:args.bytes.length});persist();return structuredClone(state.materials);}

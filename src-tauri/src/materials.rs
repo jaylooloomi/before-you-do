@@ -22,10 +22,25 @@ pub struct Item {
 pub struct Bundle {
     pub items: Vec<Item>,
 }
+#[derive(Clone, Serialize, Deserialize)]
+struct TaskPack { id: String, name: String, bundle: Bundle }
+#[derive(Clone, Serialize, Deserialize)]
+struct TaskPacks { version: u8, active: String, packs: Vec<TaskPack> }
+impl TaskPacks {
+    fn legacy(bundle: Bundle) -> Self { Self {version:1,active:"legacy".into(),packs:vec![TaskPack{id:"legacy".into(),name:"My task".into(),bundle}]} }
+    fn validate(self)->Result<Self,String>{
+        if self.version!=1 || self.packs.is_empty(){return Err("Invalid task pack store".into());}
+        let mut ids=std::collections::HashSet::new();let mut names=std::collections::HashSet::new();let mut assets=std::collections::HashSet::new();
+        for pack in &self.packs {if pack.id.is_empty()||!ids.insert(&pack.id)||!names.insert(pack.name.trim().to_lowercase())||pack.name.trim().is_empty(){return Err("Invalid task pack".into());}validate_bundle(pack.bundle.clone())?;for item in &pack.bundle.items{if !assets.insert(&item.id){return Err("Shared material ID".into());}}}
+        if !ids.contains(&self.active){return Err("Active task pack missing".into());}Ok(self)
+    }
+    fn bundle(&self)->Bundle{self.packs.iter().find(|p|p.id==self.active).unwrap().bundle.clone()}
+}
 pub struct Materials {
     load_error: Option<String>,
     root: PathBuf,
     bundle: Mutex<Bundle>,
+    packs: Mutex<TaskPacks>,
     capture: Mutex<Option<Frame>>,
     presentation: Mutex<(u64,u8)>,
     audit_gate: Mutex<(bool,Option<std::sync::mpsc::SyncSender<()>>)>,
@@ -42,19 +57,27 @@ impl Materials {
         let loaded = if file.exists() {
             fs::read(file)
                 .map_err(err)
-                .and_then(|bytes| serde_json::from_slice::<Bundle>(&bytes).map_err(err))
-                .and_then(validate_bundle)
+                .and_then(|bytes| {
+                    let value:serde_json::Value=serde_json::from_slice(&bytes).map_err(err)?;
+                    if value.get("packs").is_some(){serde_json::from_value::<TaskPacks>(value).map_err(err)?.validate()}
+                    else {let bundle=validate_bundle(serde_json::from_value(value).map_err(err)?)?;
+                        // Keep the original bytes, including unknown legacy fields, before first migration.
+                        let backup=root.join("session.legacy.json");
+                        if !backup.exists(){use std::io::Write;let mut out=fs::OpenOptions::new().write(true).create_new(true).open(backup).map_err(err)?;out.write_all(&bytes).map_err(err)?;out.sync_all().map_err(err)?;}
+                        Ok(TaskPacks::legacy(bundle))}
+                })
         } else {
-            Ok(Bundle::default())
+            Ok(TaskPacks::legacy(Bundle::default()))
         };
         let (bundle, load_error) = match loaded {
             Ok(bundle) => (bundle, None),
-            Err(e) => (Bundle::default(), Some(e)),
+            Err(e) => (TaskPacks::legacy(Bundle::default()), Some(e)),
         };
         Ok(Self {
             load_error,
             root,
-            bundle: Mutex::new(bundle),
+            bundle: Mutex::new(bundle.bundle()),
+            packs: Mutex::new(bundle),
             capture: Mutex::new(None),
             presentation: Mutex::new((0,0)),
             audit_gate: Mutex::new((false,None)),
@@ -98,10 +121,30 @@ impl Materials {
     }
     fn commit(&self, bundle: &Bundle) -> Result<(), String> {
         self.ready()?;
+        let mut packs=self.packs.lock().map_err(err)?;let mut next=packs.clone();
+        next.packs.iter_mut().find(|p|p.id==next.active).ok_or("Task pack missing")?.bundle=bundle.clone();
+        self.write_packs(&next)?;*packs=next;Ok(())
+    }
+    fn write_packs(&self,packs:&TaskPacks)->Result<(),String>{
         fs::create_dir_all(&self.root).map_err(err)?;
         let tmp = self.root.join("session.json.tmp");
-        fs::write(&tmp, serde_json::to_vec_pretty(bundle).map_err(err)?).map_err(err)?;
+        use std::io::Write;
+        let mut file=fs::File::create(&tmp).map_err(err)?;
+        file.write_all(&serde_json::to_vec_pretty(packs).map_err(err)?).map_err(err)?;file.sync_all().map_err(err)?;drop(file);
         fs::rename(tmp, self.root.join("session.json")).map_err(err)
+    }
+    fn select_pack(&self,target:Option<String>,name:Option<String>)->Result<serde_json::Value,String>{
+        self.ready()?;
+        let _operation=self.operation.lock().map_err(err)?;
+        if self.busy.load(std::sync::atomic::Ordering::SeqCst){return Err("Finish capture before switching task packs".into());}
+        let mut bundle=self.bundle.lock().map_err(err)?;let mut packs=self.packs.lock().map_err(err)?;let mut next=packs.clone();
+        next.packs.iter_mut().find(|p|p.id==next.active).ok_or("Task pack missing")?.bundle=bundle.clone();
+        if let Some(name)=name {let name=name.trim();if name.is_empty()||name.chars().count()>80||name.chars().any(char::is_control){return Err("Enter a task name (1–80 characters)".into());}
+            if next.packs.iter().any(|p|p.name.to_lowercase()==name.to_lowercase()){return Err("Task name already exists".into());}
+            let key=id();next.packs.push(TaskPack{id:key.clone(),name:name.into(),bundle:Bundle::default()});next.active=key;
+        }else if let Some(target)=target {if !next.packs.iter().any(|p|p.id==target){return Err("Task pack not found".into());}next.active=target;}
+        self.write_packs(&next)?;*bundle=next.bundle();*packs=next;
+        Ok(serde_json::to_value(&*packs).map_err(err)?)
     }
     fn append(&self, item: Item, bytes: Option<&[u8]>) -> Result<Bundle, String> {
         let mut current = self.bundle.lock().map_err(err)?;
@@ -211,6 +254,12 @@ fn manager(w: &tauri::WebviewWindow) -> Result<(), String> {
     } else {
         Ok(())
     }
+}
+#[tauri::command]
+pub fn materials_packs(w:tauri::WebviewWindow,state:tauri::State<Materials>)->Result<serde_json::Value,String>{manager(&w)?;state.ready()?;serde_json::to_value(&*state.packs.lock().map_err(err)?).map_err(err)}
+#[tauri::command]
+pub fn materials_select_pack(w:tauri::WebviewWindow,app:tauri::AppHandle,state:tauri::State<Materials>,target:Option<String>,name:Option<String>)->Result<serde_json::Value,String>{
+    manager(&w)?;if app.state::<crate::recording::Recorder>().active(){return Err("Finish recording before switching task packs".into());}state.select_pack(target,name)
 }
 fn valid_text(s: &str) -> Result<(), String> {
     if s.chars().count() > 100_000 {
@@ -326,6 +375,42 @@ pub fn materials_import(
         Some(&bytes),
     )
 }
+#[tauri::command]
+pub fn materials_replace_image(w:tauri::WebviewWindow,state:tauri::State<Materials>,item_id:String,bytes:Vec<u8>)->Result<Bundle,String>{
+    manager(&w)?;replace_image(&state,&item_id,bytes)
+}
+fn replace_image(state:&Materials,item_id:&str,bytes:Vec<u8>)->Result<Bundle,String>{
+    state.ready()?;
+    if bytes.len()>MAX_FILE{return Err("Maximum file size is 25 MB".into());}
+    // Decode and encode again: store only a single pixel frame, never editor metadata or source layers.
+    let decoder=png::Decoder::new(std::io::Cursor::new(&bytes));
+    let mut reader=decoder.read_info().map_err(err)?;
+    let info=reader.info();
+    if info.width as u64*info.height as u64>32_000_000 || info.animation_control.is_some(){return Err("Unsupported image dimensions or animation".into());}
+    let mut pixels=vec![0;reader.output_buffer_size().ok_or("Invalid PNG size")?];
+    let frame=reader.next_frame(&mut pixels).map_err(err)?;
+    if !matches!(frame.color_type,png::ColorType::Rgb|png::ColorType::Rgba)||frame.bit_depth!=png::BitDepth::Eight{return Err("Expected 8-bit RGB PNG".into());}
+    let mut clean=Vec::new();{
+        let mut encoder=png::Encoder::new(&mut clean,frame.width,frame.height);encoder.set_color(frame.color_type);encoder.set_depth(frame.bit_depth);
+        let mut writer=encoder.write_header().map_err(err)?;writer.write_image_data(&pixels[..frame.buffer_size()]).map_err(err)?;
+    }
+    if clean.len()>MAX_FILE{return Err("Maximum file size is 25 MB".into());}
+    let mut current=state.bundle.lock().map_err(err)?;
+    let mut next=current.clone();
+    let item=next.items.iter_mut().find(|i|i.id==item_id&&i.kind=="image").ok_or("Image not found")?;
+    if current.items.iter().map(|i|i.size).sum::<u64>()-item.size+clean.len() as u64>MAX_TOTAL{return Err("Maximum total size is 100 MB".into());}
+    item.size=clean.len() as u64;item.name=format!("{}.png",item.name.rsplit_once('.').map(|(stem,_)|stem).unwrap_or(&item.name));
+    if validate_name(&item.name).is_err(){item.name=format!("edited-{item_id}.png");}
+    // Remove the app's OS-opening copy before replacing; exports always read the current asset.
+    let opened=state.root.join("opened").join(item_id);
+    if opened.exists(){fs::remove_dir_all(&opened).map_err(err)?;}
+    let temporary=state.root.join("files").join(format!("{item_id}.edited"));
+    fs::write(&temporary,&clean).map_err(err)?;
+    if let Err(e)=fs::rename(&temporary,state.asset(item_id)){let _=fs::remove_file(&temporary);return Err(err(e));}
+    // If session persistence fails, the source pixels are still replaced (fail closed).
+    *current=next.clone();state.commit(&next)?;Ok(next)
+}
+
 #[tauri::command]
 pub fn materials_order(
     w: tauri::WebviewWindow,
@@ -485,6 +570,7 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
     }
     fs::write(dir.join("prompt.md"), prompt).map_err(err)?;
     let mut manifest=serde_json::to_value(&*current).map_err(err)?;
+    {let packs=state.packs.lock().map_err(err)?;let pack=packs.packs.iter().find(|p|p.id==packs.active).ok_or("Task pack missing")?;manifest["task_pack"]=serde_json::json!({"id":pack.id,"name":pack.name});}
     for (n,item) in manifest["items"].as_array_mut().ok_or("Invalid manifest")?.iter_mut().enumerate(){
         item["number"]=serde_json::json!(format!("{:02}",n+1));
         if item["kind"]!="text" {item["export_name"]=serde_json::json!(format!("{:02}-{}",n+1,current.items[n].name));}
@@ -866,6 +952,30 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn task_packs_migrate_switch_restart_and_export_without_mixing(){
+        let root=std::env::temp_dir().join(id());fs::create_dir_all(root.join("files")).unwrap();
+        let legacy=br#"{"items":[{"id":"abc","name":"note.txt","kind":"file","text":"","size":3},{"id":"def","name":"Text","kind":"text","text":"Client A draft","size":0}],"unknown":"preserve"}"#;
+        fs::write(root.join("session.json"),legacy).unwrap();fs::write(root.join("files/abc"),b"AAA").unwrap();
+        let store=Materials::new(root.clone()).unwrap();assert!(store.ready().is_ok());assert_eq!(fs::read(root.join("session.legacy.json")).unwrap(),legacy);
+        assert_eq!(fs::read(root.join("session.json")).unwrap(),legacy);
+        store.busy.store(true,std::sync::atomic::Ordering::SeqCst);assert!(store.select_pack(None,Some("Busy".into())).is_err());store.busy.store(false,std::sync::atomic::Ordering::SeqCst);
+        store.select_pack(None,Some("Client B".into())).unwrap();assert!(store.bundle.lock().unwrap().items.is_empty());
+        store.append(Item{id:"123".into(),name:"Text".into(),kind:"text".into(),text:"Client B draft".into(),size:0},None).unwrap();
+        store.append(Item{id:"456".into(),name:"note.txt".into(),kind:"file".into(),text:String::new(),size:3},Some(b"BBB")).unwrap();
+        {let mut current=store.bundle.lock().unwrap();let next=reorder(&current,&["456".into(),"123".into()]).unwrap();store.commit(&next).unwrap();*current=next;}
+        let exported=PathBuf::from(export_bundle(&store).unwrap());let prompt=fs::read_to_string(exported.join("prompt.md")).unwrap();assert!(prompt.contains("Client B draft"));assert!(!prompt.contains("Client A"));
+        assert_eq!(fs::read(exported.join("01-note.txt")).unwrap(),b"BBB");
+        let restarted=Materials::new(root.clone()).unwrap();assert_eq!(restarted.bundle.lock().unwrap().items[1].text,"Client B draft");assert_eq!(restarted.bundle.lock().unwrap().items[0].id,"456");
+        assert!(restarted.select_pack(None,Some(" client b ".into())).is_err());assert!(restarted.select_pack(None,Some("  ".into())).is_err());assert!(restarted.select_pack(Some("missing".into()),None).is_err());
+        restarted.select_pack(Some("legacy".into()),None).unwrap();let current=restarted.bundle.lock().unwrap().clone();assert_eq!(current.items[0].id,"abc");assert_eq!(current.items[1].text,"Client A draft");
+        let exported=PathBuf::from(export_bundle(&restarted).unwrap());assert_eq!(fs::read(exported.join("01-note.txt")).unwrap(),b"AAA");
+        let original=fs::read(root.join("session.json")).unwrap();fs::write(root.join("session.json.tmp"),b"interrupted write").unwrap();
+        let recovered=Materials::new(root.clone()).unwrap();assert_eq!(recovered.bundle.lock().unwrap().items.len(),2);assert_eq!(fs::read(root.join("session.json")).unwrap(),original);assert_eq!(fs::read(root.join("session.legacy.json")).unwrap(),legacy);
+        // A failed replacement leaves memory and committed selection unchanged.
+        fs::remove_file(root.join("session.json.tmp")).unwrap();fs::create_dir(root.join("session.json.tmp")).unwrap();assert!(recovered.select_pack(None,Some("Blocked".into())).is_err());assert_eq!(recovered.packs.lock().unwrap().active,"legacy");assert_eq!(fs::read(root.join("session.json")).unwrap(),original);
+        fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
     fn opening_files_keeps_extensions_and_does_not_modify_sources(){
         let dir=std::env::temp_dir().join(id());let store=Materials::new(dir.clone()).unwrap();
         store.append(Item{id:"photo".into(),name:"圖片.png".into(),kind:"image".into(),text:String::new(),size:3},Some(b"png")).unwrap();
@@ -1095,4 +1205,20 @@ mod tests {
         assert_eq!(store.bundle.lock().unwrap().items.len(), 1);
         fs::remove_file(dir).unwrap();
     }
+}
+#[cfg(test)]
+mod image_edit_tests {
+ use super::*;
+ fn png_pixel(pixel:[u8;4])->Vec<u8>{let mut bytes=Vec::new();{let mut encoder=png::Encoder::new(&mut bytes,1,1);encoder.set_color(png::ColorType::Rgba);encoder.set_depth(png::BitDepth::Eight);let mut w=encoder.write_header().unwrap();w.write_image_data(&pixel).unwrap();}bytes}
+ #[test]
+ fn replaced_pixels_are_the_only_new_export_and_open_source(){
+  let root=std::env::temp_dir().join(id());let state=Materials::new(root.clone()).unwrap();let original=png_pixel([255,0,0,255]);let bundle=add_png(&state,original.clone()).unwrap();let key=&bundle.items[0].id;
+  let opened=prepare_open_file(&state,key).unwrap();assert_eq!(fs::read(&opened).unwrap(),original);
+  let clean=png_pixel([0,0,0,255]);replace_image(&state,key,clean.clone()).unwrap();assert!(!opened.exists());
+  let reopened=prepare_open_file(&state,key).unwrap();assert_eq!(fs::read(reopened).unwrap(),clean);
+  let export=PathBuf::from(export_bundle(&state).unwrap());let files=fs::read_dir(&export).unwrap().map(|e|e.unwrap().path()).collect::<Vec<_>>();assert_eq!(files.len(),3);
+  let image=files.iter().find(|p|p.extension().is_some_and(|e|e=="png")).unwrap();assert_eq!(fs::read(image).unwrap(),clean);assert_eq!(fs::read(state.asset(key)).unwrap(),clean);
+  let reloaded=Materials::new(root.clone()).unwrap();assert_eq!(reloaded.bundle.lock().unwrap().items.len(),1);assert!(replace_image(&state,key,b"not PNG".to_vec()).is_err());assert_eq!(fs::read(state.asset(key)).unwrap(),clean);
+  fs::remove_dir_all(root).unwrap();
+ }
 }
