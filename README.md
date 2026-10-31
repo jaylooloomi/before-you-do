@@ -36,13 +36,37 @@
   <a href="#faq">FAQ</a>
 </p>
 
-<p align="center"><img src="docs/images/before-you-do-hero-v2-lowercase.png" alt="before-you-do: replace repeated typing and searching through notes with Alt+H to paste instructions into an unsent AI message" width="1000"></p>
+<p align="center"><img src="docs/images/before-you-do-bundle-hero-en.png" alt="before-you-do octopus organizing text, screenshots, video and files into a numbered local prompt bundle, alongside reusable instruction cards" width="1000"></p>
 
-<p align="center"><sub>Promotional illustration. Alt+H is the configurable default shortcut. The app pastes text without sending your message.</sub></p>
+<p align="center"><sub>Product illustration. Alt+H inserts snippets; exported materials are attached manually. Nothing is sent automatically.</sub></p>
 
 Save the instructions you keep repeating to AI — “plan first,” “change only what is necessary,” or “test it before reporting back” — and insert them after writing your request. No API key, AI account or AutoHotkey required, and no dependency on a particular model.
 
 **It pastes; you send.** You choose when to add an instruction and which one to use, and can edit it before sending. Prompts express your expectations; they do not guarantee that AI will follow them.
+
+## Two modes, one clearer AI handoff
+
+Describe **what** you need. Keep reusable instructions for **how** AI should work, and gather the supporting material for **this task**.
+
+| Mode | Use it when | What you do |
+|---|---|---|
+| **Reusable snippets** | You keep repeating “plan first,” “test it,” or “stay in scope” | Save the instruction, hold **Alt+H**, choose a role/snippet and release to paste |
+| **Task materials** | Your request needs screenshots, a recording, notes or files | Collect the items, arrange their order and export one local bundle |
+
+**Example:** a login bug needs two screenshots, a short recording and a requirements file. Add a task description, arrange the materials as **#01, #02…**, then refer to those numbers in your request. Export the bundle and attach its contents to your AI chat. Add “Implement, test and report” from your snippets when you want AI to carry the work through.
+
+### Four tabs
+
+| Tab | Main tools |
+|---|---|
+| **Snippets** | 13 roles including My snippets, Agent commands, Development, Writing and Project management; scenarios, search, ordering, default-role star, editing and saving |
+| **Materials** | Region/full-screen/window screenshots, Windows silent video/GIF, text/files, numbered drag sorting, previews, double-click to open with the default app, combined text and bundle export |
+| **Settings** | Snippet shortcut, four interface languages, light/dark/system theme and sign-in startup |
+| **AI guide** | Template library, AI editing instructions, current-role JSON import/export, data paths and backup guidance |
+
+**Recent interface updates:** consistent page-title positions, cards and controls; separate Settings and AI guide tabs; shorter help copy; and the version below the app name. The current source also includes left-aligned material shortcut hints and a reserved **Delete / Save snippets** action area that stays visible while editor content scrolls. Those last two adjustments are newer than the v0.5.0 download.
+
+**Two separate actions:** **Alt+H** pastes a saved snippet; **Export material bundle** creates local files. Copy combined text includes attachment references, not the images or file bytes. Attach the exported files yourself, review the message and send it when ready.
 
 ## Prompt workspace (v0.5.0)
 
@@ -69,7 +93,7 @@ Open **Capture shortcuts and options** in the workspace to change these keys (Pr
 
 Recording currently supports **Windows only**, without audio: WebM at 15 fps, GIF at 10 fps, up to 120 seconds and 25 MB. Use **Install recording component** once to download the pinned ~82 MB FFmpeg LGPL shared runtime; the SHA-256 must match before use. A green dashed border marks the live recording region. A compact nearby bar provides Stop, Pause/Resume, Cancel and an elapsed timer. The border turns yellow while paused; paused time is excluded by recording separate segments and joining them on completion. Cancel discards the session. Border and controls are excluded from capture. A short original completion sound plays only after the material is saved successfully. The system tray icon also gains a red badge while recording. Exit waits for finalization; failed outputs remain at the displayed recovery path. See [runtime sources and license](docs/THIRD_PARTY_RECORDING.md). Mac screenshots remain available; recording and these new global shortcuts are not yet supported on Mac.
 
-Materials live in `prompt-materials/` beside the snippet data file, with a separate `session.json`, managed `files/` copies, and `exports/`. Removing a source file after importing does not remove its managed copy. Exports remain after individual materials are removed. This feature is on `codex/capture-hotkeys-recording`; the public release links below still point to the currently published build.
+Materials live in `prompt-materials/` beside the snippet data file, with a separate `session.json`, managed `files/` copies, and `exports/`. Removing a source file after importing does not remove its managed copy. Exports remain after individual materials are removed. The Materials workspace is included in v0.5.0.
 
 ## Use cases
 
@@ -187,7 +211,7 @@ The table uses the default **Alt+H**. Change it under **Settings → Keyboard sh
 
 ## Make the instructions your own
 
-The bottom of the Alt+H picker contains “Add a prompt” followed by “Settings.” Select Settings and release the shortcut modifiers to open the **snippet manager**, without pasting text or creating a draft. Use the sidebar’s **Settings & AI guide** button for the settings page.
+The bottom of the Alt+H picker contains “Add a prompt” followed by “Settings.” Select Settings and release the shortcut modifiers to open the **snippet manager**, without pasting text or creating a draft. Use the top **Settings** tab for app preferences and **AI guide** for templates and JSON workflows.
 
 On Windows, selecting Settings or Add opens the manager on the original input window's display, fitted to that display's work area. Normal tray opening retains its usual placement.
 
