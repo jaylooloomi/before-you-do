@@ -28,8 +28,8 @@ Tired of retyping “plan first” and “test your changes,” or pasting scree
 
 Save the reminders you use repeatedly, then add the right one to your conversation:
 
-> “Summarize your understanding, then proceed.”  
-> “Only change what is necessary. Avoid unrelated refactoring.”  
+> “Summarize your understanding, then proceed.”<br>
+> “Only change what is necessary. Avoid unrelated refactoring.”<br>
 > “Test the main flows and report the results.”
 
 1. Write your request in the AI chat and leave the cursor where you want the instruction.
