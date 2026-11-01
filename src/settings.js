@@ -1,3 +1,5 @@
+import {uiIcon} from './workspace-ui.js';
+import {attachShortcutRecorder,snippetShortcutFromBinding,normalizeCaptureShortcut} from './capture-shortcut-recorder.js';
 import { importPreview } from './import-preview.js';
 import { createAutostartSetting } from './autostart-setting.js';
 import { roleName } from './roles.js';
@@ -7,11 +9,11 @@ import { filePrompt, chatPrompt } from './ai-prompts.js';
 import { getTemplates } from './template-locales.js';
 import { parseSnippetImport, serializeSnippetExport } from './model.js';
 
-export function createSettingsPage({ invoke, askConfirmation, onReload, onImport, onAddTemplate }) {
+export function createSettingsPage({ invoke, listen=async()=>()=>{}, askConfirmation, onReload, onImport, onAddTemplate }) {
   const panel = document.createElement('section');
   panel.className = 'settings-panel'; panel.hidden = true;
   panel.innerHTML = `<header class="settings-heading"><div><h2>設定</h2><p>用你的 AI 修改短句，無須 API。</p></div></header>
-    <section class="settings-card"><h3>快捷鍵設定</h3><p>按住喚出，放開貼入；再按一次按鍵取消。</p><div class="shortcut-setting"><label for="shortcut-modifier">組合鍵</label><select id="shortcut-modifier"><option value="alt">Alt / Option</option><option value="altShift">Alt / Option + Shift</option><option value="ctrl">Ctrl</option><option value="ctrlShift">Ctrl + Shift</option></select><label for="shortcut-key">按鍵</label><select id="shortcut-key"></select></div><p id="shortcut-current"></p><div class="settings-buttons"><button data-settings="shortcut-save">儲存快捷鍵</button><button data-settings="shortcut-reset">恢復 Alt+H</button></div></section>
+    <section class="settings-card"><h3>快捷鍵設定</h3><p>按住喚出，放開貼入；再按一次按鍵取消。</p><div class="capture-shortcut-row snippet-shortcut-row"><label class="secondary paired-capture-action" for="snippet-shortcut-input">${uiIcon('file')}<span>常用短句</span></label><input id="snippet-shortcut-input" type="text" autocomplete="off" aria-label="常用短句快捷鍵" aria-describedby="snippet-shortcut-feedback"><button type="button" class="shortcut-restore" data-settings="shortcut-reset" aria-label="恢復 Alt+H" title="恢復 Alt+H">還原</button><small id="snippet-shortcut-feedback" role="status"></small></div><div class="settings-buttons"><button data-settings="shortcut-save">儲存快捷鍵</button></div></section>
     <section class="settings-card"><h3>介面語言</h3><select id="language" aria-label="介面語言"><option value="system">跟隨系統</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select><p>內建短句隨語言切換，自訂短句不變。</p></section>
     <section class="settings-card"><h3>範本庫</h3><p>選一個範本加入草稿，不覆蓋原有短句。</p><select id="template-language" aria-label="範本語言"><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select><select id="template-choice" aria-label="範本庫"></select><div id="template-preview"><h4></h4><p></p><pre></pre></div><button type="button" data-settings="template">新增此範本</button></section>
     <section class="settings-card"><h3>短句存在哪裡？</h3><p>短句與排序儲存在本機 JSON。</p><code id="data-path"></code><div class="settings-buttons"><button data-settings="folder">開啟資料夾</button><button data-settings="path">複製檔案路徑</button></div><p class="settings-backup">上一版備份：<code id="backup-path"></code></p><p id="file-exists"></p></section>
@@ -28,18 +30,26 @@ export function createSettingsPage({ invoke, askConfirmation, onReload, onImport
   panel.querySelector('#import-json').closest('.settings-card').after(exportCard);
   const roleNote=document.createElement('p');roleNote.className='role-settings-note';panel.querySelector('.settings-heading').after(roleNote);
   let currentView='all';
-  for(const card of panel.querySelectorAll('.settings-card'))card.dataset.settingsView=card===autostart.card||card.querySelector('#shortcut-modifier,#language')?'settings':'ai';
-  function show(view){currentView=view;panel.dataset.view=view;for(const card of panel.querySelectorAll('.settings-card'))card.hidden=view!=='all'&&card.dataset.settingsView!==view;roleNote.hidden=view==='settings';renderHeading();}
-  function renderHeading(){panel.querySelector('.settings-heading h2').textContent=t(currentView==='ai'?'AI 教學':'設定');panel.querySelector('.settings-heading p').textContent=t(currentView==='ai'?'用你的 AI 修改短句，無須 API。':'管理快捷鍵、介面語言、啟動與外觀選項。');}
+  for(const card of panel.querySelectorAll('.settings-card'))card.dataset.settingsView=card.querySelector('#snippet-shortcut-input')?'shortcuts':card===autostart.card||card.querySelector('#language')?'settings':'ai';
+  function show(view){currentView=view;panel.dataset.view=view;for(const card of panel.querySelectorAll('.settings-card'))card.hidden=view!=='all'&&card.dataset.settingsView!==view;roleNote.hidden=view!=='ai'&&view!=='all';renderHeading();}
+  function renderHeading(){panel.querySelector('.settings-heading h2').textContent=t(currentView==='ai'?'AI 教學':currentView==='shortcuts'?'快捷鍵':'設定');panel.querySelector('.settings-heading p').textContent=t(currentView==='ai'?'用你的 AI 修改短句，無須 API。':currentView==='shortcuts'?'集中設定短句、截圖、錄影與素材快捷鍵。':'管理介面語言、啟動與外觀選項。');}
   onLanguageChange(renderHeading);
   let currentRole='personal';
   function renderRoleNote(){roleNote.textContent=t('目前角色：{role}；以下操作僅影響此角色。',{role:roleName(currentRole,getLanguage())});}
   onLanguageChange(renderRoleNote);
   let info;
-  const shortcutModifier=panel.querySelector('#shortcut-modifier'), shortcutKey=panel.querySelector('#shortcut-key');
-  for(const key of [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789','Space']){const option=document.createElement('option');option.value=key;option.textContent=key==='Space'?t('空白鍵'):key;shortcutKey.append(option);}
-  function refreshShortcut(){const value=getShortcut();shortcutModifier.value=value.modifier;shortcutKey.value=value.key;panel.querySelector('#shortcut-current').textContent=t('目前快捷鍵：{shortcut}',{shortcut:shortcutLabel()});shortcutKey.querySelector('[value=Space]').textContent=t('空白鍵');}
-  onShortcutChange(refreshShortcut);refreshShortcut();
+  const shortcutInput=panel.querySelector('#snippet-shortcut-input'),shortcutFeedback=panel.querySelector('#snippet-shortcut-feedback'),shortcutSave=panel.querySelector('[data-settings=shortcut-save]');let shortcutDirty=false;
+  const binding=value=>({alt:'Alt',altShift:'Alt+Shift',ctrl:'Ctrl',ctrlShift:'Ctrl+Shift'}[value.modifier])+'+'+value.key;
+  function validateShortcut(){const candidate=snippetShortcutFromBinding(shortcutInput.value);let error=!candidate?t('請使用 Alt／Ctrl（可加 Shift）搭配字母、數字或空白鍵。'):'';
+    if(candidate){const normalized=binding(candidate);const conflicts=[...document.querySelectorAll('.central-capture-shortcuts input')].filter(input=>normalizeCaptureShortcut(input.value)===normalized).map(input=>input.getAttribute('aria-label'));if(conflicts.length)error=t('與「{action}」重複：{shortcut}',{action:conflicts.join(' / '),shortcut:normalized});}
+    shortcutInput.setAttribute('aria-invalid',String(!!error));shortcutFeedback.textContent=error;shortcutSave.disabled=!!error;return candidate&&!error?candidate:null;
+  }
+  function refreshShortcut(force=false){if(force||!shortcutDirty){shortcutInput.value=binding(getShortcut());shortcutDirty=false;}validateShortcut();}
+  attachShortcutRecorder(shortcutInput,{allowSpace:true,onUnsupported:()=>{shortcutFeedback.textContent=t('請使用 Alt／Ctrl（可加 Shift）搭配字母、數字或空白鍵。');}});
+  shortcutInput.oninput=()=>{shortcutDirty=true;validateShortcut();};
+  for(const [event,editing]of [['focus',true],['blur',false]])shortcutInput.addEventListener(event,()=>invoke('capture_hotkeys_editing',{editing}).catch(error=>{shortcutFeedback.textContent=errorMessage(error);}));
+  listen('capture-shortcut-recorded',event=>{if(document.activeElement===shortcutInput){shortcutInput.value=event.payload;shortcutInput.dispatchEvent(new Event('input',{bubbles:true}));}}).catch(error=>{shortcutFeedback.textContent=errorMessage(error);});
+  onShortcutChange(()=>refreshShortcut());onLanguageChange(()=>refreshShortcut());refreshShortcut();
   const status = panel.querySelector('#settings-status');
   let reportKey='', reportParams={};
   const reportText = () => t(reportKey, {...reportParams, ...('error' in reportParams ? {error:errorMessage(reportParams.error)} : {})});
@@ -71,8 +81,8 @@ export function createSettingsPage({ invoke, askConfirmation, onReload, onImport
       if (!info) await refresh();
       if (action === 'template') { onAddTemplate(getTemplates(templateLanguage.value)[Number(choice.value)||0]); report('已加入草稿，請返回短句儲存。'); }
       if(action==='shortcut-save'||action==='shortcut-reset'){
-        const candidate=action==='shortcut-reset'?{modifier:'alt',key:'H'}:{modifier:shortcutModifier.value,key:shortcutKey.value};
-        await invoke('save_shortcut',{shortcut:candidate});refreshShortcut();report('快捷鍵已儲存，下次啟動也會沿用。');
+        const candidate=action==='shortcut-reset'?{modifier:'alt',key:'H'}:validateShortcut();
+        if(!candidate)return;await invoke('save_shortcut',{shortcut:candidate});refreshShortcut(true);shortcutFeedback.textContent=t('已儲存');
       }
       if(action==='export-json'){
         const saved=await invoke('get_snippets');

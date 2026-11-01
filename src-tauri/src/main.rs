@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod platform;
 mod materials;
+mod capture_toast;
+mod quick_materials;
+#[cfg(windows)] mod quick_audit;
 mod recording;
 mod recording_overlay;
 mod capture_hotkeys;
@@ -107,6 +110,7 @@ struct State {
     preview: bool,
 }
 struct UiMenu {
+    materials: tauri::menu::MenuItem<tauri::Wry>,
     manage: tauri::menu::MenuItem<tauri::Wry>,
     quit: tauri::menu::MenuItem<tauri::Wry>,
 }
@@ -125,17 +129,19 @@ fn set_autostart(state: tauri::State<State>, enabled: bool) -> Result<autostart:
 #[tauri::command]
 fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
     *app.state::<State>().language.lock().unwrap() = language.clone();
-    let (manage_text, quit_text, title) = match language.as_str() {
-        "zh-TW" => ("管理短句", "結束 before-you-do", "before-you-do · 常用短句"),
-        "zh-CN" => ("管理短句", "退出 before-you-do", "before-you-do · 常用短句"),
+    let (manage_text, materials_text, quit_text, title) = match language.as_str() {
+        "zh-TW" => ("管理短句", "管理剪貼簿", "結束", "before-you-do · 常用短句"),
+        "zh-CN" => ("管理短句", "管理剪贴板", "退出", "before-you-do · 常用短句"),
         "ja" => (
             "短文を管理",
-            "before-you-do を終了",
+            "クリップボードを管理",
+            "終了",
             "before-you-do · 短文ライブラリ",
         ),
         _ => (
             "Manage snippets",
-            "Quit before-you-do",
+            "Manage clipboard",
+            "Quit",
             "before-you-do · Snippets",
         ),
     };
@@ -143,6 +149,7 @@ fn set_ui_language(app: tauri::AppHandle, language: String) -> Result<(), String
     menu.manage
         .set_text(manage_text)
         .map_err(|e| e.to_string())?;
+    menu.materials.set_text(materials_text).map_err(|e| e.to_string())?;
     menu.quit.set_text(quit_text).map_err(|e| e.to_string())?;
     if let Some(window) = app.get_webview_window("main") {
         window.set_title(title).map_err(|e| e.to_string())?;
@@ -398,7 +405,7 @@ fn window_action(window: tauri::WebviewWindow, action: String) -> Result<(), Str
 }
 #[tauri::command]
 fn configure_glass(app: tauri::AppHandle, dark: bool, transparency: u8) -> Result<(), String> {
-    for label in ["main", "picker"] {
+    for label in ["main", "picker", "materials-quick"] {
         if let Some(window) = app.get_webview_window(label) {
             window
                 .set_theme(Some(if dark {
@@ -602,6 +609,9 @@ fn activate_picker_role(app: &tauri::AppHandle, id: &str, items: &[Snippet]) -> 
 }
 fn handle_action(app: &tauri::AppHandle, action: Action) {
     if let Action::Capture(ref mode)=action {
+        if mode=="show-materials"{let _=quick_materials::request_toggle(app,true);return;}
+        if mode=="paste-all"&&quick_materials::visible(app){let _=quick_materials::request_paste(app);return;}
+        if mode=="paste-all" { if let Some(target)=platform::foreground_target(){let _=app.emit_to("main","materials-paste-request",target);}else{let _=app.emit_to("main","capture-error","請先點選外部對話輸入框，再按 Alt+V。");}return; }
         if mode=="add-text"||mode=="add-file" {
             if app.state::<recording::Recorder>().active()||app.state::<materials::Materials>().busy.load(Ordering::SeqCst){return;}
             platform::cancel_selection();app.state::<State>().picker.lock().unwrap().finish(false);
@@ -609,6 +619,7 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
             let target=platform::foreground_target().filter(|target|!platform::is_app_target(*target));let handle=app.clone();let mode=mode.clone();let _=app.run_on_main_thread(move||{if let Some(target)=target{manage_from_target(&handle,target);}else{manage(&handle);}let _=handle.emit_to("main","material-action",mode);});return;
         }
         let handle=app.clone();let mode=mode.clone();
+        if mode=="region"&&materials::cancel_region(app){return;}
         tauri::async_runtime::spawn(async move{
             if handle.state::<recording::Recorder>().active(){if mode.starts_with("record-"){handle.state::<recording::Recorder>().stop();}return;}
             if handle.state::<materials::Materials>().busy.load(Ordering::SeqCst){return;}
@@ -624,7 +635,16 @@ fn handle_action(app: &tauri::AppHandle, action: Action) {
     let state = app.state::<State>();
     match action {
         Action::Capture(_) => {},
+        Action::QuickRelease(ticket)=>quick_materials::release(app,ticket),
+        Action::QuickKey(key)=>quick_materials::key(app,key),
+        Action::RecordShortcut(binding)=>{if capture_hotkeys::is_editing(app){let _=app.emit_to("main","capture-shortcut-recorded",binding);}},
         Action::Dismiss => {
+            if capture_hotkeys::is_editing(app) {
+                let shortcut=state.shortcut.lock().unwrap();
+                let modifier=match shortcut.modifier.as_str(){"ctrl"=>"Ctrl","ctrlShift"=>"Ctrl+Shift","altShift"=>"Alt+Shift",_=>"Alt"};
+                let _=app.emit_to("main","capture-shortcut-recorded",format!("{modifier}+{}",shortcut.key));
+                return;
+            }
             let _ = dismiss_manager_shortcut(app.clone());
         }
         Action::Begin(target) => {
@@ -736,6 +756,13 @@ fn main() {
 
     let preview = std::env::args().any(|arg| arg == "--design-preview");
     let background = autostart::is_background(std::env::args());
+    let mut context=tauri::generate_context!();
+    if let Some(index)=std::env::args().position(|a|a=="--quick-native-audit"){
+        assert!(std::env::args().any(|a|a=="--integration-test"),"Audit requires integration mode");
+        let dir=PathBuf::from(std::env::args().nth(index+1).expect("Audit directory required"));assert!(dir.is_absolute(),"Absolute audit directory required");
+        context.config_mut().app.app_directories_override=Some(tauri::utils::config::AppDirectoriesOverride::Root(dir.join("profile")));
+        for window in &mut context.config_mut().app.windows{window.data_directory=Some(dir.join("webview"));}
+    }
     let builder = tauri::Builder::default();
     let builder = if preview {
         builder
@@ -745,13 +772,14 @@ fn main() {
         }))
     };
     builder
-        .invoke_handler(tauri::generate_handler![
-            materials::materials_packs, materials::materials_select_pack,
+        .invoke_handler(tauri::generate_handler![quick_materials::materials_quick_finish_clear,quick_materials::materials_quick_trace,capture_toast::capture_toast_ready, capture_toast::capture_toast_hide,
+            quick_materials::materials_quick_open,quick_materials::materials_quick_abort,quick_materials::materials_quick_action,quick_materials::materials_quick_finish_paste,materials::materials_quick_snapshot,
+            materials::materials_packs, materials::materials_select_pack, materials::materials_store, materials::workspace::materials_workspace, materials::materials_save_as,
             materials::materials_load, materials::materials_text, materials::materials_import, materials::materials_replace_image,
             materials::materials_order, materials::materials_remove, materials::materials_preview, materials::materials_info,
-            materials::materials_export, materials::materials_open, materials::materials_choose_files, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish, materials::preview_capture_gate, materials::preview_capture_start, materials::preview_capture_presentation, materials::capture_prime, materials::capture_present, materials::capture_prepare_failed,
+            materials::materials_export, materials::materials_paste_all, materials::materials_open, materials::materials_choose_files, materials::capture_capabilities, materials::capture_request_permission, materials::capture_open_permissions, materials::capture_start, materials::capture_frame, materials::capture_finish, materials::preview_capture_gate, materials::preview_capture_start, materials::preview_capture_presentation, materials::capture_prime, materials::capture_present, materials::capture_prepare_failed,
             recording_overlay::preview_recording_overlay, recording::recording_control, recording::recording_state, recording::recording_stop, recording::recording_install, recording::preview_recording,
-            capture_hotkeys::capture_hotkeys_get, capture_hotkeys::capture_hotkeys_save,
+            capture_hotkeys::capture_hotkeys_get, capture_hotkeys::capture_hotkeys_save, capture_hotkeys::capture_hotkeys_editing,
             request_quit,
             confirm_quit,
             preview_quit_approved,
@@ -836,12 +864,16 @@ fn main() {
                 pending_new: AtomicBool::new(std::env::args().any(|arg| arg == "--new-snippet")),
                 pending_settings: AtomicBool::new(false),
             });
-            app.manage(materials::Materials::new(path.with_file_name("prompt-materials")).map_err(std::io::Error::other)?);
+            let mut material_state=materials::Materials::new(path.with_file_name("prompt-materials")).map_err(std::io::Error::other)?;material_state.initialize_workspace();app.manage(material_state);
             app.manage(recording::Recorder::default());
+            app.manage(quick_materials::QuickMaterials::default());
             app.manage(capture_hotkeys::Hotkeys::new(path.with_file_name("capture-hotkeys.json")));
             if (!preview && !integration) || (preview && std::env::args().any(|a|a=="--capture-hotkeys-test")){capture_hotkeys::start(app.handle().clone());}
             if let Some(bar)=app.get_webview_window("recording-controls"){
                 let handle=app.handle().clone();bar.on_window_event(move|event|{if let tauri::WindowEvent::CloseRequested{api,..}=event{api.prevent_close();handle.state::<recording::Recorder>().cancel();}});
+            }
+            if let Some(window)=app.get_webview_window("materials-quick"){
+                let handle=app.handle().clone();window.on_window_event(move|event|{if let tauri::WindowEvent::CloseRequested{api,..}=event{api.prevent_close();let _=quick_materials::close(&handle);}});
             }
             capture::track();
             if let Some(capture)=app.get_webview_window("capture"){
@@ -864,14 +896,15 @@ fn main() {
             let quit_item = tauri::menu::MenuItem::with_id(
                 app,
                 "quit",
-                "Quit before-you-do",
+                "Quit",
                 true,
                 None::<&str>,
             )?;
-            let stop_recording=tauri::menu::MenuItem::with_id(app,"stop-recording","Stop recording",true,None::<&str>)?;
-            let menu = tauri::menu::Menu::with_items(app, &[&manage_item, &stop_recording, &quit_item])?;
+            let materials_item=tauri::menu::MenuItem::with_id(app,"manage-materials","Manage clipboard",true,None::<&str>)?;
+            let menu = tauri::menu::Menu::with_items(app, &[&manage_item, &materials_item, &quit_item])?;
             app.manage(UiMenu {
                 manage: manage_item,
+                materials: materials_item,
                 quit: quit_item,
             });
             let icon = tauri::image::Image::new_owned(
@@ -884,8 +917,8 @@ fn main() {
                 .tooltip("before-you-do")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "manage" => manage(app),
-                    "stop-recording" => app.state::<recording::Recorder>().stop(),
+                    "manage" => {manage(app);let _=app.emit_to("main","tray-navigate","snippets");},
+                    "manage-materials" => {manage(app);let _=app.emit_to("main","tray-navigate","materials");},
                     "quit" => {
                         let _ = request_quit(app.clone());
                     }
@@ -902,12 +935,13 @@ fn main() {
             if let Some(monitor) = main.current_monitor()? {
                 let scale = monitor.scale_factor();
                 let area = monitor.work_area();
-                let width = 1280.0_f64.min((area.size.width as f64 / scale - 32.0).max(1.0));
-                let height = 860.0_f64.min((area.size.height as f64 / scale - 32.0).max(1.0));
+                let width = 780.0_f64.min((area.size.width as f64 / scale - 32.0).max(1.0));
+                let height = 810.0_f64.min((area.size.height as f64 / scale - 32.0).max(1.0));
                 main.set_min_size(Some(tauri::LogicalSize::new(
                     780.0_f64.min(width),
                     680.0_f64.min(height),
                 )))?;
+                main.set_max_size(Some(tauri::LogicalSize::new(width,(area.size.height as f64 / scale - 32.0).max(height))))?;
                 main.set_size(tauri::LogicalSize::new(width, height))?;
                 main.set_position(tauri::PhysicalPosition::new(
                     area.position.x
@@ -926,7 +960,7 @@ fn main() {
             if let Some(picker) = app.get_webview_window("picker") {
                 picker.set_ignore_cursor_events(true)?;
             }
-            for label in ["main", "picker"] {
+            for label in ["main", "picker", "materials-quick"] {
                 if let Some(window) = app.get_webview_window(label) {
                     let _ = window_shape::apply(&window);
                     let handle = window.clone();
@@ -984,10 +1018,11 @@ fn main() {
             }
             #[cfg(windows)]
             picker_position::audit_if_requested(app.handle())?;
+            #[cfg(windows)] quick_audit::start(app.handle()).map_err(std::io::Error::other)?;
             if !background { main.show()?; }
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("無法啟動 before-you-do")
         .run(|app, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {

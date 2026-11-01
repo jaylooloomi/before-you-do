@@ -34,6 +34,15 @@ pub fn target_monitor_point(target: usize) -> Option<(i32,i32)> {
             info.rcMonitor.top+(info.rcMonitor.bottom-info.rcMonitor.top)/2))
     }
 }
+static QUICK_WINDOW:std::sync::atomic::AtomicUsize=std::sync::atomic::AtomicUsize::new(0);
+static QUICK_TARGET:std::sync::atomic::AtomicUsize=std::sync::atomic::AtomicUsize::new(0);
+static QUICK_TICKET:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(0);
+static QUICK_MODIFIERS:AtomicU32=AtomicU32::new(0);
+pub fn cancel_quick_watch(){QUICK_WINDOW.store(0,Ordering::SeqCst);}
+pub fn watch_quick_release(window:usize,target:usize,modifiers:u32,ticket:u64)->bool{QUICK_TARGET.store(target,Ordering::SeqCst);QUICK_TICKET.store(ticket,Ordering::SeqCst);QUICK_MODIFIERS.store(modifiers,Ordering::SeqCst);QUICK_WINDOW.store(window,Ordering::SeqCst);unsafe{[(1,VK_MENU),(2,VK_CONTROL),(4,VK_SHIFT)].iter().any(|(mask,key)|modifiers&mask!=0&&GetAsyncKeyState(*key as i32)<0)}}
+static RECORDING_WINDOW: std::sync::atomic::AtomicUsize=std::sync::atomic::AtomicUsize::new(0);
+pub fn record_shortcuts_for(window:usize){RECORDING_WINDOW.store(window,Ordering::SeqCst);}
+fn printscreen_binding(ctrl:bool,alt:bool,shift:bool)->String{format!("{}{}{}PrintScreen",if ctrl{"Ctrl+"}else{""},if alt{"Alt+"}else{""},if shift{"Shift+"}else{""})}
 static H_DOWN: AtomicBool = AtomicBool::new(false);
 fn send(action: Action) {
     if let Some(tx) = TX.get() {
@@ -41,6 +50,28 @@ fn send(action: Action) {
     }
 }
 unsafe extern "system" fn keyboard(code: i32, wp: WPARAM, lp: LPARAM) -> LRESULT {
+    if code>=0 {
+        let event=&*(lp as *const KBDLLHOOKSTRUCT);
+        if [0x12,0xa4,0xa5].contains(&event.vkCode)&&(wp as u32==WM_KEYDOWN||wp as u32==WM_SYSKEYDOWN){crate::quick_audit::observe("audit-alt-down");}
+        let target=RECORDING_WINDOW.load(Ordering::SeqCst);
+        if event.vkCode==VK_SNAPSHOT as u32&&target!=0&&GetForegroundWindow() as usize==target {
+            if wp as u32==WM_KEYUP||wp as u32==WM_SYSKEYUP {
+                send(Action::RecordShortcut(printscreen_binding(GetAsyncKeyState(VK_CONTROL as i32)<0,event.flags&LLKHF_ALTDOWN!=0||GetAsyncKeyState(VK_MENU as i32)<0,GetAsyncKeyState(VK_SHIFT as i32)<0)));
+            }
+            return 1;
+        }
+    }
+    if code>=0&&(wp as u32==WM_KEYUP||wp as u32==WM_SYSKEYUP){
+      let target=QUICK_WINDOW.load(Ordering::SeqCst);let key=(*(lp as *const KBDLLHOOKSTRUCT)).vkCode;let mask=QUICK_MODIFIERS.load(Ordering::SeqCst);
+      if target!=0&&(GetForegroundWindow() as usize==target||GetForegroundWindow() as usize==QUICK_TARGET.load(Ordering::SeqCst))&&((mask&1!=0&&[0x12,0xa4,0xa5].contains(&key))||(mask&2!=0&&[0x11,0xa2,0xa3].contains(&key))||(mask&4!=0&&[0x10,0xa0,0xa1].contains(&key))){QUICK_WINDOW.store(0,Ordering::SeqCst);send(Action::QuickRelease(QUICK_TICKET.load(Ordering::SeqCst)));}
+    }
+    if code>=0&&QUICK_WINDOW.load(Ordering::SeqCst)!=0 {
+        let foreground=GetForegroundWindow()as usize;let quick=QUICK_WINDOW.load(Ordering::SeqCst);let original=QUICK_TARGET.load(Ordering::SeqCst);
+        if foreground==quick||foreground==original {
+            let key=(*(lp as *const KBDLLHOOKSTRUCT)).vkCode;
+            if [0x25,0x26,0x27,0x28,0x24,0x23,0x0d,0x1b].contains(&key){if wp as u32==WM_KEYDOWN||wp as u32==WM_SYSKEYDOWN{send(Action::QuickKey(key));}return 1;}
+        }else{QUICK_WINDOW.store(0,Ordering::SeqCst);send(Action::QuickKey(0x1b));}
+    }
     // Track physical presses even before WM_HOTKEY opens the picker. Holding H
     // generates repeated key-downs; only a release followed by another press
     // should toggle the picker closed.
@@ -229,6 +260,13 @@ pub fn start(tx: Sender<Action>, shortcut: Shortcut) -> Result<(), String> {
         .map_err(|_| "error.shortcut_unavailable".to_string())?
 }
 pub fn paste(target: usize, text: &str) -> Result<(), String> {
+    paste_prepared(target,||arboard::Clipboard::new().map_err(|e|e.to_string())?.set_text(text).map_err(|e|e.to_string()))
+}
+pub fn paste_files(target: usize, files: &[std::path::PathBuf]) -> Result<(),String> {
+    paste_prepared(target,||super::copy_files(files))
+}
+fn paste_prepared(target: usize, prepare: impl FnOnce()->Result<(),String>) -> Result<(),String> {
+    let mut prepare=Some(prepare);
     unsafe {
         crate::diagnostic(&format!(
             "paste target={target} foreground={} Alt={} H={} Ctrl={} Shift={}",
@@ -246,13 +284,13 @@ pub fn paste(target: usize, text: &str) -> Result<(), String> {
                 VK_MENU,
                 VK_CONTROL,
                 VK_SHIFT,
+                0x56,
                 (CONFIG.load(Ordering::SeqCst) & 0xffff) as u16,
             ]
             .iter()
             .all(|k| GetAsyncKeyState(*k as i32) >= 0)
             {
-                let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
-                clipboard.set_text(text).map_err(|e| e.to_string())?;
+                prepare.take().ok_or("Paste already prepared")?()?;
                 if GetForegroundWindow() as usize != target {
                     return Err("已切換視窗，這次貼入已取消。".into());
                 }
@@ -361,6 +399,9 @@ mod tests {
         ACTIVE.store(true, Ordering::SeqCst);
         key(0x1B, WM_KEYDOWN);
         assert!(matches!(rx.recv().unwrap(), Action::Cancel));
+        // The material picker keeps the external input foreground, just like Alt+H.
+        let original=unsafe{GetForegroundWindow()}as usize;
+        if original!=0{QUICK_WINDOW.store(1,Ordering::SeqCst);QUICK_TARGET.store(original,Ordering::SeqCst);QUICK_MODIFIERS.store(1,Ordering::SeqCst);QUICK_TICKET.store(91,Ordering::SeqCst);key(0x4c,WM_SYSKEYUP);assert!(rx.try_recv().is_err());key(0x27,WM_SYSKEYDOWN);assert!(matches!(rx.recv().unwrap(),Action::QuickKey(0x27)));key(0x12,WM_SYSKEYUP);assert!(matches!(rx.recv().unwrap(),Action::QuickRelease(91)));key(0x12,WM_SYSKEYUP);assert!(rx.try_recv().is_err());QUICK_WINDOW.store(0,Ordering::SeqCst);}
         // A changed trigger must replace H for cancellation and track repeats.
         for shortcut in [
             Shortcut {
@@ -470,7 +511,13 @@ pub fn foreground_target() -> Option<usize> {
     let target = unsafe { GetForegroundWindow() } as usize;
     (target != 0 && !is_app_target(target)).then_some(target)
 }
+pub fn focus_target(target:usize)->Result<(),String>{unsafe{let window=target as HWND;if target==0||IsWindow(window)==0||is_app_target(target){return Err("Original input window is unavailable".into());}if GetForegroundWindow()==window{return Ok(());}let _=SetForegroundWindow(window);if GetForegroundWindow()!=window{return Err("Could not return to the original input window".into());}Ok(())}}
 
 pub fn cancel_selection() {
     ACTIVE.store(false, Ordering::SeqCst);
 }
+
+#[cfg(test)]mod recorder_tests{#[test]fn snapshot_modifier_names(){assert_eq!(super::printscreen_binding(false,true,false),"Alt+PrintScreen");assert_eq!(super::printscreen_binding(true,true,true),"Ctrl+Alt+Shift+PrintScreen");assert_eq!(super::printscreen_binding(false,false,false),"PrintScreen");}}
+
+
+#[cfg(test)]mod quick_focus_tests{use super::*;#[test]fn already_foreground_target_is_accepted_without_focus_change(){unsafe{let before=GetForegroundWindow();if !before.is_null()&&!is_app_target(before as usize){focus_target(before as usize).unwrap();assert_eq!(GetForegroundWindow(),before);}}}}

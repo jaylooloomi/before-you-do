@@ -3,12 +3,23 @@ use std::sync::mpsc::Sender;
 pub enum Action {
     Begin(usize),
     Capture(String),
+    RecordShortcut(String),
+    QuickRelease(u64),
+    QuickKey(u32),
     Dismiss,
     Move(i32),
     Role(i32),
     Commit,
     Cancel,
     Error(String),
+}
+pub fn copy_files(files:&[std::path::PathBuf])->Result<(),String>{
+    if files.is_empty()||files.iter().any(|file|!file.is_file()){return Err("Material attachment missing".into());}
+    let mut clipboard=arboard::Clipboard::new().map_err(|e|e.to_string())?;
+    // arboard's file_list adds CF_HDROP without removing earlier formats.
+    // Otherwise receivers may prefer stale text/PNG over the requested files.
+    clipboard.clear().map_err(|e|e.to_string())?;
+    clipboard.set().file_list(files).map_err(|e|e.to_string())
 }
 // macOS targets are process IDs, not window handles. Prefer the cursor monitor there.
 #[cfg(not(windows))]
@@ -46,3 +57,8 @@ pub fn foreground_target() -> Option<usize> {
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn cancel_selection() {}
+
+#[cfg(not(windows))]
+pub fn paste_files(_: usize, _: &[std::path::PathBuf])->Result<(),String>{Err("Batch attachment paste currently supports Windows only".into())}
+#[cfg(not(windows))]
+pub fn focus_target(_:usize)->Result<(),String>{Err("Returning to the original window currently supports Windows only".into())}

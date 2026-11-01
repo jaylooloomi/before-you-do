@@ -3,7 +3,7 @@ async function open(page){const manager=new Manager(page);await manager.open();a
 test('materials preserve snippet drafts; text, files, ordering, export and refresh',async({page})=>{
  const manager=new Manager(page);await manager.open();await manager.text.fill('Original unsaved snippet draft');await page.getByRole('button',{name:'本次 prompt 素材',exact:true}).click();
  await page.getByRole('button',{name:'加入文字',exact:true}).click();const text=page.getByRole('textbox',{name:'任務文字 1',exact:true});await text.fill('<script>alert(1)</script>\n請分析這個問題');
- await page.getByText('截圖快捷鍵與選項',{exact:true}).click();await page.getByRole('button',{name:'儲存文字草稿',exact:true}).click();await page.getByText('截圖快捷鍵與選項',{exact:true}).click();await expect(page.getByRole('status').filter({hasText:'素材已儲存'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'儲存文字草稿',exact:true})).toHaveCount(0);await expect(page.getByRole('status').filter({hasText:'素材已儲存'})).toBeVisible();
  await page.getByLabel('選擇素材檔案',{exact:true}).setInputFiles({name:'context.txt',mimeType:'text/plain',buffer:Buffer.from('reference text')});await expect(page.getByRole('listitem',{name:'02 · context.txt',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'素材選單 2',exact:true}).click();await page.getByRole('button',{name:'上移素材 2',exact:true}).click();await expect(page.getByRole('listitem',{name:'01 · context.txt',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'複製整合文字',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.qa.clipboard)).toContain('<script>alert(1)</script>');

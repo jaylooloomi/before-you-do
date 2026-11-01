@@ -1,3 +1,4 @@
+pub(crate) mod workspace;
 use crate::capture::{self as native, Frame};
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -23,18 +24,19 @@ pub struct Bundle {
     pub items: Vec<Item>,
 }
 #[derive(Clone, Serialize, Deserialize)]
-struct TaskPack { id: String, name: String, bundle: Bundle }
+struct TaskPack { id: String, name: String, bundle: Bundle, #[serde(default)] created_ms:u64 }
 #[derive(Clone, Serialize, Deserialize)]
-struct TaskPacks { version: u8, active: String, packs: Vec<TaskPack> }
+struct TaskPacks { version: u8, active: String, packs: Vec<TaskPack>, #[serde(default)] workspace:Option<Bundle>, #[serde(default)] undo:Option<Bundle>, #[serde(default)] next_sequence:u64 }
 impl TaskPacks {
-    fn legacy(bundle: Bundle) -> Self { Self {version:1,active:"legacy".into(),packs:vec![TaskPack{id:"legacy".into(),name:"My task".into(),bundle}]} }
+    fn legacy(bundle: Bundle) -> Self { Self {version:1,active:"legacy".into(),packs:vec![TaskPack{id:"legacy".into(),name:"My task".into(),bundle,created_ms:0}],workspace:None,undo:None,next_sequence:1} }
     fn validate(self)->Result<Self,String>{
-        if self.version!=1 || self.packs.is_empty(){return Err("Invalid task pack store".into());}
+        if ![1,2].contains(&self.version) || self.packs.is_empty(){return Err("Invalid task pack store".into());}
         let mut ids=std::collections::HashSet::new();let mut names=std::collections::HashSet::new();let mut assets=std::collections::HashSet::new();
         for pack in &self.packs {if pack.id.is_empty()||!ids.insert(&pack.id)||!names.insert(pack.name.trim().to_lowercase())||pack.name.trim().is_empty(){return Err("Invalid task pack".into());}validate_bundle(pack.bundle.clone())?;for item in &pack.bundle.items{if !assets.insert(&item.id){return Err("Shared material ID".into());}}}
+        for bundle in [&self.workspace,&self.undo].into_iter().flatten(){validate_bundle(bundle.clone())?;for item in &bundle.items{if !assets.insert(&item.id){return Err("Shared material ID".into());}}}
         if !ids.contains(&self.active){return Err("Active task pack missing".into());}Ok(self)
     }
-    fn bundle(&self)->Bundle{self.packs.iter().find(|p|p.id==self.active).unwrap().bundle.clone()}
+    fn bundle(&self)->Bundle{self.workspace.clone().unwrap_or_else(||self.packs.iter().find(|p|p.id==self.active).unwrap().bundle.clone())}
 }
 pub struct Materials {
     load_error: Option<String>,
@@ -93,6 +95,14 @@ impl Materials {
     pub fn add_recording(&self,name:String,bytes:Vec<u8>,gif:bool)->Result<(),String>{self.ready()?;if bytes.len()>MAX_FILE{return Err("Recording exceeds 25 MB".into());}self.append(Item{id:id(),name,kind:if gif{"image"}else{"file"}.into(),text:String::new(),size:bytes.len() as u64},Some(&bytes))?;Ok(())}
     fn invalidate_capture(&self) {
         let _operation = self.operation.lock().unwrap_or_else(|e| e.into_inner());
+        self.invalidate_capture_locked();
+    }
+    fn cancel_region_capture(&self)->bool {
+        let _operation=self.operation.lock().unwrap_or_else(|e|e.into_inner());
+        if !self.busy.load(std::sync::atomic::Ordering::SeqCst)||*self.intent.lock().unwrap_or_else(|e|e.into_inner())!="region" {return false;}
+        self.invalidate_capture_locked();true
+    }
+    fn invalidate_capture_locked(&self) {
         self.generation
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         if let Ok(mut capture) = self.capture.lock() {
@@ -122,7 +132,7 @@ impl Materials {
     fn commit(&self, bundle: &Bundle) -> Result<(), String> {
         self.ready()?;
         let mut packs=self.packs.lock().map_err(err)?;let mut next=packs.clone();
-        next.packs.iter_mut().find(|p|p.id==next.active).ok_or("Task pack missing")?.bundle=bundle.clone();
+        if next.workspace.is_some(){next.workspace=Some(bundle.clone());}else{next.packs.iter_mut().find(|p|p.id==next.active).ok_or("Task pack missing")?.bundle=bundle.clone();}
         self.write_packs(&next)?;*packs=next;Ok(())
     }
     fn write_packs(&self,packs:&TaskPacks)->Result<(),String>{
@@ -133,7 +143,28 @@ impl Materials {
         file.write_all(&serde_json::to_vec_pretty(packs).map_err(err)?).map_err(err)?;file.sync_all().map_err(err)?;drop(file);
         fs::rename(tmp, self.root.join("session.json")).map_err(err)
     }
+    fn save_as(&self,name:&str)->Result<(),String>{
+      if self.packs.lock().map_err(err)?.workspace.is_some(){return Err("Use workspace actions".into());}
+      self.ready()?;let _operation=self.operation.lock().map_err(err)?;if self.busy.load(std::sync::atomic::Ordering::SeqCst){return Err("Finish capture before changing materials".into());}
+      let name=name.trim();if name.is_empty()||name.chars().count()>80||name.chars().any(char::is_control){return Err("Enter a task name (1–80 characters)".into());}
+      let mut bundle=self.bundle.lock().map_err(err)?;let mut packs=self.packs.lock().map_err(err)?;
+      if packs.packs.iter().any(|p|p.name.to_lowercase()==name.to_lowercase()){return Err("Task name already exists".into());}
+      let mut next=packs.clone();next.packs.iter_mut().find(|p|p.id==next.active).ok_or("Task pack missing")?.bundle=bundle.clone();
+      let mut copy=bundle.clone();let mut created=Vec::new();let result=(||->Result<(),String>{
+       for item in &mut copy.items{let source=self.asset(&item.id);item.id=id();if item.kind!="text"{let target=self.asset(&item.id);let mut input=fs::File::open(source).map_err(err)?;let mut output=fs::OpenOptions::new().write(true).create_new(true).open(&target).map_err(err)?;created.push(target);std::io::copy(&mut input,&mut output).map_err(err)?;output.sync_all().map_err(err)?;}}
+       let key=id();next.packs.push(TaskPack{id:key.clone(),name:name.into(),bundle:copy.clone(),created_ms:0});next.active=key;self.write_packs(&next)
+      })();if let Err(error)=result{for path in created{let _=fs::remove_file(path);}return Err(error);}
+      *bundle=copy;*packs=next;Ok(())
+    }
+    fn store_current(&self,clear:bool)->Result<Bundle,String>{
+        if self.packs.lock().map_err(err)?.workspace.is_some(){return Err("Use workspace actions".into());}
+        self.ready()?;let _operation=self.operation.lock().map_err(err)?;
+        if self.busy.load(std::sync::atomic::Ordering::SeqCst){return Err("Finish capture before changing materials".into());}
+        let mut current=self.bundle.lock().map_err(err)?;let next=if clear{Bundle::default()}else{current.clone()};
+        self.commit(&next)?;*current=next.clone();Ok(next)
+    }
     fn select_pack(&self,target:Option<String>,name:Option<String>)->Result<serde_json::Value,String>{
+        if self.packs.lock().map_err(err)?.workspace.is_some(){return Err("Use workspace actions".into());}
         self.ready()?;
         let _operation=self.operation.lock().map_err(err)?;
         if self.busy.load(std::sync::atomic::Ordering::SeqCst){return Err("Finish capture before switching task packs".into());}
@@ -141,7 +172,7 @@ impl Materials {
         next.packs.iter_mut().find(|p|p.id==next.active).ok_or("Task pack missing")?.bundle=bundle.clone();
         if let Some(name)=name {let name=name.trim();if name.is_empty()||name.chars().count()>80||name.chars().any(char::is_control){return Err("Enter a task name (1–80 characters)".into());}
             if next.packs.iter().any(|p|p.name.to_lowercase()==name.to_lowercase()){return Err("Task name already exists".into());}
-            let key=id();next.packs.push(TaskPack{id:key.clone(),name:name.into(),bundle:Bundle::default()});next.active=key;
+            let key=id();next.packs.push(TaskPack{id:key.clone(),name:name.into(),bundle:Bundle::default(),created_ms:0});next.active=key;
         }else if let Some(target)=target {if !next.packs.iter().any(|p|p.id==target){return Err("Task pack not found".into());}next.active=target;}
         self.write_packs(&next)?;*bundle=next.bundle();*packs=next;
         Ok(serde_json::to_value(&*packs).map_err(err)?)
@@ -255,8 +286,24 @@ fn manager(w: &tauri::WebviewWindow) -> Result<(), String> {
         Ok(())
     }
 }
+fn reader(w:&tauri::WebviewWindow)->Result<(),String>{if matches!(w.label(),"main"|"materials-quick"){Ok(())}else{Err("Material reader only".into())}}
+#[tauri::command]
+pub fn materials_quick_snapshot(w:tauri::WebviewWindow,app:tauri::AppHandle)->Result<serde_json::Value,String>{
+    reader(&w)?;let state=app.state::<Materials>();state.ready()?;
+    let items=state.bundle.lock().map_err(err)?.clone();let packs=state.packs.lock().map_err(err)?;
+    let name=if packs.workspace.is_some(){"本次素材".into()}else{packs.packs.iter().find(|p|p.id==packs.active).ok_or("Task pack missing")?.name.clone()};
+    let hotkeys=crate::capture_hotkeys::snapshot(&app);
+    Ok(serde_json::json!({"items":items.items,"taskName":name,"workspace":packs.workspace.is_some(),"quick":hotkeys.config.quick,"paste":hotkeys.config.paste}))
+}
 #[tauri::command]
 pub fn materials_packs(w:tauri::WebviewWindow,state:tauri::State<Materials>)->Result<serde_json::Value,String>{manager(&w)?;state.ready()?;serde_json::to_value(&*state.packs.lock().map_err(err)?).map_err(err)}
+#[tauri::command]
+pub fn materials_save_as(w:tauri::WebviewWindow,app:tauri::AppHandle,state:tauri::State<Materials>,name:String)->Result<(),String>{manager(&w)?;if app.state::<crate::recording::Recorder>().active(){return Err("Finish recording before changing materials".into());}state.save_as(&name)?;let _=app.emit_to("materials-quick","materials-updated",());Ok(())}
+#[tauri::command]
+pub fn materials_store(w:tauri::WebviewWindow,app:tauri::AppHandle,state:tauri::State<Materials>,clear:bool)->Result<Bundle,String>{
+ manager(&w)?;if app.state::<crate::recording::Recorder>().active(){return Err("Finish recording before changing materials".into());}
+ let result=state.store_current(clear)?;let _=app.emit_to("materials-quick","materials-updated",());Ok(result)
+}
 #[tauri::command]
 pub fn materials_select_pack(w:tauri::WebviewWindow,app:tauri::AppHandle,state:tauri::State<Materials>,target:Option<String>,name:Option<String>)->Result<serde_json::Value,String>{
     manager(&w)?;if app.state::<crate::recording::Recorder>().active(){return Err("Finish recording before switching task packs".into());}state.select_pack(target,name)
@@ -524,7 +571,7 @@ pub fn materials_preview(
     state: tauri::State<Materials>,
     item_id: String,
 ) -> Result<String, String> {
-    manager(&w)?;
+    reader(&w)?;
     state.ready()?;
     let current = state.bundle.lock().map_err(err)?;
     let item = current
@@ -570,7 +617,7 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
     }
     fs::write(dir.join("prompt.md"), prompt).map_err(err)?;
     let mut manifest=serde_json::to_value(&*current).map_err(err)?;
-    {let packs=state.packs.lock().map_err(err)?;let pack=packs.packs.iter().find(|p|p.id==packs.active).ok_or("Task pack missing")?;manifest["task_pack"]=serde_json::json!({"id":pack.id,"name":pack.name});}
+    {let packs=state.packs.lock().map_err(err)?;let pack=packs.packs.iter().find(|p|p.id==packs.active).ok_or("Task pack missing")?;manifest["task_pack"]=if packs.workspace.is_some(){serde_json::json!({"id":"workspace","name":"Current materials"})}else{serde_json::json!({"id":pack.id,"name":pack.name})};}
     for (n,item) in manifest["items"].as_array_mut().ok_or("Invalid manifest")?.iter_mut().enumerate(){
         item["number"]=serde_json::json!(format!("{:02}",n+1));
         if item["kind"]!="text" {item["export_name"]=serde_json::json!(format!("{:02}-{}",n+1,current.items[n].name));}
@@ -583,8 +630,70 @@ fn export_bundle(state: &Materials) -> Result<String, String> {
     fs::rename(&dir, &final_dir).map_err(err)?;
     Ok(final_dir.to_string_lossy().into_owned())
 }
-fn add_frame(state: &Materials, frame: Frame) -> Result<Bundle, String> {
+enum PasteContents { Text(String), Files(Vec<PathBuf>) }
+fn prepare_paste(state: &Materials) -> Result<PasteContents,String> {
+    state.ready()?;
+    let bundle=state.bundle.lock().map_err(err)?.clone();
+    if bundle.items.is_empty(){return Err("No materials to paste".into());}
+    if bundle.items.iter().all(|item|item.kind=="text") {
+        let text=bundle.items.iter().enumerate().map(|(index,item)|format!("[Material #{:02}]\n{}",index+1,item.text)).collect::<Vec<_>>().join("\n\n");
+        if bundle.items.iter().all(|item|item.text.trim().is_empty()){return Err("No material text to paste".into());}
+        return Ok(PasteContents::Text(text));
+    }
+    // Immutable exported copies retain numbering even when the workspace changes.
+    let dir=PathBuf::from(export_bundle(state)?);
+    let manifest:serde_json::Value=serde_json::from_slice(&fs::read(dir.join("manifest.json")).map_err(err)?).map_err(err)?;
+    let has_text=bundle.items.iter().any(|item|item.kind=="text"&&!item.text.trim().is_empty());
+    let mut files=if has_text {vec![dir.join("prompt.md")]} else {Vec::new()};
+    for item in manifest["items"].as_array().ok_or("Invalid material manifest")? {
+        if let Some(name)=item["export_name"].as_str(){files.push(dir.join(name));}
+    }
+    if files.iter().any(|file|!file.is_file()){return Err("Material attachment missing".into());}
+    Ok(PasteContents::Files(files))
+}
+#[tauri::command]
+pub async fn materials_paste_all(w:tauri::WebviewWindow,app:tauri::AppHandle,target:Option<usize>) -> Result<(),String> {
+    manager(&w)?;
+    if app.state::<crate::State>().preview {return Err("Batch paste is unavailable in previews".into());}
+    tauri::async_runtime::spawn_blocking(move||{
+        let state=app.state::<Materials>();
+        let _operation=state.operation.lock().map_err(err)?;
+        if state.busy.load(std::sync::atomic::Ordering::SeqCst)||app.state::<crate::recording::Recorder>().active(){return Err("Finish capture or recording before pasting materials".into());}
+        if let Some(target)=target {
+            if crate::platform::is_app_target(target)||crate::platform::foreground_target()!=Some(target){return Err("Target window changed; batch paste cancelled".into());}
+        }
+        match prepare_paste(&state)? {
+            PasteContents::Text(text)=>if let Some(target)=target{crate::platform::paste(target,&text)}else{arboard::Clipboard::new().map_err(err)?.set_text(text).map_err(err)},
+            PasteContents::Files(files)=>if let Some(target)=target{crate::platform::paste_files(target,&files)}else{crate::platform::copy_files(&files)},
+        }
+    }).await.map_err(err)?
+}
+fn add_frame(state: &Materials, frame: &Frame) -> Result<Bundle, String> {
     add_png(state, frame.png()?)
+}
+// Persist first: a failed or stale capture must never replace the clipboard.
+fn save_and_copy_screenshot(
+    frame: &Frame,
+    save: impl FnOnce() -> Result<Bundle, String>,
+    copy: impl FnOnce(&Frame) -> Result<(), String>,
+) -> Result<Option<String>, String> {
+    save()?;
+    Ok(copy(frame).err())
+}
+fn copy_screenshot(app: &tauri::AppHandle, frame: &Frame) -> Result<(), String> {
+    // Isolated preview/audit instances must not change the user's clipboard.
+    if app.state::<crate::State>().preview { return Ok(()); }
+    let image = arboard::ImageData {
+        width: frame.width as usize,
+        height: frame.height as usize,
+        bytes: std::borrow::Cow::Borrowed(&frame.rgba),
+    };
+    arboard::Clipboard::new().map_err(err)?.set_image(image).map_err(err)
+}
+fn report_clipboard_error(app: &tauri::AppHandle, error: Option<String>) {
+    if let Some(error) = error {
+        let _ = app.emit_to("main", "capture-error", format!("Screenshot saved to materials, but copying to clipboard failed: {error}"));
+    }
 }
 fn add_png(state: &Materials, bytes: Vec<u8>) -> Result<Bundle, String> {
     let key = id();
@@ -702,6 +811,13 @@ pub fn preview_capture_presentation(w:tauri::WebviewWindow,app:tauri::AppHandle)
 }
 pub fn cancel(app: &tauri::AppHandle) {
     app.state::<Materials>().invalidate_capture();
+    hide_cancelled_capture(app);
+}
+pub fn cancel_region(app:&tauri::AppHandle)->bool {
+    if !app.state::<Materials>().cancel_region_capture(){return false;}
+    hide_cancelled_capture(app);true
+}
+fn hide_cancelled_capture(app:&tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("capture") {
         let _ = crate::capture_presentation::hide(&window);
     }
@@ -727,6 +843,8 @@ pub fn capture_finish(
     .map_err(|e| e.to_string())?;
     let intent=state.intent.lock().map_err(err)?.clone();
     let mut recording=None;
+    let mut clipboard_error=None;
+    let mut toast_frame=None;
     if let Some([x,y,width,height])=rect {
         let source=state.capture.lock().map_err(err)?;
         let source=source.as_ref().ok_or("No capture")?;
@@ -735,7 +853,11 @@ pub fn capture_finish(
             let bounds=[source.x.checked_add(x as i32).ok_or("Coordinate overflow")?,source.y.checked_add(y as i32).ok_or("Coordinate overflow")?,width as i32,height as i32];
             crate::recording::validate_rect(bounds)?;
             recording=Some((if intent=="record-gif"{crate::recording::Format::Gif}else{crate::recording::Format::Video},bounds));
-        }else{add_frame(&state,source.crop(x,y,width,height)?)?;}
+        }else{
+            let cropped=source.crop(x,y,width,height)?;
+            clipboard_error=save_and_copy_screenshot(&cropped,||add_frame(&state,&cropped),|frame|copy_screenshot(&app,frame))?;
+            toast_frame=Some(cropped);
+        }
     }
     state.capture.lock().map_err(err)?.take();
     if let Some((_,tx))=state.presentation_waiter.lock().map_err(err)?.take(){let _=tx.send(Ok(()));}
@@ -745,6 +867,8 @@ pub fn capture_finish(
     if let Some((format,bounds))=recording {crate::recording::start(app.clone(),format,bounds)?;}
     else if state.restore_main.load(std::sync::atomic::Ordering::SeqCst){crate::manage(&app);}
     let _ = app.emit_to("main", "materials-updated", ());
+    report_clipboard_error(&app,clipboard_error);
+    if let Some(frame)=toast_frame {crate::capture_toast::notify(&app,&frame);}
     Ok(())
 }
 #[tauri::command]
@@ -770,6 +894,7 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
             .unwrap_or(native::CaptureError::PermissionRequired.to_string()));
     }
     let state = app.state::<Materials>();
+    let operation=state.operation.lock().map_err(err)?;
     state.ready()?;
     if state.busy.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return Err("Capture already in progress".into());
@@ -781,6 +906,7 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
     *state.intent.lock().map_err(err)?=intent;
     let w=app.get_webview_window("main").ok_or("Manager unavailable")?;
     state.restore_main.store(from_manager,std::sync::atomic::Ordering::SeqCst);
+    drop(operation);
     let region = mode == "region";
     let result = async {
         let target = if mode == "window" {
@@ -789,6 +915,7 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
             0
         };
         w.hide().map_err(err)?;
+        crate::capture_toast::dismiss(&app);
         let frame = tauri::async_runtime::spawn_blocking(move || native::capture(&mode, target))
             .await
             .map_err(err)??;
@@ -802,8 +929,10 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
         if region {
             show_region(app.clone(), frame, generation).await?;
         } else {
-            state.commit_capture(generation, frame.png()?)?;
+            let clipboard_error=save_and_copy_screenshot(&frame,||state.commit_capture(generation,frame.png()?),|frame|copy_screenshot(&app,frame))?;
             app.emit_to("main", "materials-updated", ()).map_err(err)?;
+            report_clipboard_error(&app,clipboard_error);
+            crate::capture_toast::notify(&app,&frame);
         }
         Ok::<(), String>(())
     }
@@ -825,7 +954,9 @@ pub async fn start_internal(app:tauri::AppHandle, intent:String, from_manager:bo
         }
         if from_manager{crate::manage(&app);}
     }
-    result
+    // Cancellation invalidates in-flight native capture/presentation work.
+    // It is a successful cancellation, not a capture error to surface later.
+    if state.generation.load(std::sync::atomic::Ordering::SeqCst)!=generation {Ok(())}else{result}
 }
 async fn show_region(app: tauri::AppHandle, frame: Frame, generation: u64) -> Result<(), String> {
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
@@ -921,7 +1052,7 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
         },
         Some(b"fixture!"),
     )?;
-    add_frame(&store, crop)?;
+    add_frame(&store, &crop)?;
     let export = PathBuf::from(export_bundle(&store)?);
     if !fs::read_to_string(export.join("prompt.md"))
         .map_err(err)?
@@ -951,6 +1082,83 @@ pub fn audit(directory: &std::path::Path) -> Result<(), String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn region_shortcut_cancels_selection_without_saving_and_rejects_stale_pixels() {
+        use super::*;
+        use std::sync::atomic::Ordering;
+        let root=std::env::temp_dir().join(format!("region-toggle-{}",id()));
+        fs::create_dir_all(&root).unwrap();
+        let state=Materials::new(root.clone()).unwrap();
+        assert!(!state.cancel_region_capture());
+        state.busy.store(true,Ordering::SeqCst);state.generation.store(7,Ordering::SeqCst);
+        let frame=Frame::new(0,0,1,1,vec![10,20,30,255]).unwrap();let png=frame.png().unwrap();
+        *state.capture.lock().unwrap()=Some(frame);
+        assert!(state.cancel_region_capture());assert!(!state.busy.load(Ordering::SeqCst));
+        assert!(state.capture.lock().unwrap().is_none());assert_eq!(state.generation.load(Ordering::SeqCst),8);
+        assert!(state.commit_capture(7,png).is_err());assert!(state.bundle.lock().unwrap().items.is_empty());
+        assert!(!state.cancel_region_capture());
+        state.busy.store(true,Ordering::SeqCst);*state.intent.lock().unwrap()="record-video".into();
+        assert!(!state.cancel_region_capture());assert!(state.busy.load(Ordering::SeqCst));
+        drop(state);fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn batch_paste_uses_only_current_pack_with_numbered_immutable_attachments() {
+        use super::*;
+        let root=std::env::temp_dir().join(format!("batch-paste-{}",id()));
+        let state=Materials::new(root.clone()).unwrap();
+        assert!(prepare_paste(&state).is_err());
+        state.append(Item{id:"text1".into(),name:"Task".into(),kind:"text".into(),text:"Do this carefully".into(),size:0},None).unwrap();
+        match prepare_paste(&state).unwrap(){PasteContents::Text(text)=>assert_eq!(text,"[Material #01]\nDo this carefully"),_=>panic!("Text should paste directly")}
+        state.append(Item{id:"file1".into(),name:"圖 1.png".into(),kind:"image".into(),text:"".into(),size:3},Some(b"PNG")).unwrap();
+        let files=match prepare_paste(&state).unwrap(){PasteContents::Files(files)=>files,_=>panic!("Mixed contents must include all files")};
+        assert_eq!(files.len(),2);assert_eq!(files[0].file_name().unwrap(),"prompt.md");assert_eq!(files[1].file_name().unwrap(),"02-圖 1.png");
+        let text=fs::read_to_string(&files[0]).unwrap();assert!(text.contains("Do this carefully"));assert!(text.contains("[Material #02]"));assert!(text.contains("02-圖 1.png"));assert_eq!(fs::read(&files[1]).unwrap(),b"PNG");
+        state.select_pack(None,Some("Other task".into())).unwrap();assert!(prepare_paste(&state).is_err());assert_eq!(fs::read(&files[1]).unwrap(),b"PNG");
+        drop(state);fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn attachment_only_paste_omits_prompt_including_blank_text() {
+        use super::*;
+        let root=std::env::temp_dir().join(format!("attachment-paste-{}",id()));
+        let state=Materials::new(root.clone()).unwrap();
+        state.append(Item{id:"image".into(),name:"shot.png".into(),kind:"image".into(),text:"".into(),size:3},Some(b"PNG")).unwrap();
+        state.append(Item{id:"file".into(),name:"note.txt".into(),kind:"file".into(),text:"".into(),size:4},Some(b"FILE")).unwrap();
+        for blank in [false,true] {
+            if blank {state.append(Item{id:"blank".into(),name:"Text".into(),kind:"text".into(),text:"  \n".into(),size:0},None).unwrap();}
+            let files=match prepare_paste(&state).unwrap(){PasteContents::Files(files)=>files,_=>panic!("Expected attachments")};
+            assert_eq!(files.len(),2);
+            assert_eq!(files[0].file_name().unwrap(),"01-shot.png");assert_eq!(files[1].file_name().unwrap(),"02-note.txt");
+            assert_eq!(fs::read(&files[0]).unwrap(),b"PNG");assert_eq!(fs::read(&files[1]).unwrap(),b"FILE");
+        }
+        drop(state);fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn screenshot_is_saved_before_exact_cropped_pixels_are_copied() {
+        use super::*;
+        let root=std::env::temp_dir().join(format!("capture-clipboard-{}",id()));
+        let state=Materials::new(root.clone()).unwrap();
+        let source=Frame::new(0,0,2,1,vec![255,0,0,255,0,255,0,255]).unwrap();
+        let crop=source.crop(1,0,1,1).unwrap();
+        let error=save_and_copy_screenshot(&crop,||add_frame(&state,&crop),|image|{
+            assert_eq!(state.bundle.lock().unwrap().items.len(),1);
+            assert_eq!((image.width,image.height),(1,1));
+            assert_eq!(image.rgba,vec![0,255,0,255]);
+            Ok(())
+        }).unwrap();
+        assert_eq!(error,None);
+        drop(state);fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn failed_save_never_changes_clipboard_and_copy_failure_keeps_saved_material() {
+        use super::*;
+        let frame=Frame::new(0,0,1,1,vec![12,34,56,255]).unwrap();
+        assert!(save_and_copy_screenshot(&frame,||Err("disk full".into()),|_|panic!("Clipboard must remain unchanged")).is_err());
+        let root=std::env::temp_dir().join(format!("capture-clipboard-{}",id()));
+        let state=Materials::new(root.clone()).unwrap();
+        assert_eq!(save_and_copy_screenshot(&frame,||add_frame(&state,&frame),|_|Err("Clipboard busy".into())).unwrap(),Some("Clipboard busy".into()));
+        assert_eq!(state.bundle.lock().unwrap().items.len(),1);
+        drop(state);fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn task_packs_migrate_switch_restart_and_export_without_mixing(){
         let root=std::env::temp_dir().join(id());fs::create_dir_all(root.join("files")).unwrap();
@@ -1222,3 +1430,17 @@ mod image_edit_tests {
   fs::remove_dir_all(root).unwrap();
  }
 }
+
+#[cfg(test)]mod store_tests{
+ use super::*;
+ #[test]fn save_clear_preserve_other_packs_assets_exports_and_failure_keeps_memory(){
+ let root=std::env::temp_dir().join(format!("store-current-{}",id()));let state=Materials::new(root.clone()).unwrap();
+ state.append(Item{id:"one".into(),name:"a.txt".into(),kind:"file".into(),text:String::new(),size:3},Some(b"AAA")).unwrap();let exported=PathBuf::from(export_bundle(&state).unwrap());
+ state.select_pack(None,Some("Other".into())).unwrap();state.append(Item{id:"two".into(),name:"Text".into(),kind:"text".into(),text:"other".into(),size:0},None).unwrap();state.store_current(false).unwrap();
+ state.select_pack(Some("legacy".into()),None).unwrap();state.store_current(true).unwrap();assert!(state.bundle.lock().unwrap().items.is_empty());assert_eq!(fs::read(state.asset("one")).unwrap(),b"AAA");assert!(exported.join("prompt.md").is_file());
+ let other=state.packs.lock().unwrap().packs.iter().find(|p|p.name=="Other").unwrap().id.clone();state.select_pack(Some(other),None).unwrap();assert_eq!(state.bundle.lock().unwrap().items[0].text,"other");
+ let before=fs::read(root.join("session.json")).unwrap();fs::create_dir(root.join("session.json.tmp")).unwrap();assert!(state.store_current(true).is_err());assert_eq!(state.bundle.lock().unwrap().items.len(),1);assert_eq!(fs::read(root.join("session.json")).unwrap(),before);fs::remove_dir_all(root).unwrap();
+ }
+}
+
+#[cfg(test)]mod save_as_tests{use super::*;#[test]fn named_copy_is_independent_and_failed_commit_keeps_original(){let root=std::env::temp_dir().join(format!("save-as-{}",id()));let state=Materials::new(root.clone()).unwrap();state.append(Item{id:"old".into(),name:"image.png".into(),kind:"image".into(),text:String::new(),size:3},Some(b"PNG")).unwrap();state.append(Item{id:"text".into(),name:"Text".into(),kind:"text".into(),text:"Hello".into(),size:0},None).unwrap();state.save_as(" Copy ").unwrap();let items=state.bundle.lock().unwrap().items.clone();assert_ne!(items[0].id,"old");assert_eq!(fs::read(state.asset(&items[0].id)).unwrap(),b"PNG");assert_eq!(state.packs.lock().unwrap().packs[0].bundle.items[0].id,"old");fs::write(state.asset(&items[0].id),b"NEW").unwrap();assert_eq!(fs::read(state.asset("old")).unwrap(),b"PNG");assert!(state.save_as("copy").is_err());assert!(state.save_as(" ").is_err());let before=fs::read(root.join("session.json")).unwrap();let count=fs::read_dir(root.join("files")).unwrap().count();fs::create_dir(root.join("session.json.tmp")).unwrap();assert!(state.save_as("Failure").is_err());assert_eq!(fs::read(root.join("session.json")).unwrap(),before);assert_eq!(fs::read_dir(root.join("files")).unwrap().count(),count);assert_eq!(state.packs.lock().unwrap().packs.len(),2);fs::remove_dir_all(root).unwrap();}}

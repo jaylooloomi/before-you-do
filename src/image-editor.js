@@ -1,10 +1,16 @@
 import {getLanguage} from './i18n.js';
 export function imagePoint(event,rect,width,height){return {x:Math.max(0,Math.min(width,(event.clientX-rect.left)*width/rect.width)),y:Math.max(0,Math.min(height,(event.clientY-rect.top)*height/rect.height))};}
+export function wrapAnnotationText(ctx,text,width){const lines=[];for(const paragraph of text.split('\n')){let line='';for(const char of Array.from(paragraph)){if(line&&ctx.measureText(line+char).width>width){lines.push(line);line='';}line+=char;}lines.push(line);}return lines;}
 export function drawAnnotations(ctx,marks,width){
  ctx.save();ctx.lineWidth=Math.max(2,width/240);ctx.strokeStyle='#ff473d';ctx.lineCap='round';ctx.lineJoin='round';
  for(const m of marks){const x=Math.min(m.a.x,m.b.x),y=Math.min(m.a.y,m.b.y),w=Math.abs(m.b.x-m.a.x),h=Math.abs(m.b.y-m.a.y);
  if(m.tool==='redact'){ctx.fillStyle='#000';ctx.fillRect(Math.floor(x),Math.floor(y),Math.ceil(x+w)-Math.floor(x),Math.ceil(y+h)-Math.floor(y));}
  else if(m.tool==='box')ctx.strokeRect(x,y,w,h);
+ else if(m.tool==='text'){
+  if(!m.text)continue;ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  const size=m.fontSize||Math.max(16,width/60);ctx.font=`600 ${size}px sans-serif`;ctx.textBaseline='top';ctx.fillStyle='#ff473d';ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1,size/10);
+  for(const [index,line]of wrapAnnotationText(ctx,m.text,Math.max(1,w-4)).entries()){const top=y+2+index*size*1.3;if(top>=y+h)break;ctx.strokeText(line,x+2,top);ctx.fillText(line,x+2,top);}ctx.restore();
+ }
  else {const angle=Math.atan2(m.b.y-m.a.y,m.b.x-m.a.x),head=ctx.lineWidth*5;ctx.beginPath();ctx.moveTo(m.a.x,m.a.y);ctx.lineTo(m.b.x,m.b.y);ctx.moveTo(m.b.x-head*Math.cos(angle-.5),m.b.y-head*Math.sin(angle-.5));ctx.lineTo(m.b.x,m.b.y);ctx.lineTo(m.b.x-head*Math.cos(angle+.5),m.b.y-head*Math.sin(angle+.5));ctx.stroke();}}
  ctx.restore();
 }
@@ -20,19 +26,23 @@ export async function editImage({src,onSave}){
  const stage=document.createElement('div');stage.className='image-editor-stage';stage.append(canvas);
  const status=document.createElement('p');status.setAttribute('role','status');
  const footer=document.createElement('div');footer.className='image-editor-tools';
- let marks=[],draft=null,tool='redact',saving=false,pointer=null;const ctx=canvas.getContext('2d');
+ let marks=[],draft=null,tool='redact',saving=false,pointer=null,editing=null;const ctx=canvas.getContext('2d');
  const draw=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0);drawAnnotations(ctx,draft?[...marks,draft]:marks,canvas.width);};
  function button(text,fn,parent=toolbar){const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;parent.append(b);return b;}
- const tools=[];for(const [key,zh,english]of [['redact','遮蔽','Redact'],['arrow','箭頭','Arrow'],['box','框線','Box']]){const b=button(label(zh,english),()=>{tool=key;tools.forEach(([k,b])=>b.setAttribute('aria-pressed',String(k===tool)));});tools.push([key,b]);b.setAttribute('aria-pressed',String(key===tool));}
- const undo=button(label('復原上一步','Undo'),()=>{marks.pop();draw();update();});
- const clear=button(label('清除本次編輯','Clear edits'),()=>{marks=[];draw();update();});
- const close=()=>{if(!saving){dialog.close();dialog.remove();}};
+ function finishText(commit=true){if(!editing)return;const current=editing;editing=null;if(commit&&current.input.value.trim()){marks.push({...current.mark,text:current.input.value});}current.input.remove();draw();update();}
+ function positionText(){if(!editing)return;const {mark,input}=editing;const sx=canvas.clientWidth/canvas.width,sy=canvas.clientHeight/canvas.height;Object.assign(input.style,{left:(canvas.offsetLeft+Math.min(mark.a.x,mark.b.x)*sx)+'px',top:(canvas.offsetTop+Math.min(mark.a.y,mark.b.y)*sy)+'px',width:(Math.abs(mark.b.x-mark.a.x)*sx)+'px',height:(Math.abs(mark.b.y-mark.a.y)*sy)+'px',fontSize:(mark.fontSize*sx)+'px'});}
+ function startText(mark){const input=document.createElement('textarea');input.className='image-annotation-text';input.setAttribute('aria-label',label('標註文字','Annotation text'));input.placeholder=label('輸入文字；Ctrl+Enter 完成，Esc 取消','Type text; Ctrl+Enter to finish, Esc to cancel');input.maxLength=10000;input.spellcheck=false;editing={mark:{...mark,fontSize:Math.max(16,canvas.width/60)},input};input.oninput=update;input.onblur=()=>finishText();input.onkeydown=e=>{if(e.isComposing)return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finishText(false);}else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();finishText();}};stage.append(input);positionText();input.focus();update();}
+ const resize=new ResizeObserver(positionText);resize.observe(canvas);
+ const tools=[];for(const [key,zh,english]of [['redact','遮蔽','Redact'],['arrow','箭頭','Arrow'],['box','框線','Box'],['text','文字','Text']]){const b=button(label(zh,english),()=>{finishText();tool=key;tools.forEach(([k,b])=>b.setAttribute('aria-pressed',String(k===tool)));});tools.push([key,b]);b.setAttribute('aria-pressed',String(key===tool));}
+ const undo=button(label('復原上一步','Undo'),()=>{finishText();marks.pop();draw();update();});
+ const clear=button(label('清除本次編輯','Clear edits'),()=>{finishText(false);marks=[];draw();update();});
+ const close=()=>{if(!saving){resize.disconnect();dialog.close();dialog.remove();}};
  button(label('取消','Cancel'),close,footer);
- const save=button(label('儲存並永久取代','Save and replace'),async()=>{if(saving||draft||!marks.length)return;saving=true;for(const b of dialog.querySelectorAll('button'))b.disabled=true;status.textContent=label('儲存中…','Saving…');try{draw();const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob||blob.size>25*1024*1024)throw new Error(label('輸出圖片超過 25 MB','Output exceeds 25 MB'));await onSave(Array.from(new Uint8Array(await blob.arrayBuffer())));saving=false;close();}catch(e){status.textContent=String(e.message||e);saving=false;for(const b of dialog.querySelectorAll('button'))b.disabled=false;update();}},footer);
- function update(){undo.disabled=clear.disabled=!marks.length;save.disabled=!marks.length||!!draft;}
- canvas.onpointerdown=e=>{if(saving||pointer!==null||e.button!==0)return;pointer=e.pointerId;canvas.setPointerCapture(pointer);const a=imagePoint(e,canvas.getBoundingClientRect(),canvas.width,canvas.height);draft={tool,a,b:a};update();};
+ const save=button(label('儲存並永久取代','Save and replace'),async()=>{finishText();if(saving||draft||!marks.length)return;saving=true;for(const b of dialog.querySelectorAll('button'))b.disabled=true;status.textContent=label('儲存中…','Saving…');try{draw();const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob||blob.size>25*1024*1024)throw new Error(label('輸出圖片超過 25 MB','Output exceeds 25 MB'));await onSave(Array.from(new Uint8Array(await blob.arrayBuffer())));saving=false;close();}catch(e){status.textContent=String(e.message||e);saving=false;for(const b of dialog.querySelectorAll('button'))b.disabled=false;update();}},footer);
+ function update(){const hasText=!!editing?.input.value.trim();undo.disabled=clear.disabled=!marks.length&&!editing;save.disabled=(!marks.length&&!hasText)||!!draft;}
+ canvas.onpointerdown=e=>{if(saving||pointer!==null||e.button!==0)return;finishText();pointer=e.pointerId;canvas.setPointerCapture(pointer);const a=imagePoint(e,canvas.getBoundingClientRect(),canvas.width,canvas.height);draft={tool,a,b:a};update();};
  canvas.onpointermove=e=>{if(e.pointerId!==pointer||!draft)return;draft.b=imagePoint(e,canvas.getBoundingClientRect(),canvas.width,canvas.height);draw();};
- canvas.onpointerup=e=>{if(e.pointerId!==pointer||!draft)return;draft.b=imagePoint(e,canvas.getBoundingClientRect(),canvas.width,canvas.height);if(Math.hypot(draft.b.x-draft.a.x,draft.b.y-draft.a.y)>=1)marks.push(draft);draft=null;pointer=null;draw();update();};
+ canvas.onpointerup=e=>{if(e.pointerId!==pointer||!draft)return;draft.b=imagePoint(e,canvas.getBoundingClientRect(),canvas.width,canvas.height);const mark=draft;draft=null;pointer=null;if(Math.hypot(mark.b.x-mark.a.x,mark.b.y-mark.a.y)>=1){if(mark.tool==='text'){if(Math.abs(mark.b.x-mark.a.x)>=4&&Math.abs(mark.b.y-mark.a.y)>=4)startText(mark);}else marks.push(mark);}draw();update();};
  canvas.onpointercancel=canvas.onlostpointercapture=()=>{draft=null;pointer=null;draw();update();};
  dialog.oncancel=e=>{e.preventDefault();close();};dialog.append(title,note,toolbar,stage,status,footer);document.body.append(dialog);draw();update();dialog.showModal();
 }

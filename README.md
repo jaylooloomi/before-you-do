@@ -1,6 +1,4 @@
-<p align="center"><img src="src/assets/app-icon.png" alt="before-you-do" width="96" height="96"></p>
-
-<h1 align="center">before-you-do</h1>
+<h1 align="center">before-you-do <img src="src/assets/app-icon.png" alt="" width="36" height="36" align="absmiddle"></h1>
 
 <p align="center">
   <b>One more instruction, before AI gets to work.</b><br>
@@ -52,7 +50,9 @@ For example, a login bug needs two screenshots, a short recording and a written 
 
 The export contains <code>prompt.md</code>, attachment copies and <code>manifest.json</code>. **Copy combined text** copies text and attachment references instead.
 
-**You currently attach exported files yourself.** Continuous clipboard collection and pasting all images/files into an Agent in one action are not available yet. The app never sends your message automatically.
+Press **Alt+V** to paste the current workspace bundle. The receiving app must support multiple-file paste; otherwise use export. The app never sends your message automatically.
+
+**Save material pack** takes one click and uses the local date and time, with a suffix for same-second collisions. The Load dialog provides Cancel, Delete, Add and Replace; loading asks before replacing current materials. Clearing the workspace leaves saved packs unchanged, and can be undone.
 
 ## Download and get started
 
@@ -64,7 +64,7 @@ The export contains <code>prompt.md</code>, attachment copies and <code>manifest
 
 Data stays local and no API key is needed. You choose the AI, review the content and send it yourself.
 
-**v0.6.0:** keep separate [named task packs](docs/task-packs.md) and [annotate or redact images](docs/image-editor.md). Back up your materials before upgrading: the new task-pack format cannot be opened by older versions.
+**v0.6.0:** keep separate [saved material packs](docs/task-packs.md) and [annotate or redact images](docs/image-editor.md). Back up your materials before upgrading: the new material-pack format cannot be opened by older versions.
 
 ## Keyboard essentials
 
@@ -75,8 +75,16 @@ Data stays local and no API key is needed. You choose the AI, review the content
 | Cancel | Esc, or press H again |
 | Save the current role’s snippets | Ctrl+S |
 
-Change the shortcut in **Settings**. On Mac, use Option and Command+S.
+Manage all shortcuts in the **Shortcut** tab. On Mac, use Option and Command+S.
 
 The [user guide](docs/USER_GUIDE.md) covers role templates, capture and recording, shortcut settings, AI-assisted snippet editing, backups and development. Screenshots use the current source and demo data; release differences and platform limits are noted in the guide.
 
 [MIT License](LICENSE) · [Template sources and licensing](docs/USER_GUIDE.md#template-sources-and-licensing)
+
+### Quick materials
+
+New-install defaults: **Alt+J** captures a region, **Alt+L** records video and **Alt+K** opens quick materials. Other material bindings start disabled; upgrades retain custom settings. Inside the main window, the quick-materials shortcut only hides it. In other apps, press **Alt+K** to toggle the compact list. Hold the modifier: ↑/↓ selects materials, ←/→ selects Paste all, Clear or Open main window. Release Alt (or the configured modifier) to run the selected action and close the panel (Paste all by default); Esc cancels. Enter previews. The paste-all shortcut starts disabled; assign one (such as Alt+V) if needed. Configure both bindings in **Shortcuts**.
+
+After taking a screenshot, a thumbnail appears briefly in the lower-right corner of the captured monitor without taking keyboard focus.
+
+Attachment-only pasting does not add `prompt.md`. Mixed text and attachments include it; text-only materials paste directly. Releasing the modifier with no materials closes the quick panel. Clear requires confirmation and supports undo; saved bundles are unchanged.

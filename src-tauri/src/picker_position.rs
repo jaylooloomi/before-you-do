@@ -46,12 +46,12 @@ fn placement_with_size(
 fn desired_size(window: &tauri::WebviewWindow) -> tauri::Result<(f64, f64)> {
     if window.label() == "main" {
         if window.is_maximized()? || window.is_minimized()? {
-            return Ok((940.0, 820.0));
+            return Ok((780.0, 810.0));
         }
         let size = window
             .inner_size()?
             .to_logical::<f64>(window.scale_factor()?);
-        Ok((size.width, size.height))
+        Ok((780.0, size.height))
     } else {
         Ok((580.0, 480.0))
     }
@@ -77,7 +77,7 @@ pub fn prepare_manager(
     window.unminimize()?;
     position_sized(app, window, target, desired)
 }
-fn position_sized(
+pub(crate) fn position_sized(
     app: &tauri::AppHandle,
     window: &tauri::WebviewWindow,
     target: usize,
@@ -115,6 +115,7 @@ fn position_sized(
                     .min(p.height as f64) as u32,
             )))?;
         }
+        if window.label()=="main"{window.set_max_size(Some(tauri::PhysicalSize::new(p.width,area.size.height.saturating_sub((32.0*monitor.scale_factor()).round() as u32).max(p.height))))?;}
         window.set_size(tauri::PhysicalSize::new(p.width, p.height))?;
         window.set_position(tauri::PhysicalPosition::new(p.x, p.y))?;
     }

@@ -12,7 +12,14 @@ if im.width != im.height:
     raise SystemExit('The icon master must be square.')
 if im.getpixel((0, 0))[3] != 0:
     raise SystemExit('The icon master must have transparent exterior corners.')
-icon = im.resize((1024, 1024), Image.Resampling.LANCZOS)
+# Ignore nearly invisible alpha fringe when fitting the tile to desktop icon bounds.
+bounds = im.getchannel('A').point(lambda alpha: 255 if alpha >= 128 else 0).getbbox()
+if bounds is None:
+    raise SystemExit('The icon master is empty.')
+tile = im.crop(bounds)
+icon = Image.new('RGBA', (1024, 1024))
+tile.thumbnail((1008, 1008), Image.Resampling.LANCZOS)
+icon.alpha_composite(tile, ((1024-tile.width)//2, (1024-tile.height)//2))
 icon.save(out / 'icon.png')
 icon.save(out / 'icon.ico', sizes=[(16,16),(20,20),(24,24),(32,32),(40,40),(48,48),(64,64),(128,128),(256,256)])
 icon.save(out / 'icon.icns')

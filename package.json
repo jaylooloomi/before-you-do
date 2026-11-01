@@ -1,6 +1,6 @@
 {
   "name": "before-you-do",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
     "test": "node --test tests/*.test.js",
     "test:qa": "node scripts/qa.mjs",
     "test:components": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:native-quick": "powershell.exe -NoProfile -File scripts/test-native-quick.ps1"
   },
   "dependencies": {
     "@tauri-apps/api": "^2"

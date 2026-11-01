@@ -29,7 +29,8 @@ Existing snippets and settings remain in %APPDATA%\dev.quicksay.desktop.
 Unsaved drafts live in memory; do not force-quit an app with edits you want to keep.
 
 Hold Alt and press H, use Left/Right for roles and Up/Down for snippets, release Alt to paste.
-Change the shortcut, interface language and theme under Settings.
+Change keyboard bindings under Shortcuts; interface language and theme are under Settings.
+New installs: Alt+J region capture, Alt+K quick materials, Alt+L recording. Existing bindings are retained.
 Choose Follow system, Light or Dark for the interface theme.
 Optional sign-in startup: Settings > Startup. On by default on first use; remembers manual disabling; starts in the tray.
 After moving the app, toggle startup off/on to update its path. Disable it before removing the app.
@@ -41,9 +42,9 @@ Unsigned portable build; no automatic updater.
 請完整解壓縮，保留同資料夾內的 WebView2Loader.dll。
 升級前先儲存所有角色要保留的草稿，再透過系統匣完整退出舊版。
 原有短句與設定會保留；未儲存草稿僅在記憶體中，不要直接強制結束。
-可在「設定與 AI 教學」調整快捷鍵及語言，並在主畫面選擇跟隨系統、亮色或暗色；自訂短句不會被語系切換覆蓋。
+可在「快捷」調整快捷鍵，在「設定」調整語言，並在主畫面選擇跟隨系統、亮色或暗色；自訂短句不會被語系切換覆蓋。
 此版本未簽章，沒有自動更新；貼入會取代剪貼簿內容，不會送出訊息。
-「設定與 AI 教學 → 啟動設定」可設定登入後啟動到系統匣，首次使用預設開啟，手動取消後會記住。移動程式後請關閉再開啟此設定；移除程式前請先關閉。
+「設定 → 啟動設定」可設定登入後啟動到系統匣，首次使用預設開啟，手動取消後會記住。移動程式後請關閉再開啟此設定；移除程式前請先關閉。
 "@
 [IO.File]::WriteAllText((Join-Path $staging 'START-HERE.txt'),$instructions,[Text.UTF8Encoding]::new($false))
 Compress-Archive -Path "$staging/*" -DestinationPath "artifacts/before-you-do-$Tag-windows-x64.zip" -Force

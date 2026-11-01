@@ -25,6 +25,26 @@ export function installBridge(){
     if(cmd==='recording_install'){state.recording.runtime_ready=true;return;}
     if(cmd==='recording_stop'){state.recording.status={phase:'finalizing'};emit('recording-state',state.recording.status);return;}
     if(cmd==='capture_hotkeys_get')return structuredClone(state.captureHotkeys);
+    if(cmd==='capture_hotkeys_editing'){state.captureHotkeysEditing=args.editing;return null;}
+    if(cmd==='materials_workspace'){
+      state.taskPacks??={version:1,active:'legacy',packs:[{id:'legacy',name:'My task',bundle:structuredClone(state.materials)}]};const store=state.taskPacks;
+      const copy=bundle=>{const result=structuredClone(bundle);result.items.forEach(item=>{const old=item.id;item.id='copy-'+(++next);if(qa.mediaPreviews?.[old])qa.mediaPreviews[item.id]=qa.mediaPreviews[old];});return result;};
+      if(!store.workspace){store.packs.find(p=>p.id===store.active).bundle=copy(state.materials);store.workspace=structuredClone(state.materials);store.next_sequence=1;}
+      store.workspace=structuredClone(state.materials);let savedName=null;
+      if(args.action==='save'){if(!state.materials.items.length)throw 'No materials to save';const base='素材包 '+args.name;let n=2;savedName=base;while(store.packs.some(p=>p.name===savedName))savedName=base+'-'+String(n++).padStart(2,'0');store.packs.push({id:'saved-'+(++next),name:savedName,bundle:copy(state.materials),created_ms:Date.now()});}
+      else if(args.action==='clear'){if(state.materials.items.length){store.undo=structuredClone(state.materials);state.materials={items:[]};}}
+      else if(args.action==='undo'){if(!store.undo)throw 'Nothing to restore';state.materials={items:[...store.undo.items,...state.materials.items]};store.undo=null;}
+      else if(args.action==='add'||args.action==='replace'){const pack=store.packs.find(p=>p.id===args.target);if(!pack)throw 'Material pack not found';const items=[...(args.action==='add'?state.materials.items:[]),...copy(pack.bundle).items];if(items.length>100)throw 'Material limits exceeded';state.materials={items};store.undo=null;}
+      else if(args.action==='delete'){const i=store.packs.findIndex(p=>p.id===args.target);if(i<0)throw 'Material pack not found';store.packs.splice(i,1);}
+      else if(args.action==='rename'){const name=args.name.trim();if(!name||name.length>80)throw 'Enter a material pack name (1–80 characters)';if(store.packs.some(p=>p.id!==args.target&&p.name.toLowerCase()===name.toLowerCase()))throw 'Material pack name already exists';store.packs.find(p=>p.id===args.target).name=name;}
+      store.workspace=structuredClone(state.materials);persist();return structuredClone({active:'workspace',previous_active:store.active,packs:store.packs.filter(p=>p.bundle.items.length).map(p=>({id:p.id,name:p.name,count:p.bundle.items.length,created_ms:p.created_ms||0})),canUndo:!!store.undo,savedName});
+    }
+    if(cmd==='materials_save_as'){state.taskPacks.packs.find(p=>p.id===state.taskPacks.active).bundle=structuredClone(state.materials);const name=args.name.trim();if(state.taskPacks.packs.some(p=>p.name.toLowerCase()===name.toLowerCase()))throw 'Task name already exists';const id='copy-'+(++next),bundle=structuredClone(state.materials);bundle.items.forEach(item=>item.id='copy-item-'+(++next));state.taskPacks.packs.push({id,name,bundle});state.taskPacks.active=id;state.materials=structuredClone(bundle);persist();return null;}
+    if(cmd==='materials_store'){if(args.clear)state.materials={items:[]};if(state.taskPacks)state.taskPacks.packs.find(p=>p.id===state.taskPacks.active).bundle=structuredClone(state.materials);persist();return structuredClone(state.materials);}
+    if(cmd==='materials_quick_snapshot')return structuredClone({items:state.materials.items,taskName:'My task',quick:state.captureHotkeys?.config.quick??'Alt+M',paste:state.captureHotkeys?.config.paste??'Alt+V'});
+    if(cmd==='materials_quick_finish_clear'){state.taskPacks??={packs:[]};state.taskPacks.undo=structuredClone(state.materials);state.materials={items:[]};persist();return null;}
+    if(cmd==='materials_quick_action'||cmd==='materials_quick_open'||cmd==='materials_quick_abort'||cmd==='materials_quick_finish_paste')return null;
+    if(cmd==='materials_paste_all'){qa.batchPaste={target:args.target,items:structuredClone(state.materials.items)};return null;}
     if(cmd==='capture_hotkeys_save'){state.captureHotkeys.config=args.config;persist();return structuredClone(state.captureHotkeys);}
 
     if(cmd==='capture_capabilities')return structuredClone(state.captureCapabilities||{platform:'windows',supported:true,permission:'not_required',reason:null,windowSemantics:'visible_pixels'});
@@ -37,7 +57,7 @@ export function installBridge(){
     if(cmd==='set_default_role'){state.defaultRole=args.role;persist();emit('default-role-changed',args.role);return args.role;}
     if(cmd==='materials_packs'||cmd==='materials_select_pack'){
       state.taskPacks??={version:1,active:'legacy',packs:[{id:'legacy',name:'My task',bundle:structuredClone(state.materials)}]};
-      const store=state.taskPacks;store.packs.find(p=>p.id===store.active).bundle=structuredClone(state.materials);
+      const store=state.taskPacks;if(!store.workspace)store.packs.find(p=>p.id===store.active).bundle=structuredClone(state.materials);
       if(cmd==='materials_select_pack'){
         if(args.name!=null){const name=args.name.trim();if(store.packs.some(p=>p.name.toLowerCase()===name.toLowerCase()))throw 'Task name already exists';const id='pack-'+Date.now();store.packs.push({id,name,bundle:{items:[]}});store.active=id;}
         else {if(!store.packs.some(p=>p.id===args.target))throw 'Task pack not found';store.active=args.target;}
@@ -48,6 +68,7 @@ export function installBridge(){
     if(cmd==='materials_load')return structuredClone(state.materials);
     if(cmd==='materials_text'){if(args.itemId){state.materials.items.find(i=>i.id===args.itemId).text=args.text;}else state.materials.items.push({id:'m'+(++next),name:'Text',kind:'text',text:args.text,size:0});persist();return structuredClone(state.materials);}
     if(cmd==='materials_import'){state.materials.items.push({id:'m'+(++next),name:args.name,kind:args.name.endsWith('.png')?'image':'file',text:'',size:args.bytes.length});persist();return structuredClone(state.materials);}
+    if(cmd==='materials_replace_image'){const item=state.materials.items.find(item=>item.id===args.itemId);if(!item)throw 'Material not found';item.size=args.bytes.length;qa.mediaPreviews??={};qa.mediaPreviews[args.itemId]='data:image/png;base64,'+btoa(String.fromCharCode(...args.bytes));persist();return structuredClone(state.materials);}
     if(cmd==='materials_preview'&&qa.mediaPreviews?.[args.itemId])return qa.mediaPreviews[args.itemId];
     if(cmd==='materials_preview')return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==';
     if(cmd==='materials_order'){state.materials.items=args.ids.map(id=>state.materials.items.find(i=>i.id===id));persist();return structuredClone(state.materials);}

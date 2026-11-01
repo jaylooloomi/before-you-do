@@ -2,13 +2,14 @@
 
 [Back to README](../README.md) · [繁體中文指南](USER_GUIDE.zh-TW.md)
 
-### Four tabs
+### Five tabs
 
 | Tab | Main tools |
 |---|---|
 | **Snippets** | 13 roles including My snippets, Agent commands, Development, Writing and Project management; scenarios, search, ordering, default-role star, editing and saving |
 | **Materials** | Region/full-screen/window screenshots, Windows silent video/GIF, text/files, numbered drag sorting, previews, double-click to open with the default app, combined text and bundle export |
-| **Settings** | Snippet shortcut, four interface languages, light/dark/system theme and sign-in startup |
+| **Shortcut** | Snippet picker, capture, recording, text/file and Alt+V batch paste bindings |
+| **Settings** | four interface languages, light/dark/system theme and sign-in startup |
 | **AI guide** | Template library, AI editing instructions, current-role JSON import/export, data paths and backup guidance |
 
 v0.6.0 includes the left-aligned capture/recording hints and the reserved Delete / Save area. The screenshots below were captured from the earlier source layout; named task packs and image annotation are described in the dedicated guides. [Task packs](task-packs.md) · [Image annotation](image-editor.md).
@@ -28,18 +29,18 @@ Add task text, screenshots, a recording and a requirements file. Drag cards to c
 <details>
 <summary>Capture, recording, text and file shortcuts</summary>
 
-In **Materials → Settings**, each action sits beside its shortcut field. Customize region/full-screen/window capture, video, GIF, **Add text** and **Add file**. The image uses example Ctrl+Shift+F6–F12 bindings; choose available keys on your computer. Auto detection and the pixel magnifier can also be toggled here.
+In the **Shortcut** tab, each action sits beside its shortcut field. Customize region/full-screen/window capture, video, GIF, **Add text**, **Add file** and **Alt+V batch paste**. The image shows the default bindings; choose available keys on your computer. Auto detection and the pixel magnifier remain under the always-visible checkboxes in the Materials toolbar.
 
-<p align="center"><img src="../docs/images/current/capture-settings-en.png" alt="English capture settings showing seven paired action buttons and editable shortcut fields, auto detection and pixel magnifier" width="1100"></p>
+<p align="center"><img src="../docs/images/current/shortcuts-en.png" alt="English capture settings showing seven paired action buttons and editable shortcut fields, auto detection and pixel magnifier" width="1100"></p>
 
 </details>
 
 <details>
-<summary>Settings: shortcut, language, appearance and startup</summary>
+<summary>Settings: language, appearance and startup</summary>
 
-The standalone **Settings** tab controls the snippet picker shortcut, four interface languages, light/dark/system appearance and sign-in startup. These preferences are separate from the capture shortcuts in Materials.
+The standalone **Settings** tab controls four interface languages, light/dark/system appearance and sign-in startup. All shortcut bindings are managed in the Shortcut tab.
 
-<p align="center"><img src="../docs/images/current/settings-en.png" alt="Current English Settings tab with snippet shortcut, interface language, appearance and startup options" width="1100"></p>
+<p align="center"><img src="../docs/images/current/settings-en.png" alt="Current English Settings tab with interface language, appearance and startup options" width="1100"></p>
 
 </details>
 
@@ -69,7 +70,13 @@ Open the **Materials** tab to collect a one-off task separately from your reusab
 
 The region selector prepares the desktop image and cursor magnifier before revealing the window, so the magnifier is available immediately without another mouse movement.
 
-**Smart region selection:** hover to highlight a window or native control with a dashed outline, then click to capture it. Drag to select any rectangle instead. Tab / Shift+Tab cycles between the detected control and its parent window; Escape or right-click cancels. A pixel magnifier and X/Y/W/H readout help with precision. Automatic detection and the magnifier can be toggled under Capture shortcuts and options in the workspace. No toolbar covers the frozen screen. Windows detects native controls; macOS detects windows. Custom-drawn web content may require manual selection.
+**Region capture toggle:** while the selector is open, press the configured region shortcut again (for example Alt+J) to cancel. Cancellation adds no material and leaves the clipboard unchanged. Press again to start a new capture.
+
+**Smart region selection:** hover to highlight a window or native control with a dashed outline, then click to capture it. Drag to select any rectangle instead. Tab / Shift+Tab cycles between the detected control and its parent window; Escape or right-click cancels. A pixel magnifier and X/Y/W/H readout help with precision. Automatic detection and the magnifier can be toggled using the always-visible checkboxes in the workspace toolbar. No toolbar covers the frozen screen. Windows detects native controls; macOS detects windows. Custom-drawn web content may require manual selection.
+
+Completed region, full-screen and window screenshots are saved to Materials and copied as images to the system clipboard for Ctrl+V (Command+V on Mac). Cancelling a capture leaves the clipboard unchanged. Recordings are not copied automatically. A clipboard failure does not discard the saved screenshot.
+
+**Paste the current material bundle (assign a shortcut such as Alt+V).** Focus an external AI chat, press Alt+V, then release the keys. Text-only packs paste as text. Attachment-only bundles paste numbered files without `prompt.md`; mixed nonblank text and attachments include it. The receiving app must support pasting multiple files; review the attachments and send manually. Otherwise attach the exported files yourself. Other task packs are excluded. Change the binding in the Shortcut tab under Paste all materials. Its paired action button copies the pack for manual pasting. Immutable export copies remain on disk so later edits cannot invalidate pasted attachments.
 
 The existing Alt+H snippet workflow is unchanged. There is no background clipboard monitoring, automatic upload, or automatic sending. Each file is limited to 25 MB, attachments to 100 MB total, and each session to 100 items. Windows window capture records visible desktop pixels; covered content may be absent. macOS uses a desktop-independent ScreenCaptureKit window filter. macOS 11–13 can still use snippets and text/file materials, but screenshot buttons are disabled. On macOS 14+, explicitly allow screen capture using the workspace button, then check access again. Refused or revoked access never disables your text/file materials.
 
@@ -77,7 +84,7 @@ The existing Alt+H snippet workflow is unchanged. There is no background clipboa
 
 **Windows capture shortcuts:** Shift+PrintScreen selects a region, PrintScreen captures all screens, and Alt+PrintScreen captures the last external window. Ctrl+Shift+PrintScreen selects a region for silent WebM recording; Ctrl+Alt+Shift+PrintScreen selects a region for GIF. Press a recording shortcut again to stop, or use **Stop recording** in the system tray. Shortcut captures save to the workspace without opening the manager. Alt+H remains independent.
 
-Open **Capture shortcuts and options** in the workspace to change these keys (PrintScreen or F6–F12, with Ctrl/Alt/Shift), or leave a binding blank to disable it. Close competing capture tools or change the bindings if Windows reports a registration conflict. No conflicting key is silently taken over.
+Open the **Shortcut** tab to record a replacement by clicking a field and pressing a combination such as Alt+J. Supported keys: Ctrl/Alt with A–Z or 0–9, and PrintScreen or F6–F12 with optional Ctrl/Alt/Shift. Backspace/Delete clears a binding and you can immediately record another combination. Each row has Restore for its last saved value. Duplicate or invalid combinations are flagged inline and block saving. Saving cleared bindings requires a disable confirmation; the actions themselves remain available. Esc restores the value from before focus and Tab moves to the next field. Click Save capture shortcuts to apply. Close competing capture tools or change the bindings if Windows reports a registration conflict. No conflicting key is silently taken over.
 
 Recording currently supports **Windows only**, without audio: WebM at 15 fps, GIF at 10 fps, up to 120 seconds and 25 MB. Use **Install recording component** once to download the pinned ~82 MB FFmpeg LGPL shared runtime; the SHA-256 must match before use. A green dashed border marks the live recording region. A compact nearby bar provides Stop, Pause/Resume, Cancel and an elapsed timer. The border turns yellow while paused; paused time is excluded by recording separate segments and joining them on completion. Cancel discards the session. Border and controls are excluded from capture. A short original completion sound plays only after the material is saved successfully. The system tray icon also gains a red badge while recording. Exit waits for finalization; failed outputs remain at the displayed recovery path. See [runtime sources and license](../docs/THIRD_PARTY_RECORDING.md). Mac screenshots remain available; recording and these new global shortcuts are not yet supported on Mac.
 
@@ -179,7 +186,7 @@ In the **snippet manager**, use **← / →** to switch roles and **↑ / ↓** 
 
 When the manager has keyboard focus, the shortcut only hides it: no picker opens and nothing is pasted. Unsaved drafts stay in the app. Focus an external input and press the shortcut again to select a snippet. When invoked from an external app, the manager is hidden before the picker opens.
 
-The table uses the default **Alt+H**. Change it under **Settings → Keyboard shortcut**. The picker updates its hints; pressing your newly configured key a second time cancels it.
+The table uses the default **Alt+H**. Change it under **Shortcut → Keyboard shortcut**. The picker updates its hints; pressing your newly configured key a second time cancels it.
 
 | Key | Action |
 |---|---|
@@ -255,7 +262,7 @@ For example, a scenario can say “Use after implementation, when the main workf
 
 ### Customize the shortcut
 
-The default is **Alt+H**. In **Settings → Keyboard shortcut**, choose Alt / Option or Ctrl, optionally add Shift, and select A–Z, 0–9 or Space. Click **Save shortcut** to apply it immediately and keep it across restarts. You can also reset it to Alt+H.
+The default is **Alt+H**. In **Shortcut → Keyboard shortcut**, click the snippet shortcut field and press Alt/Option or Ctrl, optionally with Shift, plus A–Z, 0–9 or Space. Click **Save shortcut** to apply it immediately and keep it across restarts. You can also reset it to Alt+H.
 
 For example, with **Ctrl+Shift+J**, hold Ctrl+Shift and press J, select with ↑ / ↓, then release the modifiers to paste. Press J again while the picker is open to cancel. On Windows, if the new combination is already registered, the app retains your previous shortcut and settings. On macOS, avoid combinations used by other apps. Common Ctrl editing combinations, such as copy, paste and save, cannot be assigned.
 

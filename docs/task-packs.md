@@ -1,21 +1,27 @@
-# Named task packs
+# Material workspace and saved packs
 
-The prompt workspace can create named task packs and switch between them. Each pack retains its own materials, order and text drafts; the selected pack is restored on startup. Names are trimmed, must contain 1–80 characters, and are unique ignoring case. Cancelling creation leaves the current pack unchanged.
+Current materials form a workspace separate from saved material packs. Capture, type, attach, reorder and paste without naming a task. The workspace and text drafts persist locally. Alt+M and Alt+V operate only on this workspace.
 
-Switching first flushes pending edits. A save failure keeps the current pack selected and retains the draft. Controls are locked during a switch. Native capture and recording must finish before switching. Copy and export use only the selected pack; exported `manifest.json` includes its ID and name.
+## Actions
 
-## Storage and migration
+- **Save material pack:** one click creates an independent snapshot named with local time, such as `素材包 20261101-153045`. Same-second collisions add `-02`, `-03`, etc. Existing names stay unchanged. No name dialog. Failed saves leave committed data unchanged.
+- **Load material pack:** shows name, saved time when known, and material count. The wide selector shows the saved pack name; count and saved time appear below. The dialog has Cancel, Delete, Add and Replace buttons. Add appends independent copies; Replace replaces current materials after confirmation and leaves the saved pack unchanged.
+- **Clear:** confirms before clearing only the workspace. Saved packs and exports stay unchanged.
+- **Undo clear:** restores cleared items and retains new items added since clearing. Undo survives restart. The existing 100-item / 100-MB limits apply; overflow refuses without discarding either set.
+- **Delete:** confirms before removing the selected saved pack. Current materials, undo and numbering remain intact, including after deleting the last pack.
 
-`prompt-materials/session.json` now stores a versioned collection with an active pack ID. Existing single-bundle data becomes the `legacy` pack named “My task”. Before migration, the original bytes are saved as `session.legacy.json`; the original asset files stay in place. The original session is replaced only when a change is saved. No migration resets or deletes content.
+## Existing data and migration
 
-Writes serialize the complete collection to `session.json.tmp`, flush it, then rename it over the committed session. Startup uses the committed session and ignores an interrupted temporary write. Invalid committed data blocks writes instead of resetting the store. Draft recovery retains the original local-storage key for the legacy pack and uses pack-specific keys for new packs. This provides process-crash recovery, not a guarantee against hardware failure or browser storage being cleared.
+Schema version 2 separates the workspace, saved packs, undo and serial counter. Existing packs retain names, order and contents. The old active contents become the workspace with their original IDs, so pending drafts still match; an independent copy remains in the library. Empty legacy placeholders remain on disk but are hidden from the Load list.
 
-The format is intended for this updated application; older builds do not understand the collection schema. This change does not install or restart the desktop application.
+Before migration commits, the exact prior session bytes are preserved in `prompt-materials/session.pre-workspace.json`. Original assets remain in place. Snapshot and load actions create independent asset copies. Copy or session-write failure removes new copies and preserves committed state. Older builds reject version 2 instead of silently removing these fields. Back up before upgrading or downgrading.
+
+Active legacy text drafts are transferred to the workspace recovery key; old keys remain available. Snippet drafts, role settings and shortcuts stay separate.
 
 ## Verification
 
-- Rust `materials::` tests exercise exact legacy-byte backup, asset retention, separate same-named attachments, ordering, restart selection, duplicate and invalid names, correct exports, interrupted temporary writes, and failed persistence preserving committed state.
-- Browser `task-packs.spec.js` uses synthetic data and a test IPC bridge to exercise create/cancel, duplicates, switching with pending text, immediate reload recovery, first copy after recovery, and a failed save blocking selection changes.
-- Browser tests do not validate an installed desktop build. Existing material and image-editor tests provide regression coverage.
+Rust tests cover migration backup bytes, snapshot independence, persistent serials, restart, clear/undo with new items, Add/Replace, asset isolation, write rollback, missing targets and size limits. Browser tests cover one-click save, no naming prompt, pending-action protection, failed saves, load confirmation, deletion and cancellation, legacy draft recovery and original snippet preservation.
 
-For acceptance in an isolated updated build: create two named packs with different sample images and drafts, reorder each, switch repeatedly, restart, then compare each export's prompt, attachments and task-pack metadata. Do not use real customer files for this check.
+## 中文操作
+
+直接整理「本次素材」→ 貼給 AI → 清空。要重複使用才按「儲存素材包」，自動帶流水編號，不必命名。「載入素材包」只有取消、刪除、加入、取代四個按鈕；刪除只移除選取的已存素材包，載入前會確認取代本次素材。清空不影響已存素材包，且可復原；Alt+M／Alt+V 只處理本次工作區。

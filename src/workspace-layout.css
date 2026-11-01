@@ -254,3 +254,28 @@
 .app-shell .editor-actions-footer .delete{min-height:36px;padding:8px 12px;border:1px solid #c63f4e44;border-radius:8px}
 .app-shell .editor-actions-footer .delete:not(:disabled){color:#b42332;background:#c63f4e0c}
 :root[data-theme=dark] .app-shell .editor-actions-footer .delete:not(:disabled){color:#ffacb4;background:#ffacb410;border-color:#ffacb43d}
+.app-shell[data-page=shortcuts] .manager{grid-template-columns:minmax(0,1fr)}.app-shell[data-page=shortcuts] .manager>aside{display:none}.settings-panel[data-view=shortcuts] .settings-card{padding:16px 20px}.central-capture-shortcuts .capture-shortcut-rows{max-width:680px}.central-capture-shortcuts .capture-shortcut-row{grid-template-columns:minmax(140px,1fr) minmax(150px,2fr)}.central-capture-shortcuts input{box-sizing:border-box;min-width:0;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:var(--palette-bg);color:var(--ink)}.central-capture-shortcuts p{line-height:1.6}.workspace-nav{overflow-x:auto;flex-shrink:1}.workspace-nav .settings-link{flex-shrink:0}
+.central-capture-shortcuts .capture-shortcut-row{grid-template-columns:minmax(140px,1fr) minmax(130px,2fr) auto;align-items:start}.central-capture-shortcuts .capture-shortcut-rows{max-width:820px}.shortcut-field-feedback{grid-column:2/-1;color:#ff8585;font-size:12px;line-height:1.5;white-space:normal}.shortcut-field-feedback:empty{display:none}.central-capture-shortcuts input[aria-invalid=true]{border-color:#e56363;outline-color:#e56363}.shortcut-restore{min-width:52px}
+/* Share one column boundary between the title-bar tabs and the library sidebar. */
+.app-shell{--library-column:28%;--bar-inset:26px}
+.app-shell[data-page=library] .manager{grid-template-columns:var(--library-column) minmax(0,1fr)}
+.app-shell .windowbar{display:grid;grid-template-columns:var(--library-column) minmax(0,1fr) auto;gap:0;padding:0}
+.app-shell .window-brand{min-width:0;padding-left:var(--bar-inset)}
+.app-shell .workspace-nav{margin-right:0}
+.app-shell .window-controls{padding-right:var(--bar-inset)}
+@media(max-width:1150px){.app-shell{--bar-inset:18px}}
+@media(max-width:850px){.app-shell{--library-column:190px}}
+.capture-inline-preferences{display:flex;flex:1 0 100%;align-items:center;flex-wrap:wrap;gap:8px 18px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--ink)}.capture-inline-preferences label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}.capture-inline-preferences input{width:14px;height:14px;margin:0;accent-color:var(--accent)}
+.capture-inline-preferences{order:10}
+.snippet-shortcut-row{max-width:820px;grid-template-columns:minmax(140px,1fr) minmax(130px,2fr) auto;align-items:start}.snippet-shortcut-row label{display:flex;align-items:center;min-height:36px;padding:8px 12px;background:var(--hover);border:1px solid var(--line);border-radius:7px}.snippet-shortcut-row input{box-sizing:border-box;width:100%;min-width:0;padding:9px 12px;background:var(--palette-bg);border:1px solid var(--line);border-radius:7px;color:var(--ink)}#snippet-shortcut-feedback{grid-column:2/-1;font-size:12px;line-height:1.5}#snippet-shortcut-feedback:empty{display:none}.snippet-shortcut-row input[aria-invalid=true]{border-color:#e56363}.snippet-shortcut-row input[aria-invalid=true]~small{color:#ff8585}
+
+.app-shell[data-page=library] .manager>aside .search-box{margin-bottom:0}
+
+.task-pack-bar>button{width:112px;min-width:112px}.task-pack-bar>button[hidden]{display:none}.workspace-count{font-weight:600;margin-right:auto}.app-dialog label>select{display:block;width:100%;margin:10px 0;padding:10px}.app-dialog .dialog-actions{flex-wrap:wrap}
+
+html[lang=en] .task-pack-bar>button,html[lang=ja] .task-pack-bar>button{width:160px;min-width:160px}
+
+.pack-library-dialog{width:min(640px,calc(100vw - 32px));max-width:calc(100vw - 32px)}.pack-library-dialog>label{display:block;width:100%}.pack-library-dialog label>select{display:block;width:100%;max-width:none;min-width:0;min-height:42px;font-size:14px}.pack-library-dialog .dialog-actions{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:10px}.pack-library-dialog .dialog-actions>button{min-width:80px}
+/* Keep the approved app icon visible beside the product name and version. */
+.app-shell .window-brand .brand-mark{display:inline-flex;flex:0 0 30px;width:30px;height:30px;border-radius:7px}
+.app-shell .window-brand-copy{min-width:0}

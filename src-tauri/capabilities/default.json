@@ -6,7 +6,9 @@
     "main",
     "picker",
     "capture",
-    "recording-controls"
+    "recording-controls",
+    "materials-quick",
+    "capture-toast"
   ],
   "permissions": [
     "core:event:allow-listen",

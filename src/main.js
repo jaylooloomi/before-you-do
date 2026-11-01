@@ -1,4 +1,5 @@
 import {version as appVersion} from '../package.json';
+import {mountMaterialsQuick} from './materials-quick.js';
 import {uiIcon} from './workspace-ui.js';
 import {createMaterialsPage} from './materials.js';
 import {mountCapture} from './capture.js';
@@ -17,6 +18,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { prepareSnippetSave, reorderSnippets, savedVersions, snippetIssues } from './model.js';
 import './style.css';
+import './materials-quick.css';
 import './workspace-layout.css';
 import { askConfirmation } from './dialog.js';
 import { t, getLanguage, getPreference, setLanguage, onLanguageChange, bindTranslations, errorMessage } from './i18n.js';
@@ -25,6 +27,8 @@ import { createSettingsPage } from './settings.js';
 import { roles, roleName, roleDescription, getRoleDefaults, findRoleTemplate } from './roles.js';
 import { normalizeAppearanceTheme, resolveAppearanceTheme } from './appearance.js';
 async function startApp() {
+if(new URLSearchParams(location.search).has('capture-toast')){const {mountCaptureToast}=await import('./capture-toast.js');await mountCaptureToast(document.querySelector('#app'),{invoke,listen});return;}
+if(new URLSearchParams(location.search).has("materials-quick")){await mountMaterialsQuick(document.querySelector("#app"),{invoke,listen});return;}
 if(new URLSearchParams(location.search).has("recording-controls")){await mountRecordingControls(document.querySelector("#app"),{invoke,listen});return;}
 if(new URLSearchParams(location.search).has("capture-region")){await mountCapture(document.querySelector("#app"),{invoke,listen});return;}
 const templateInfo = item => {
@@ -120,7 +124,7 @@ if (picker) {
   // Bonus-05: snapshots never share objects with editable drafts, including cached roles.
   let loadedSnapshot;
   async function snapshotFor(saved){return savedSnapshot(saved,(await invoke('storage_info')).exists);}
-  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span><span class="window-brand-copy"><span>before-you-do</span><small class="window-version">v${appVersion}</small></span><span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="最大化／還原" data-action="maximize">${icon('maximize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" title="可輸入多個關鍵字，搜尋名稱、內容與情境。" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div class="section-label">我的短句</div><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="介面主題"><option value="system">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · ${appVersion}</span></footer></section></main></div>`;
+  root.innerHTML = `<div class="app-shell"><div class="windowbar"><div class="window-brand"><span class="tiny-mark brand-mark"><img src="${appIcon}" alt=""></span><span class="window-brand-copy"><span>before-you-do</span><small class="window-version">v${appVersion}</small></span><span class="window-subtitle">你的對話捷徑</span></div><div class="window-controls"><button aria-label="最小化" data-action="minimize">${icon('minimize')}</button><button aria-label="最大化／還原" data-action="maximize">${icon('maximize')}</button><button aria-label="收起到系統匣" data-action="close">${icon('close')}</button></div></div><main class="manager"><aside><div class="library-heading"><h1>短句資料庫</h1><span id="library-count">0</span></div><label class="search-box" for="search">${icon('search')}<input id="search" title="可輸入多個關鍵字，搜尋名稱、內容與情境。" placeholder="搜尋短句" autocomplete="off"><kbd>/</kbd></label><div id="snippets"></div><button id="add" class="add">${icon('plus')}新增短句</button><div class="sidebar-foot">${icon('lock')}只儲存在這台電腦</div></aside><section class="workspace"><header class="editor-heading"><div><div class="eyebrow">YOUR WORDS, WITHIN REACH</div><h2>把常說的話，留在手邊。</h2></div><span id="native-status" class="status-pill" role="status"><i></i><span>準備中</span></span></header><div id="native-error" role="status" hidden></div><button id="retry" class="secondary" hidden>重新啟用快捷鍵</button><form id="editor"><div class="editor-card"><div class="field-heading"><span class="item-icon">${icon('text')}</span><label for="name">短句名稱</label><span class="plain-badge">純文字</span></div><input id="name" placeholder="為這句話取個名字"><div class="content-label"><label for="text">短句內容</label><span id="count"></span></div><textarea id="text" placeholder="寫下你想快速補進對話的文字…"></textarea><div class="editor-bottom"><span>貼入游標位置，不會送出訊息</span><span id="save-status" role="status">已儲存</span></div></div><div class="form-actions"><button type="button" id="delete" class="delete">${icon('trash')}刪除</button><div><span class="save-hint">Ctrl / ⌘ S</span><button class="primary" type="submit">${icon('check')}儲存短句</button></div></div></form><div class="usage-bar"><span class="shortcut"><kbd>Alt / ⌥</kbd><kbd>H</kbd></span><span>按住喚出，用 ↑ ↓ 選句，放開即貼上</span></div><div class="appearance-bar"><div class="glass-setting"><label for="transparency">${icon('glass')}玻璃透明度</label><input type="range" id="transparency" min="15" max="85" step="1"><output id="transparency-value" for="transparency"></output></div><select id="theme" aria-label="介面主題"><option value="system">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select></div><footer>每次貼入會取代剪貼簿內容。<span>before-you-do · ${appVersion}</span></footer></section></main></div>`;
   const roleCards = el('div','role-cards');roleCards.setAttribute('role','group');roleCards.setAttribute('aria-label',t('選擇角色'));
   const roleSwitcher=el('div','role-switcher');
   const previousRoles=el('button','role-scroll','‹'),nextRoles=el('button','role-scroll','›');
@@ -183,7 +187,6 @@ if (picker) {
     }));
     roleCards.setAttribute('aria-label',t('選擇角色'));
     roleSwitcher.title=t('主畫面：← → 切換角色，↑ ↓ 選擇短句；編輯文字時保留游標操作。');
-    document.querySelector('aside .section-label').textContent=roleName(activeRole,getLanguage());
     previousRoles.setAttribute('aria-label',t('向左捲動角色'));nextRoles.setAttribute('aria-label',t('向右捲動角色'));
     previousRoles.title=t('向左捲動角色');nextRoles.title=t('向右捲動角色');
     if(scrollSelected)roleCards.querySelector('.role-card[aria-pressed=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});else roleCards.scrollLeft=previousScroll;
@@ -225,9 +228,10 @@ if (picker) {
   const settingsButton = el('button', 'settings-link', '設定');
   settingsButton.type = 'button'; settingsButton.setAttribute('aria-pressed', 'false');
   document.querySelector('.sidebar-foot').before(settingsButton);
-  const aiButton=el('button','settings-link','AI 教學');aiButton.type='button';aiButton.setAttribute('aria-pressed','false');
+  const shortcutsButton=el('button','settings-link','快捷');shortcutsButton.setAttribute('aria-label','快捷鍵');shortcutsButton.type='button';shortcutsButton.setAttribute('aria-pressed','false');
+  const aiButton=el('button','settings-link','教學');aiButton.setAttribute('aria-label','AI 教學');aiButton.type='button';aiButton.setAttribute('aria-pressed','false');
   function showLibrary() { materials.panel.hidden=true; materialsButton.setAttribute('aria-pressed','false'); settings.panel.hidden = true; workspace.hidden = false; settingsButton.setAttribute('aria-pressed', 'false'); }
-  const settings = createSettingsPage({ invoke, askConfirmation, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario,custom:true}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
+  const settings = createSettingsPage({ invoke, listen, askConfirmation, onAddTemplate: item => { if (items.length >= 100) throw new Error('最多 100 句。'); stash(); items.push({name:item.name,text:item.text,scenario:item.scenario,custom:true}); selected=items.length-1; dirty=true; search.value=''; render(); setSaveStatus('尚未儲存'); },
     onReload: async () => {
       if (dirty && !await askConfirmation({title: '重新載入檔案？', message: '將以檔案內容取代目前編輯與未儲存草稿。請確認要保留的內容已儲存或另行備份。', confirmText: '重新載入'})) return false;
       const refreshed = await invoke('reload_snippets'); loadedSnapshot=await snapshotFor(refreshed);items = refreshed; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; render(); setSaveStatus('已從檔案載入'); return true;
@@ -235,19 +239,25 @@ if (picker) {
     onImport: async imported => { const custom=imported.map(item=>({...item,scenario:item.scenario??'',custom:true}));await invoke('save_snippets', {items: custom,expected:loadedSnapshot,expectedRole:activeRole});loadedSnapshot=savedSnapshot(custom,true); items = custom; versions=savedVersions(items);saveIssues=[];selected = 0; dirty = false; search.value = ''; render(); setSaveStatus('已儲存'); },
   });
   document.querySelector('.manager').append(settings.panel);
-  async function openSettingsView(view){if(materials.busy)return;try{await materials.flush();}catch{return;}const alreadyOpen=!settings.panel.hidden;materials.panel.hidden=true;materialsButton.setAttribute('aria-pressed','false');stash();workspace.hidden=true;settings.show(view);settings.panel.hidden=false;if(!alreadyOpen)await settings.refresh();}
-  settingsButton.onclick=()=>openSettingsView('settings');aiButton.onclick=()=>openSettingsView('ai');
+  async function openSettingsView(view){if(materials.busy)return;try{await materials.flush();}catch{return;}const alreadyOpen=!settings.panel.hidden;materials.panel.hidden=true;materialsButton.setAttribute('aria-pressed','false');stash();workspace.hidden=true;settings.show(view);settings.panel.hidden=false;if(!alreadyOpen)await settings.refresh();if(view==='shortcuts')await materials.refreshShortcuts();}
+  settingsButton.onclick=()=>openSettingsView('settings');shortcutsButton.onclick=()=>openSettingsView('shortcuts');aiButton.onclick=()=>openSettingsView('ai');
   const materialsButton=el('button','settings-link','本次 prompt 素材');materialsButton.type='button';materialsButton.setAttribute('aria-pressed','false');settingsButton.before(materialsButton);
-  const materials=createMaterialsPage({invoke,listen});document.querySelector('.manager').append(materials.panel);
+  const materials=createMaterialsPage({invoke,listen,onOpen:()=>materialsButton.onclick()});document.querySelector('.manager').append(materials.panel);
+  const captureShortcutsCard=el('section','settings-card');captureShortcutsCard.dataset.settingsView='shortcuts';const captureShortcutsTitle=el('h3','','截圖與素材快捷鍵');captureShortcutsCard.append(captureShortcutsTitle,materials.shortcutSettings);settings.panel.querySelector('#settings-status').before(captureShortcutsCard);captureShortcutsCard.hidden=true;
+  let quickClearing=false;await listen('materials-quick-clear-request',async event=>{if(quickClearing)return;quickClearing=true;try{await materials.flush();await invoke('materials_quick_finish_clear',{ticket:event.payload});}catch(error){await invoke('materials_quick_abort',{ticket:event.payload,message:errorMessage(error)});setSaveError(error);}finally{quickClearing=false;}});
+  let quickPasting=false;
+  await listen('materials-quick-request',async event=>{try{await materials.flush();await invoke('materials_quick_open',{ticket:event.payload});}catch(error){await invoke('materials_quick_abort',{ticket:event.payload,message:errorMessage(error)});await invoke('materials_quick_action',{action:'main'});setSaveError(error);}});
+  await listen('materials-quick-paste-request',async event=>{invoke('materials_quick_trace',{stage:'main received paste request busy='+quickPasting}).catch(()=>{});if(quickPasting)return;quickPasting=true;try{await materials.flush();await invoke('materials_quick_finish_paste',{ticket:event.payload});}catch(error){await invoke('materials_quick_abort',{ticket:event.payload,message:errorMessage(error)});setSaveError(error);}finally{quickPasting=false;}});
   await listen('material-action',async event=>{if(materials.busy||saving||switchingRole||document.querySelector('dialog[open]'))return;await roleSync;stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');await materials.open();materials.executeAction(event.payload);});
-  materialsButton.onclick=()=>{stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');materials.open();};
+  materialsButton.onclick=async()=>{stash();workspace.hidden=true;settings.panel.hidden=true;settingsButton.setAttribute('aria-pressed','false');materialsButton.setAttribute('aria-pressed','true');await materials.open();};
   document.querySelector('.library-heading h1').setAttribute('aria-label','短句資料庫');document.querySelector('.library-heading h1').textContent='常用短句';
   const sidebarIntro=el('p','sidebar-intro','選擇角色，快速套用實用的指令短句。');document.querySelector('.library-heading').after(sidebarIntro);
   const pageNav=el('nav','workspace-nav');pageNav.setAttribute('aria-label',t('頁面導覽'));
-  const libraryButton=el('button','settings-link','常用短句');libraryButton.type='button';libraryButton.setAttribute('aria-pressed','true');
-  document.querySelector('.window-controls').before(pageNav);pageNav.append(libraryButton,materialsButton,settingsButton,aiButton);for(const [button,key]of [[libraryButton,'file'],[materialsButton,'folder'],[settingsButton,'settings'],[aiButton,'guide']]){const mark=el('span','nav-icon');mark.innerHTML=uiIcon(key);button.prepend(mark);}materialsButton.setAttribute('aria-label','本次 prompt 素材');materialsButton.lastChild.textContent='本次素材';
+  const libraryButton=el('button','settings-link','常用短句');libraryButton.setAttribute('aria-label','常用短句');libraryButton.type='button';libraryButton.setAttribute('aria-pressed','true');
+  document.querySelector('.window-controls').before(pageNav);pageNav.append(libraryButton,materialsButton,shortcutsButton,settingsButton,aiButton);for(const [button,key]of [[libraryButton,'file'],[materialsButton,'folder'],[shortcutsButton,'keyboard'],[settingsButton,'settings'],[aiButton,'guide']]){const mark=el('span','nav-icon');mark.innerHTML=uiIcon(key);button.prepend(mark);}materialsButton.setAttribute('aria-label','本次 prompt 素材');materialsButton.lastChild.textContent='剪貼素材';
   libraryButton.onclick=async()=>{if(materials.busy)return;try{await materials.flush();showLibrary();}catch{}};
-  const syncPage=()=>{const mode=!materials.panel.hidden?'materials':!settings.panel.hidden?(settings.panel.dataset.view==='ai'?'ai':'settings'):'library';document.querySelector('.app-shell').dataset.page=mode;if(mode==='library'){if(roleSwitcher.parentElement!==workspace)workspace.insertBefore(roleSwitcher,saveOverview);}else{const searchBox=document.querySelector('.search-box');if(roleSwitcher.previousElementSibling!==searchBox)searchBox.after(roleSwitcher);}libraryButton.setAttribute('aria-pressed',String(mode==='library'));settingsButton.setAttribute('aria-pressed',String(mode==='settings'));aiButton.setAttribute('aria-pressed',String(mode==='ai'));};
+  await listen('tray-navigate',async event=>{if(materials.busy||saving||switchingRole||document.querySelector('dialog[open]'))return;try{if(event.payload==='materials')await materialsButton.onclick();else if(event.payload==='snippets')await libraryButton.onclick();}catch(error){setSaveError(error);}});
+  const syncPage=()=>{const mode=!materials.panel.hidden?'materials':!settings.panel.hidden?settings.panel.dataset.view:'library';document.querySelector('.app-shell').dataset.page=mode;if(mode==='library'){if(roleSwitcher.parentElement!==workspace)workspace.insertBefore(roleSwitcher,saveOverview);}else{const searchBox=document.querySelector('.search-box');if(roleSwitcher.previousElementSibling!==searchBox)searchBox.after(roleSwitcher);}libraryButton.setAttribute('aria-pressed',String(mode==='library'));shortcutsButton.setAttribute('aria-pressed',String(mode==='shortcuts'));settingsButton.setAttribute('aria-pressed',String(mode==='settings'));aiButton.setAttribute('aria-pressed',String(mode==='ai'));};
   new MutationObserver(syncPage).observe(document.querySelector('.manager'),{subtree:true,attributes:true,attributeFilter:['hidden','data-view']});syncPage();
   const appFooter=el('footer','app-footer');const footerLanguage=document.createElement('select');footerLanguage.setAttribute('aria-label',t('顯示語言'));footerLanguage.innerHTML='<option value="system">'+t('跟隨系統')+'</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option>';footerLanguage.value=getPreference();footerLanguage.onchange=()=>setLanguage(footerLanguage.value);onLanguageChange(()=>{footerLanguage.value=getPreference();document.getElementById('language').value=getPreference();});const foot=document.querySelector('.sidebar-foot');foot.innerHTML=uiIcon('folder');foot.append(document.createTextNode(t('本機儲存・不自動送出')));appFooter.append(foot,footerLanguage);document.querySelector('.app-shell').append(appFooter);
   function stash() {
@@ -352,6 +362,7 @@ if (picker) {
   // WebView key handling can consume a registered hotkey before the global path.
   // The focused manager always treats its shortcut as dismiss-only.
   document.addEventListener('keydown', e => {
+    if(e.target instanceof Element&&e.target.closest('[data-shortcut-recorder]'))return;
     if(!matchesShortcutEvent(e,getShortcut()))return;
     e.preventDefault();e.stopImmediatePropagation();
     if(!e.repeat)invoke('dismiss_manager_shortcut').catch(setSaveError);
@@ -395,6 +406,7 @@ if (picker) {
 const syncNativeLanguage = () => invoke('set_ui_language', {language:getLanguage()}).catch(console.warn);
 onLanguageChange(syncNativeLanguage);
 await syncNativeLanguage();
+invoke('materials_quick_trace',{stage:'main-ready'}).catch(()=>{});
 document.documentElement.lang = getLanguage();
 
 renderShortcut();

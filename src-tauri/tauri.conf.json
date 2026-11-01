@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "before-you-do",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "identifier": "dev.quicksay.desktop",
   "build": {
     "beforeDevCommand": "npm run dev:ui",
@@ -16,8 +16,8 @@
         "alwaysOnTop": true,
         "visible": false,
         "title": "before-you-do · 常用短句",
-        "width": 1280,
-        "height": 860,
+        "width": 780,
+        "height": 810,
         "minWidth": 780,
         "minHeight": 680,
         "transparent": true,
@@ -25,7 +25,8 @@
         "decorations": false,
         "shadow": false,
         "dragDropEnabled": false,
-        "maximizable": false
+        "maximizable": false,
+        "maxWidth": 780
       },
       {
         "label": "picker",
@@ -77,6 +78,43 @@
         "width": 380,
         "height": 42,
         "backgroundColor": "#242424",
+        "dragDropEnabled": false
+      },
+      {
+        "label": "materials-quick",
+        "title": "before-you-do · 本次素材",
+        "url": "index.html?materials-quick",
+        "width": 640,
+        "height": 650,
+        "minWidth": 320,
+        "minHeight": 360,
+        "visible": false,
+        "focus": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "transparent": true,
+        "backgroundColor": "#00000000",
+        "shadow": false,
+        "dragDropEnabled": false,
+        "focusable": false
+      },
+      {
+        "label": "capture-toast",
+        "title": "before-you-do · Screenshot",
+        "url": "index.html?capture-toast",
+        "visible": false,
+        "focus": false,
+        "focusable": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "width": 320,
+        "height": 220,
+        "backgroundColor": "#202020",
         "dragDropEnabled": false
       }
     ],
