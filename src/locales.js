@@ -1,5 +1,8 @@
 // Source text is the stable key. User snippet names and bodies never pass through this table.
 export const rows = [
+["複製","复制","Copy","コピー"],
+["複製素材","复制素材","Copy material","素材をコピー"],
+["已複製素材","已复制素材","Material copied","素材をコピーしました"],
 ["確認清空","确认清空","Confirm clear","クリアを確認"],
 ["↑↓ 選素材 · ←→ 選動作 · 放開 {modifier} 執行 · Esc 取消","↑↓ 选素材 · ←→ 选动作 · 松开 {modifier} 执行 · Esc 取消","↑↓ Select · ←→ Action · Release {modifier} to run · Esc Cancel","↑↓ 素材 · ←→ 操作 · {modifier} を離して実行 · Esc キャンセル"],
 ["↑↓ 選素材 · ←→ 選動作 · 放開觸發鍵執行 · Esc 取消","↑↓ 选素材 · ←→ 选动作 · 松开触发键执行 · Esc 取消","↑↓ Select · ←→ Action · Release trigger key to run · Esc Cancel","↑↓ 素材 · ←→ 操作 · 起動キーを離して実行 · Esc キャンセル"],

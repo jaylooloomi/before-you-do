@@ -279,3 +279,4 @@ html[lang=en] .task-pack-bar>button,html[lang=ja] .task-pack-bar>button{width:16
 /* Keep the approved app icon visible beside the product name and version. */
 .app-shell .window-brand .brand-mark{display:inline-flex;flex:0 0 30px;width:30px;height:30px;border-radius:7px}
 .app-shell .window-brand-copy{min-width:0}
+.material-card[draggable=true]{cursor:grab}.material-card.material-dragging{cursor:grabbing}.material-card[draggable=true] textarea,.material-card[draggable=true] input{cursor:text}.material-card[draggable=true] video{cursor:auto}

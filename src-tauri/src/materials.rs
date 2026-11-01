@@ -545,6 +545,41 @@ fn prepare_open_file(state:&Materials,item_id:&str)->Result<PathBuf,String>{
     fs::canonicalize(&destination).map_err(err)?;
     Ok(destination)
 }
+enum SingleCopy { Text(String), Image(u32,u32,Vec<u8>), File(PathBuf) }
+fn prepare_single_copy(state:&Materials,item_id:&str,image_png:Option<Vec<u8>>)->Result<SingleCopy,String>{
+    state.ready()?;
+    let item=state.bundle.lock().map_err(err)?.items.iter().find(|item|item.id==item_id).cloned().ok_or("Material not found")?;
+    if item.kind=="text" {return Ok(SingleCopy::Text(item.text));}
+    if item.kind=="image"&&!item.name.to_lowercase().ends_with(".gif") {
+        let bytes=image_png.ok_or("Image data missing")?;
+        if bytes.len()>MAX_FILE{return Err("Maximum file size is 25 MB".into());}
+        let reader=png::Decoder::new(std::io::Cursor::new(&bytes)).read_info().map_err(err)?;
+        let info=reader.info();
+        if info.width as u64*info.height as u64>32_000_000||info.animation_control.is_some(){return Err("Unsupported image dimensions or animation".into());}
+        let pixels=image::load_from_memory_with_format(&bytes,image::ImageFormat::Png).map_err(err)?.to_rgba8();
+        return Ok(SingleCopy::Image(pixels.width(),pixels.height(),pixels.into_raw()));
+    }
+    validate_name(&item.name)?;
+    let source=fs::canonicalize(state.asset(&item.id)).map_err(err)?;
+    if !source.starts_with(fs::canonicalize(state.root.join("files")).map_err(err)?)||!source.is_file(){return Err("Invalid material path".into());}
+    let folder=state.root.join("copied").join(id());fs::create_dir_all(&folder).map_err(err)?;
+    let destination=folder.join(&item.name);fs::copy(source,&destination).map_err(err)?;
+    Ok(SingleCopy::File(destination))
+}
+#[tauri::command]
+pub async fn materials_copy(w:tauri::WebviewWindow,app:tauri::AppHandle,item_id:String,image_png:Option<Vec<u8>>)->Result<(),String>{
+    manager(&w)?;
+    if app.state::<crate::State>().preview{return Err("Clipboard copying is unavailable in previews".into());}
+    tauri::async_runtime::spawn_blocking(move||{
+        let state=app.state::<Materials>();let _operation=state.operation.lock().map_err(err)?;
+        if state.busy.load(std::sync::atomic::Ordering::SeqCst){return Err("Finish capture before copying materials".into());}
+        match prepare_single_copy(&state,&item_id,image_png)? {
+            SingleCopy::Text(text)=>arboard::Clipboard::new().map_err(err)?.set_text(text).map_err(err),
+            SingleCopy::Image(width,height,bytes)=>arboard::Clipboard::new().map_err(err)?.set_image(arboard::ImageData{width:width as usize,height:height as usize,bytes:std::borrow::Cow::Owned(bytes)}).map_err(err),
+            SingleCopy::File(path)=>crate::platform::copy_files(&[path]),
+        }
+    }).await.map_err(err)?
+}
 #[tauri::command]
 pub async fn materials_open(w:tauri::WebviewWindow,state:tauri::State<'_,Materials>,item_id:String)->Result<(),String>{
     manager(&w)?;let path=prepare_open_file(&state,&item_id)?;
@@ -1114,6 +1149,25 @@ mod tests {
         assert_eq!(files.len(),2);assert_eq!(files[0].file_name().unwrap(),"prompt.md");assert_eq!(files[1].file_name().unwrap(),"02-圖 1.png");
         let text=fs::read_to_string(&files[0]).unwrap();assert!(text.contains("Do this carefully"));assert!(text.contains("[Material #02]"));assert!(text.contains("02-圖 1.png"));assert_eq!(fs::read(&files[1]).unwrap(),b"PNG");
         state.select_pack(None,Some("Other task".into())).unwrap();assert!(prepare_paste(&state).is_err());assert_eq!(fs::read(&files[1]).unwrap(),b"PNG");
+        drop(state);fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn single_copy_selects_exact_content_without_mutating_materials() {
+        use super::*;
+        let root=std::env::temp_dir().join(format!("single-copy-{}",id()));let state=Materials::new(root.clone()).unwrap();
+        state.append(Item{id:"text".into(),name:"Text".into(),kind:"text".into(),text:"Latest text".into(),size:0},None).unwrap();
+        state.append(Item{id:"image".into(),name:"shot.png".into(),kind:"image".into(),text:"".into(),size:3},Some(b"PNG")).unwrap();
+        state.append(Item{id:"file".into(),name:"note.txt".into(),kind:"file".into(),text:"".into(),size:4},Some(b"FILE")).unwrap();
+        let before=serde_json::to_value(&*state.bundle.lock().unwrap()).unwrap();
+        match prepare_single_copy(&state,"text",None).unwrap(){SingleCopy::Text(text)=>assert_eq!(text,"Latest text"),_=>panic!("Expected text")};
+        let frame=Frame::new(0,0,1,1,vec![255,0,0,255]).unwrap();
+        match prepare_single_copy(&state,"image",Some(frame.png().unwrap())).unwrap(){SingleCopy::Image(w,h,p)=>{assert_eq!((w,h),(1,1));assert_eq!(p,frame.rgba);},_=>panic!("Expected pixels")};
+        assert!(prepare_single_copy(&state,"image",Some(b"invalid".to_vec())).is_err());assert!(prepare_single_copy(&state,"missing",None).is_err());
+        let first=match prepare_single_copy(&state,"file",None).unwrap(){SingleCopy::File(path)=>path,_=>panic!("Expected file")};
+        fs::write(state.asset("file"),b"NEW").unwrap();
+        let second=match prepare_single_copy(&state,"file",None).unwrap(){SingleCopy::File(path)=>path,_=>panic!("Expected file")};
+        assert_ne!(first,second);assert_eq!(fs::read(first).unwrap(),b"FILE");assert_eq!(fs::read(second).unwrap(),b"NEW");
+        assert_eq!(serde_json::to_value(&*state.bundle.lock().unwrap()).unwrap(),before);
         drop(state);fs::remove_dir_all(root).unwrap();
     }
     #[test]

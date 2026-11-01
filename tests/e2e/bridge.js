@@ -52,7 +52,7 @@ export function installBridge(){
     if(cmd==='capture_open_permissions')return;
     if(cmd==='materials_info')return qa.materialInfo?.[args.itemId]??{};
     if(cmd==='materials_choose_files'){for(const item of qa.chosenMaterials??[])state.materials.items.push(item);persist();return structuredClone(state.materials);}
-    if(cmd==='materials_open')return;
+    if(cmd==='materials_open'||cmd==='materials_copy')return;
     if(cmd==='get_default_role')return state.defaultRole??null;
     if(cmd==='set_default_role'){state.defaultRole=args.role;persist();emit('default-role-changed',args.role);return args.role;}
     if(cmd==='materials_packs'||cmd==='materials_select_pack'){

@@ -43,14 +43,16 @@ Customize snippets, usage scenarios, their order and the shortcut.
 For example, a login bug needs two screenshots, a short recording and a written description:
 
 1. Open **Materials** and add text, images and files. You can also capture screenshots or recordings.
-2. Drag items into order and refer to them as **#01, #02…** in your request.
+2. Drag a card or its image into order and refer to items as **#01, #02…** in your request.
 3. **Export material bundle** and share the task text and attachments with your AI.
 
 <p align="center"><img src="docs/images/current/materials-en.png" alt="Numbered task text, screenshot, video and file cards with preview and local bundle export" width="1000"></p>
 
+Right-click a material or open its three-dot menu and choose **Copy**: images copy as images, text copies as text, and GIFs/videos/files copy as attachments. Text drafts are saved before copying.
+
 The export contains <code>prompt.md</code>, attachment copies and <code>manifest.json</code>. **Copy combined text** copies text and attachment references instead.
 
-Press **Alt+V** to paste the current workspace bundle. The receiving app must support multiple-file paste; otherwise use export. The app never sends your message automatically.
+Hold **Alt+K** to open quick materials, then release Alt to paste the current workspace bundle. The receiving app must support multiple-file paste; otherwise use export. The app never sends your message automatically.
 
 **Save material pack** takes one click and uses the local date and time, with a suffix for same-second collisions. The Load dialog provides Cancel, Delete, Add and Replace; loading asks before replacing current materials. Clearing the workspace leaves saved packs unchanged, and can be undone.
 
